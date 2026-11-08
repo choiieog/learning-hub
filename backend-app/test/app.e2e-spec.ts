@@ -1,29 +1,30 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { AppModule } from '../src/app.module';
+import { applyAppSettings } from './create-test-app';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+describe('Health (e2e)', () => {
+  let app: INestApplication;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleRef.createNestApplication();
+    applyAppSettings(app);
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterAll(async () => {
+    await app.close();
   });
 
-  afterEach(async () => {
-    await app.close();
+  it('GET /api/health trả envelope success + status ok', async () => {
+    const response = await request(app.getHttpServer()).get('/api/health').expect(200);
+
+    const body = response.body as { success: boolean; data: { status: string } };
+    expect(body.success).toBe(true);
+    expect(body.data.status).toBe('ok');
   });
 });
