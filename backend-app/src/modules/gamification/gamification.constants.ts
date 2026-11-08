@@ -18,7 +18,7 @@ export function expToReachLevel(level: number): number {
   return total;
 }
 
-/** EXP của một bậc: round(100 * level^1.5) — xem docs/DECISIONS.md mục 10. */
+/** EXP của một bậc: round(100 * level^1.5). */
 export function levelStep(level: number): number {
   return Math.round(100 * Math.pow(level, 1.5));
 }

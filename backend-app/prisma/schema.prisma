@@ -1,4 +1,4 @@
-// Thiết kế dữ liệu cho Learning Hub — chưa được nối vào code (chờ chốt ORM, xem docs/DECISIONS.md).
+// Thiết kế dữ liệu cho Learning Hub.
 // Chạy khi đã cài Prisma:  npx prisma migrate dev --name init
 
 // Prisma 7: the generated client lives in the source tree (output is required)

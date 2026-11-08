@@ -15,7 +15,7 @@ interface EmailMessage {
  * Sends account emails. Business code only calls `sendVerificationEmail` /
  * `sendPasswordResetEmail`, so switching driver never touches the auth module.
  *
- * Drivers (see docs/DECISIONS.md section 2):
+ * Drivers:
  *  - console: prints the link to the backend log (dev default);
  *  - smtp: real delivery via nodemailer, configured with SMTP_* variables.
  */
