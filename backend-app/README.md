@@ -44,4 +44,4 @@ npm run test:e2e        # e2e thật: cần DATABASE_URL + `npx prisma migrate d
 | `notifications` | 🟡 thông báo duyệt/từ chối + đọc tin; chưa có broadcast — xem `src/modules/notifications/README.md` |
 | `ratings`, `gamification`, `settings` | ⬜ phase 2, mới có README |
 
-Chi tiết việc còn thiếu: [../docs/ROADMAP.md](../docs/ROADMAP.md).
+Chi tiết việc còn thiếu: xem README của từng module trong `src/modules/`.

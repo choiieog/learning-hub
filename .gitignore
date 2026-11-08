@@ -20,3 +20,7 @@ backend-app/uploads/
 
 # ảnh chụp UI review (giữ cục bộ, không track)
 artifacts/
+
+# tài liệu thiết kế và script vận hành (giữ cục bộ, không track)
+docs/
+scripts/

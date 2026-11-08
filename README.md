@@ -11,8 +11,8 @@ Mỗi lượt xem được ghi nhận (tăng `viewCount`), làm nền tảng cho
 | --- | --- |
 | Frontend (`frontend-app`) | Angular 21 (standalone + signals), Tailwind CSS v4, Vitest |
 | Backend (`backend-app`) | NestJS 12 (Express 5), TypeScript, Jest |
-| Database | PostgreSQL + Prisma 7 (migration đầu tiên đã áp dụng) — xem `docs/DATA-MODEL.md` |
-| Lưu file | `StorageService` + driver `local` (`UPLOAD_DIR`, phục vụ `/api/files/...`) — xem `docs/DECISIONS.md` mục 3 |
+| Database | PostgreSQL + Prisma 7 (migration đầu tiên đã áp dụng) |
+| Lưu file | `StorageService` + driver `local` (`UPLOAD_DIR`, phục vụ `/api/files/...`) |
 
 ## Hiện trạng
 
@@ -24,7 +24,7 @@ Mỗi lượt xem được ghi nhận (tăng `viewCount`), làm nền tảng cho
 - Admin: duyệt/từ chối (kèm lý do)/xoá bài, xem trước PDF & DOCX; tác giả nhận thông báo trong chuông ở header.
 
 `StorageService` đã có driver `local` và mail đã hỗ trợ `MAIL_DRIVER=smtp` (nodemailer). Còn lại: driver cloud
-(Cloudinary/S3) chờ tài khoản dịch vụ. Chi tiết từng mục và vị trí code xem [docs/ROADMAP.md](docs/ROADMAP.md).
+(Cloudinary/S3) chờ tài khoản dịch vụ.
 
 ## Chạy dự án
 
@@ -71,14 +71,6 @@ Workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) chạy khi push 
 
 Chạy lại cục bộ: `cd backend-app && npm run lint && npm test && npm run test:e2e` — e2e cần `DATABASE_URL` trỏ tới PostgreSQL đã chạy `prisma migrate deploy`.
 
-Bảo vệ nhánh `main` (bắt buộc PR + hai check trên phải xanh trước khi merge): chạy
-`./scripts/setup-branch-protection.sh`, chi tiết và cách gỡ xem [docs/BRANCH-PROTECTION.md](docs/BRANCH-PROTECTION.md).
-
-## Tài liệu thiết kế
-
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — cây thư mục đầy đủ + quy ước đặt code
-- [docs/DATA-MODEL.md](docs/DATA-MODEL.md) — mô hình dữ liệu (đã gồm cả phần phát triển sau)
-- [docs/API-CONVENTIONS.md](docs/API-CONVENTIONS.md) — quy ước REST, phân trang, lọc nhiều lựa chọn
-- [docs/ROADMAP.md](docs/ROADMAP.md) — hiện trạng (đã xong / còn thiếu) và phần phát triển sau
-- [docs/BRANCH-PROTECTION.md](docs/BRANCH-PROTECTION.md) — bảo vệ nhánh `main` (PR + CI bắt buộc)
-- [docs/DECISIONS.md](docs/DECISIONS.md) — các lựa chọn còn mở, kèm đề xuất mặc định
+Nên bật branch protection cho `main` (bắt buộc pull request + hai check trên phải xanh trước khi merge):
+GitHub → Settings → Branches → Add branch protection rule, chọn `main` và `Require status checks to pass`
+với hai check `Backend · typecheck / lint / build / unit / e2e` và `Frontend · build`.
