@@ -23,7 +23,7 @@ const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 
 /**
- * Authentication business logic — see docs/DECISIONS.md section 2.
+ * Authentication business logic.
  *
  * Security notes:
  *  - passwords are hashed with bcrypt (10 rounds) and never returned;

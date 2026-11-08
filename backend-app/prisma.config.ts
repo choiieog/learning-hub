@@ -8,7 +8,7 @@ try {
 }
 
 /**
- * Prisma 7 project configuration (see docs/DECISIONS.md section 1).
+ * Prisma 7 project configuration.
  * Commands: npm run db:generate | db:migrate | db:seed
  */
 export default defineConfig({
