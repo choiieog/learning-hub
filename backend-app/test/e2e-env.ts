@@ -1,4 +1,6 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parseEnv } from 'node:util';
 
 /**
@@ -17,3 +19,6 @@ try {
 } catch {
   // No .env file: variables come from the environment.
 }
+
+// E2E không ghi file tải lên vào thư mục uploads của dev.
+process.env.UPLOAD_DIR = mkdtempSync(join(tmpdir(), 'lh-e2e-uploads-'));

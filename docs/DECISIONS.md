@@ -103,9 +103,14 @@ Khi có tài khoản: thêm `drivers/<tên>.driver.ts` + nhánh trong `storage.m
 - **Đã chốt và đã làm:** bảng `UserWarning` (lý do + admin + thời điểm), `User.warningCount` đếm sẵn;
   đủ 3 cảnh báo thì tự động `User.status = BANNED` — `POST /api/auth/login` và `JwtAuthGuard` chặn tài khoản bị khoá.
 
-## 10. Công thức level / EXP (phát triển sau)
+## 10. Công thức level / EXP ✅ đã làm
 
 - **Đề xuất:** `exp = viewCount * 1 + ratingCount * 5 + ratingAvg * 2`, mốc `expNeeded(level) = 100 * level^1.5`; lưu `User.exp`, `User.level`, lịch sử `ExpLog`. Bảng xếp hạng = query `ORDER BY level DESC, exp DESC` (không cần bảng riêng).
+- **Đã hiện thực** (`modules/gamification`): EXP cộng theo sự kiện thay vì tính lại từ aggregate —
+  `VIEW` +1 (1 người/tài liệu/ngày, tự xem không cộng), `RATING` +5 (chỉ đánh giá mới),
+  `DOCUMENT_APPROVED` +20; mỗi lần cộng ghi `ExpLog`. Level suy ra từ tổng EXP với
+  `levelStep(level) = round(100 * level^1.5)`. Bảng xếp hạng: `GET /api/leaderboard?limit=10`
+  (chỉ `role = USER`, sắp theo `exp` desc) — không cần bảng riêng.
 
 ## 11. Năm điểm đã chốt (05/11/2026)
 

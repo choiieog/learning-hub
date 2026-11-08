@@ -46,7 +46,20 @@ import { AuthService } from '../../core/services/auth.service';
             >
               Quản lý tài khoản
             </a>
-            <!-- TODO(phase 2): Cấu hình hệ thống, Thông báo hàng loạt -->
+            <a
+              routerLink="/admin/broadcast"
+              routerLinkActive="bg-indigo-50 text-indigo-700 font-medium"
+              class="rounded-md px-3 py-2 hover:bg-slate-100"
+            >
+              Thông báo hàng loạt
+            </a>
+            <a
+              routerLink="/admin/settings"
+              routerLinkActive="bg-indigo-50 text-indigo-700 font-medium"
+              class="rounded-md px-3 py-2 hover:bg-slate-100"
+            >
+              Cấu hình hệ thống
+            </a>
           </nav>
 
           <div class="mt-4 flex items-center justify-between gap-4 border-t border-slate-200 pt-4 text-sm md:mt-8 md:block">

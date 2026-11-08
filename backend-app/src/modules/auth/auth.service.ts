@@ -298,7 +298,10 @@ export class AuthService {
   }
 
   private async issueTokens(userId: string) {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: { avatarFrame: true },
+    });
 
     const accessToken = await this.jwt.signAsync(
       { sub: user.id, email: user.email, role: user.role },
@@ -325,6 +328,8 @@ export class AuthService {
         studentCode: user.studentCode,
         bio: user.bio,
         avatarUrl: user.avatarUrl,
+        avatarFrameId: user.avatarFrameId,
+        avatarFrameUrl: user.avatarFrame?.assetUrl ?? null,
         role: user.role,
         status: user.status,
         warningCount: user.warningCount,

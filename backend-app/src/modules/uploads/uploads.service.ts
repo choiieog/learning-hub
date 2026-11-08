@@ -4,6 +4,7 @@ import {
   MIME_BY_EXTENSION,
   UPLOAD_FOLDERS,
   type UploadFolder,
+  matchesFileSignature,
   maxUploadSizeBytes,
 } from '../../common/constants/upload.constants';
 import { StorageService } from '../../infra/storage/storage.service';
@@ -49,6 +50,13 @@ export class UploadsService {
     if (file.mimetype !== expectedMimeType) {
       throw new BadRequestException(
         `Nội dung file không khớp định dạng .${extension} (nhận ${file.mimetype}).`,
+      );
+    }
+
+    // Đuôi + MIME đều do client khai, nên kiểm luôn chữ ký nhị phân của nội dung.
+    if (!matchesFileSignature(extension, file.buffer)) {
+      throw new BadRequestException(
+        `Nội dung file không phải ${extension.toUpperCase()} thật — file có thể đã bị đổi đuôi.`,
       );
     }
 

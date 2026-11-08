@@ -32,7 +32,7 @@ AvatarFrame 1─n User       (khung avatar mở theo level — phase 2)
 | `DocumentView` | Chống spam view: unique `(documentId, viewerKey, dayKey)` | 1 |
 | `UserWarning` | Cảnh báo tài khoản của admin | 1 |
 | `Rating` | Đánh giá 1–5 sao, unique `(documentId, userId)` | 2 |
-| `Notification` | Thông báo duyệt/từ chối + thông báo chung (`userId = null`) | 1 (một phần): duyệt/từ chối + đọc tin đã dùng; broadcast/xoá bài còn ở giai đoạn 2 |
+| `Notification` | Thông báo duyệt/từ chối/xoá + thông báo chung (`userId = null`) | 1 ✅ |
 | `ExpLog` | Lịch sử cộng EXP (audit + hiển thị "hoạt động") | 2 |
 | `AvatarFrame` | Khung avatar theo level | 2 |
 | `SystemSetting` | Bật/tắt hoặc giới hạn số bài đăng | 2 |

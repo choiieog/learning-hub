@@ -82,6 +82,38 @@ export class NotificationsService {
     });
   }
 
+  /** Tác giả nhận tin bài bị admin xoá vì vi phạm; bài đã biến mất nên không kèm link. */
+  async notifyDeleted(document: ReviewedDocument): Promise<void> {
+    await this.prisma.notification.create({
+      data: {
+        type: NotificationType.DOCUMENT_DELETED,
+        title: 'Tài liệu đã bị xoá',
+        message: `“${document.title}” đã bị quản trị viên xoá vì vi phạm quy định chia sẻ tài liệu.`,
+        link: null,
+        userId: document.authorId,
+      },
+    });
+  }
+
+  /**
+   * Admin gửi thông báo hàng loạt: một row `userId = null` là đủ — mọi người thấy cùng một tin,
+   * không cần copy cho từng tài khoản (và không có trạng thái đọc riêng cho broadcast).
+   */
+  async broadcast(input: { title: string; message: string }): Promise<NotificationSummary> {
+    const created = await this.prisma.notification.create({
+      data: {
+        type: NotificationType.SYSTEM,
+        title: input.title.trim(),
+        message: input.message.trim(),
+        link: null,
+        userId: null,
+      },
+      select: NOTIFICATION_SELECT,
+    });
+
+    return created as NotificationSummary;
+  }
+
   /** Thông báo của tôi + thông báo chung; mới nhất trước. */
   async findMine(
     userId: string,

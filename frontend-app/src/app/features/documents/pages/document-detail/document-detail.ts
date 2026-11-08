@@ -11,9 +11,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DocumentDetail, DocumentFile, DocumentStatus } from '../../../../core/models';
+import { AuthService } from '../../../../core/services/auth.service';
 import { DocumentService } from '../../../../core/services/document.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
 import { fileExtension, formatFileSize, initials } from '../../../../core/utils/format.util';
+import { RatingSection } from '../../../ratings/components/rating-section/rating-section';
 
 const STATUS_LABEL: Record<DocumentStatus, string> = {
   PENDING: 'Chờ duyệt',
@@ -31,7 +33,7 @@ const STATUS_LABEL: Record<DocumentStatus, string> = {
 @Component({
   selector: 'app-document-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, RatingSection],
   template: `
     <a
       routerLink="/documents"
@@ -235,6 +237,13 @@ const STATUS_LABEL: Record<DocumentStatus, string> = {
                 </div>
               </section>
             }
+
+            @if (doc.status === 'APPROVED') {
+              <app-rating-section
+                [documentId]="doc.id"
+                [canRate]="doc.author.id !== currentUser()?.id"
+              />
+            }
           </div>
 
           <aside class="space-y-6">
@@ -305,6 +314,7 @@ export class DocumentDetailPage implements OnInit {
   private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly currentUser = inject(AuthService).currentUser;
   protected readonly item = signal<DocumentDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly errors = signal<string[]>([]);

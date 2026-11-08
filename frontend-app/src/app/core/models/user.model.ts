@@ -8,8 +8,10 @@ export interface User {
   studentCode?: string;
   bio?: string;
   avatarUrl?: string;
-  /** (phase 2) khung avatar đang dùng */
-  avatarFrameUrl?: string;
+  /** id khung avatar đang dùng (null/undefined = không dùng khung) */
+  avatarFrameId?: string | null;
+  /** gradient/ảnh của khung avatar đang dùng — backend trả sẵn để vẽ vòng */
+  avatarFrameUrl?: string | null;
   role: UserRole;
   status: UserStatus;
   warningCount: number;

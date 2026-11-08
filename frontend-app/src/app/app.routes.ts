@@ -11,6 +11,7 @@ import { guestGuard } from './core/guards/guest.guard';
  *   /auth/forgot-password            → AuthLayout  (guestGuard, yêu cầu link đặt lại mật khẩu)
  *   /auth/reset-password?token=...   → AuthLayout  (guestGuard, link đặt lại mật khẩu trong email)
  *   /dashboard, /documents, ...      → UserLayout  (authGuard)
+ *   /notifications                   → UserLayout  (authGuard, trang danh sách đầy đủ)
  *   /admin/...                       → AdminLayout (authGuard + adminGuard)
  */
 export const routes: Routes = [
@@ -113,6 +114,22 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'leaderboard',
+        title: 'Bảng xếp hạng · Learning Hub',
+        loadComponent: () =>
+          import('./features/leaderboard/pages/leaderboard/leaderboard').then(
+            (m) => m.Leaderboard,
+          ),
+      },
+      {
+        path: 'notifications',
+        title: 'Thông báo · Learning Hub',
+        loadComponent: () =>
+          import('./features/notifications/pages/notification-list/notification-list').then(
+            (m) => m.NotificationList,
+          ),
+      },
+      {
         path: 'profile',
         title: 'Hồ sơ · Learning Hub',
         loadComponent: () =>
@@ -164,6 +181,22 @@ export const routes: Routes = [
         title: 'Quản lý tài khoản · Learning Hub',
         loadComponent: () =>
           import('./features/admin/pages/admin-users/admin-users').then((m) => m.AdminUsers),
+      },
+      {
+        path: 'broadcast',
+        title: 'Thông báo hàng loạt · Learning Hub',
+        loadComponent: () =>
+          import('./features/admin/pages/admin-broadcast/admin-broadcast').then(
+            (m) => m.AdminBroadcast,
+          ),
+      },
+      {
+        path: 'settings',
+        title: 'Cấu hình hệ thống · Learning Hub',
+        loadComponent: () =>
+          import('./features/admin/pages/admin-settings/admin-settings').then(
+            (m) => m.AdminSettings,
+          ),
       },
     ],
   },

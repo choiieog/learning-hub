@@ -10,7 +10,9 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { GamificationModule } from './modules/gamification/gamification.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { RatingsModule } from './modules/ratings/ratings.module';
 import { SubjectsModule } from './modules/subjects/subjects.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { UsersModule } from './modules/users/users.module';
@@ -30,8 +32,10 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     SubjectsModule,
     DocumentsModule,
+    GamificationModule,
     DashboardModule,
     NotificationsModule,
+    RatingsModule,
     UploadsModule,
     AdminModule,
   ],

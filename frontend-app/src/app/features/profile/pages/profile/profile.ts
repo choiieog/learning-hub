@@ -11,8 +11,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { User } from '../../../../core/models';
+import { AvatarFrame, User } from '../../../../core/models';
 import { AuthService } from '../../../../core/services/auth.service';
+import { AvatarFrameService } from '../../../../core/services/avatar-frame.service';
 import { UploadService } from '../../../../core/services/upload.service';
 import { UserService } from '../../../../core/services/user.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
@@ -28,6 +29,7 @@ const BIO_MAX = 500;
  * - Sửa họ tên / mã sinh viên / giới thiệu → PATCH /api/users/me (server trả hồ sơ mới,
  *   UserService cập nhật luôn AuthService.currentUser để header đổi theo).
  * - Đổi avatar: upload ảnh (folder "avatars") → PATCH /api/users/me/avatar với url server trả.
+ * - Khung avatar mở khoá theo cấp: GET /api/avatar-frames + PATCH /api/users/me/avatar-frame.
  * - Email dùng để đăng nhập nên chỉ hiển thị, không sửa ở đây.
  */
 @Component({
@@ -77,20 +79,26 @@ const BIO_MAX = 500;
       <div class="mt-6 grid gap-6 lg:grid-cols-3">
         <!-- Thẻ định danh -->
         <section class="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-          @if (user()?.avatarUrl; as avatarUrl) {
-            <img
-              [src]="avatarUrl"
-              [alt]="'Ảnh đại diện của ' + (user()?.fullName ?? '')"
-              class="mx-auto h-24 w-24 rounded-full border border-slate-200 object-cover"
-            />
-          } @else {
-            <div
-              class="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-indigo-50 text-2xl font-semibold text-indigo-700"
-              aria-hidden="true"
-            >
-              {{ userInitials() }}
-            </div>
-          }
+          <div
+            class="mx-auto flex h-28 w-28 items-center justify-center rounded-full"
+            [style.background]="currentFrameAsset() ?? 'transparent'"
+            [class.p-1]="currentFrameAsset() !== null"
+          >
+            @if (user()?.avatarUrl; as avatarUrl) {
+              <img
+                [src]="avatarUrl"
+                [alt]="'Ảnh đại diện của ' + (user()?.fullName ?? '')"
+                class="h-full w-full rounded-full border-2 border-white object-cover"
+              />
+            } @else {
+              <div
+                class="flex h-full w-full items-center justify-center rounded-full bg-indigo-50 text-2xl font-semibold text-indigo-700"
+                aria-hidden="true"
+              >
+                {{ userInitials() }}
+              </div>
+            }
+          </div>
 
           <h2 class="mt-4 text-lg font-semibold text-slate-900">{{ user()?.fullName }}</h2>
           <p class="mt-0.5 text-sm text-slate-500">{{ user()?.email }}</p>
@@ -136,6 +144,57 @@ const BIO_MAX = 500;
               </dd>
             </div>
           </dl>
+
+          <div class="mt-6 border-t border-slate-100 pt-4 text-left">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-sm font-semibold text-slate-800">Khung avatar</h3>
+              @if (currentFrameId()) {
+                <button
+                  type="button"
+                  class="text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                  [disabled]="savingFrame()"
+                  (click)="selectFrame(null)"
+                >
+                  Bỏ khung
+                </button>
+              }
+            </div>
+            <p class="mt-1 text-xs text-slate-500">Mở khoá theo cấp độ của bạn.</p>
+
+            <ul class="mt-3 grid grid-cols-2 gap-2">
+              @for (frame of frames(); track frame.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="w-full rounded-lg border p-2 text-center transition disabled:cursor-not-allowed disabled:opacity-60"
+                    [class]="
+                      currentFrameId() === frame.id
+                        ? 'border-indigo-400 bg-indigo-50'
+                        : 'border-slate-200 hover:bg-slate-50'
+                    "
+                    [disabled]="!frame.unlocked || savingFrame()"
+                    [attr.title]="frame.unlocked ? frame.name : 'Mở ở cấp ' + frame.minLevel"
+                    (click)="selectFrame(frame.id)"
+                  >
+                    <span
+                      class="mx-auto block h-8 w-8 rounded-full"
+                      [style.background]="frame.assetUrl"
+                    ></span>
+                    <span class="mt-1 block text-xs font-medium text-slate-700">{{ frame.name }}</span>
+                    @if (!frame.unlocked) {
+                      <span class="block text-[11px] text-slate-400">Cấp {{ frame.minLevel }}</span>
+                    } @else if (currentFrameId() === frame.id) {
+                      <span class="block text-[11px] font-semibold text-indigo-600">Đang dùng</span>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+
+            @if (frameError()) {
+              <p class="mt-2 text-sm text-rose-600" role="alert">{{ frameError() }}</p>
+            }
+          </div>
         </section>
 
         <!-- Form thông tin -->
@@ -221,6 +280,7 @@ const BIO_MAX = 500;
 export class Profile implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
+  private readonly avatarFrameService = inject(AvatarFrameService);
   private readonly uploadService = inject(UploadService);
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
@@ -236,6 +296,10 @@ export class Profile implements OnInit {
   protected readonly errors = signal<string[]>([]);
   protected readonly avatarError = signal<string | null>(null);
   protected readonly bioLength = signal(0);
+  protected readonly frames = signal<AvatarFrame[]>([]);
+  protected readonly currentFrameId = signal<string | null>(null);
+  protected readonly savingFrame = signal(false);
+  protected readonly frameError = signal<string | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
     fullName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
@@ -244,6 +308,11 @@ export class Profile implements OnInit {
   });
 
   protected readonly userInitials = computed(() => initials(this.user()?.fullName ?? ''));
+  protected readonly currentFrameAsset = computed(() => {
+    const frame = this.frames().find((item) => item.id === this.currentFrameId());
+
+    return frame?.assetUrl ?? null;
+  });
   protected readonly roleLabel = computed(() =>
     this.user()?.role === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên',
   );
@@ -254,6 +323,7 @@ export class Profile implements OnInit {
       .subscribe((value) => this.bioLength.set(value.length));
 
     this.fetch();
+    this.loadFrames();
   }
 
   protected showError(control: 'fullName' | 'studentCode' | 'bio'): boolean {
@@ -292,6 +362,30 @@ export class Profile implements OnInit {
         error: (error: unknown) => {
           this.saving.set(false);
           this.errors.set(getApiErrorMessages(error));
+        },
+      });
+  }
+
+  /** Chọn/bỏ khung; đổi xong cập nhật cả hồ sơ lẫn header. */
+  protected selectFrame(frameId: string | null): void {
+    this.savingFrame.set(true);
+    this.frameError.set(null);
+    this.success.set(null);
+
+    this.avatarFrameService
+      .select(frameId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (user) => {
+          this.savingFrame.set(false);
+          this.user.set(user);
+          this.auth.setCurrentUser(user);
+          this.currentFrameId.set(user.avatarFrameId ?? null);
+          this.success.set(frameId ? 'Đã đổi khung avatar.' : 'Đã bỏ khung avatar.');
+        },
+        error: (error: unknown) => {
+          this.savingFrame.set(false);
+          this.frameError.set(getApiErrorMessages(error).join(' '));
         },
       });
   }
@@ -370,6 +464,19 @@ export class Profile implements OnInit {
           this.errors.set(getApiErrorMessages(error));
           this.loading.set(false);
         },
+      });
+  }
+
+  private loadFrames(): void {
+    this.avatarFrameService
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.frames.set(data.items);
+          this.currentFrameId.set(data.currentFrameId);
+        },
+        error: () => undefined,
       });
   }
 

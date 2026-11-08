@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '../src/generated/prisma/client';
+import { AVATAR_FRAMES } from '../src/modules/users/avatar-frame.constants';
 
 // Loaded by prisma.config.ts when run through `npx prisma db seed`;
 // loaded here as a fallback when the file is executed directly.
@@ -55,7 +56,18 @@ async function main() {
     });
   }
 
-  console.log(`Seeded admin ${admin.email} and ${subjects.length} subjects.`);
+  // Khung avatar: id cố định để API và seed luôn khớp catalog trong code.
+  for (const frame of AVATAR_FRAMES) {
+    await prisma.avatarFrame.upsert({
+      where: { id: frame.id },
+      update: { name: frame.name, minLevel: frame.minLevel, assetUrl: frame.assetUrl },
+      create: frame,
+    });
+  }
+
+  console.log(
+    `Seeded admin ${admin.email}, ${subjects.length} subjects and ${AVATAR_FRAMES.length} avatar frames.`,
+  );
 }
 
 main()
