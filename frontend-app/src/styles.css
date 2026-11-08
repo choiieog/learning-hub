@@ -1,3 +1,120 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-100 text-slate-900 antialiased;
+  }
+}
+
+/* Reusable pieces so auth pages stay readable (Tailwind v4 @apply). */
+@layer components {
+  .auth-title {
+    @apply text-xl font-semibold text-slate-900;
+  }
+
+  .auth-subtitle {
+    @apply mt-1 text-sm text-slate-500;
+  }
+
+  .field {
+    @apply mt-4;
+  }
+
+  .field-label {
+    @apply mb-1 block text-sm font-medium text-slate-700;
+  }
+
+  .field-input {
+    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition
+      placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
+      disabled:bg-slate-50 disabled:text-slate-400;
+  }
+
+  .field-hint {
+    @apply mt-1 text-xs text-slate-500;
+  }
+
+  .field-error {
+    @apply mt-1 text-xs text-red-600;
+  }
+
+  .btn-primary {
+    @apply inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm
+      font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2
+      focus:ring-indigo-300 disabled:cursor-not-allowed disabled:bg-indigo-300;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm
+      font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2
+      focus:ring-slate-200 disabled:cursor-not-allowed disabled:text-slate-400;
+  }
+
+  .alert {
+    @apply mb-4 rounded-lg border px-3 py-2 text-sm;
+  }
+
+  .alert-error {
+    @apply border-red-200 bg-red-50 text-red-700;
+  }
+
+  .alert-success {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-800;
+  }
+
+  .alert-info {
+    @apply border-sky-200 bg-sky-50 text-sky-800;
+  }
+
+  .auth-link {
+    @apply font-medium text-indigo-600 underline-offset-2 hover:text-indigo-700 hover:underline;
+  }
+
+  /* Nền phát sáng cho hero của landing page. */
+  .landing-glow {
+    background-image:
+      radial-gradient(48rem 32rem at 78% -12%, rgb(99 102 241 / 0.18), transparent 70%),
+      radial-gradient(36rem 26rem at 6% 8%, rgb(168 85 247 / 0.14), transparent 70%),
+      linear-gradient(to bottom, #ffffff, #f8fafc);
+  }
+
+  .landing-gradient-text {
+    @apply bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-500 bg-clip-text text-transparent;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-floaty {
+  animation: floaty 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-floaty {
+    animation: none;
+  }
+}
