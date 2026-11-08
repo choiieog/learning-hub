@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.angular/
+coverage/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# uploads (file tài liệu lưu local khi STORAGE_DRIVER=local)
+backend-app/uploads/
+
+# editor / OS
+.DS_Store
+*.log

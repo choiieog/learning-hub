@@ -1,0 +1,261 @@
+// Thiết kế dữ liệu cho Learning Hub — chưa được nối vào code (chờ chốt ORM, xem docs/DECISIONS.md).
+// Chạy khi đã cài Prisma:  npx prisma migrate dev --name init
+
+// Prisma 7: the generated client lives in the source tree (output is required)
+// and is created by `npm run db:generate`.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Prisma 7: the connection URL lives in prisma.config.ts (and is passed to the
+// client through the pg driver adapter), not in this file.
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  WARNED
+  BANNED
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  DOCUMENT_APPROVED
+  DOCUMENT_REJECTED
+  DOCUMENT_DELETED
+  SYSTEM
+}
+
+enum ExpReason {
+  VIEW
+  RATING
+  DOCUMENT_APPROVED
+  ADMIN_ADJUST
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  passwordHash  String
+  fullName      String
+  studentCode   String?    @unique
+  bio           String?
+  avatarUrl     String?
+  avatarFrameId String?
+  role          Role       @default(USER)
+  status        UserStatus @default(ACTIVE)
+  warningCount  Int        @default(0)
+  level         Int        @default(1)
+  exp           Int        @default(0)
+  /// null = chưa xác thực email → không được đăng nhập
+  emailVerifiedAt DateTime?
+  /// sha256 của refresh token đang hiệu lực (null = chưa/không còn phiên nào)
+  refreshTokenHash String?
+  deletedAt     DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  avatarFrame   AvatarFrame?   @relation(fields: [avatarFrameId], references: [id])
+  documents     Document[]
+  ratings       Rating[]
+  warnings      UserWarning[]  @relation("WarningTarget")
+  givenWarnings UserWarning[]  @relation("WarningAdmin")
+  notifications Notification[]
+  expLogs       ExpLog[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+
+  @@index([role, status])
+  @@index([level, exp])
+}
+
+/// Token xác thực email — chỉ lưu hash của token, token gốc chỉ nằm trong link gửi cho user.
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime // đề xuất: 24 giờ
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+/// Token đặt lại mật khẩu — chỉ lưu hash, hạn 1 giờ, dùng một lần; đổi mật khẩu xong thu hồi mọi phiên.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime // 1 giờ
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Subject {
+  id            String     @id @default(uuid())
+  code          String     @unique // vd: INT2204
+  name          String
+  description   String?
+  documentCount Int        @default(0)
+  deletedAt     DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  documents Document[]
+
+  @@index([name])
+}
+
+model Document {
+  id           String         @id @default(uuid())
+  title        String
+  description  String?        @db.Text
+  content      String?        @db.Text // markdown tùy chọn (bài viết hướng dẫn)
+  status       DocumentStatus @default(PENDING)
+  rejectReason String?
+  viewCount    Int            @default(0)
+  ratingAvg    Float          @default(0)
+  ratingCount  Int            @default(0)
+  publishedAt  DateTime?
+  deletedAt    DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  // Mỗi tài liệu thuộc đúng 1 môn học (đã chốt, không dùng bảng nối).
+  subjectId String
+  authorId  String
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id])
+
+  files   DocumentFile[]
+  views   DocumentView[]
+  ratings Rating[]
+
+  @@index([status, publishedAt])
+  @@index([subjectId, status])
+  @@index([authorId])
+  @@index([viewCount])
+}
+
+model DocumentFile {
+  id         String   @id @default(uuid())
+  url        String
+  publicId   String? // key để xóa trên storage (Cloudinary/S3)
+  name       String
+  size       Int // bytes
+  mimeType   String
+  documentId String
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
+
+/// Log lượt xem — chống spam: 1 người / tài liệu / ngày
+model DocumentView {
+  id         String   @id @default(uuid())
+  documentId String
+  viewerKey  String // luôn là userId — khách không xem được chi tiết tài liệu
+  dayKey     String // YYYY-MM-DD theo giờ Việt Nam (Asia/Ho_Chi_Minh)
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, viewerKey, dayKey])
+  @@index([documentId, createdAt])
+}
+
+/// Đánh giá sao (phase 2)
+model Rating {
+  id         String   @id @default(uuid())
+  stars      Int // 1..5
+  comment    String?  @db.Text
+  documentId String
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([documentId, userId])
+}
+
+model UserWarning {
+  id        String   @id @default(uuid())
+  reason    String   @db.Text
+  userId    String
+  adminId   String
+  createdAt DateTime @default(now())
+
+  user  User @relation("WarningTarget", fields: [userId], references: [id])
+  admin User @relation("WarningAdmin", fields: [adminId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+/// Thông báo (phase 2). userId = null nghĩa là thông báo chung cho mọi người.
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  link      String?
+  userId    String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId, readAt])
+  @@index([createdAt])
+}
+
+model ExpLog {
+  id        String    @id @default(uuid())
+  userId    String
+  delta     Int
+  reason    ExpReason
+  refId     String?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+/// Khung avatar mở khóa theo level (phase 2)
+model AvatarFrame {
+  id        String   @id @default(uuid())
+  name      String
+  assetUrl  String
+  minLevel  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  users User[]
+}
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
