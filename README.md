@@ -41,6 +41,22 @@ npm ci
 npm start
 ```
 
+## Chạy bằng Docker Compose
+
+Dựng cả Postgres + backend + frontend bằng một lệnh (không cần cài Node/Postgres trên máy):
+
+```bash
+docker compose up --build      # lần đầu build image, các lần sau khởi động nhanh
+docker compose run --rm migrate npm run db:seed   # (tuỳ chọn) admin + 5 môn học
+docker compose down            # dừng; thêm -v để xoá luôn DB và file đã tải
+```
+
+- Frontend: <http://localhost:8080> · API: <http://localhost:3000/api>
+- Postgres chỉ nằm trong mạng nội bộ của compose (không chiếm cổng 5432 trên máy); cần psql thì `docker compose exec db psql -U postgres learning_hub`.
+- Service `migrate` chạy `prisma migrate deploy` xong mới cho backend khởi động.
+- Dữ liệu ở volume `db-data`, file tải lên ở volume `uploads`; `nginx` phục vụ SPA và chuyển `/api/*` sang backend.
+- Đổi `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` bằng biến môi trường hoặc file `.env` cạnh `docker-compose.yml` khi không dùng giá trị mặc định.
+
 Mặc định `MAIL_DRIVER=console` nên link xác thực email được **in ra log backend** thay vì gửi thật.
 Đổi sang `smtp` (kèm `SMTP_*`) trước khi demo; tài khoản admin tạo bởi seed đã ở trạng thái đã xác thực.
 
