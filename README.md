@@ -1,5 +1,7 @@
 # Learning Hub — Web chia sẻ tài liệu học tập
 
+[![CI](https://github.com/choiieog/learning-hub/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/choiieog/learning-hub/actions/workflows/ci.yml)
+
 Sinh viên đăng tài liệu theo môn học, tài liệu được admin duyệt trước khi hiển thị công khai.
 Mỗi lượt xem được ghi nhận (tăng `viewCount`), làm nền tảng cho đánh giá sao và hệ thống level/EXP sau này.
 
@@ -59,6 +61,15 @@ docker compose down            # dừng; thêm -v để xoá luôn DB và file �
 
 Mặc định `MAIL_DRIVER=console` nên link xác thực email được **in ra log backend** thay vì gửi thật.
 Đổi sang `smtp` (kèm `SMTP_*`) trước khi demo; tài khoản admin tạo bởi seed đã ở trạng thái đã xác thực.
+
+## Kiểm thử & CI
+
+Workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) chạy khi push vào `main` và với mọi pull request:
+
+- **Backend** (service Postgres 16): `npm ci` → `prisma generate` → `prisma migrate deploy` trên DB trống → `tsc --noEmit` → `oxlint` → `nest build` → unit test → e2e.
+- **Frontend**: `npm ci` → `ng build` (production).
+
+Chạy lại cục bộ: `cd backend-app && npm run lint && npm test && npm run test:e2e` — e2e cần `DATABASE_URL` trỏ tới PostgreSQL đã chạy `prisma migrate deploy`.
 
 ## Tài liệu thiết kế
 
