@@ -15,6 +15,12 @@ export interface AppNotification {
   createdAt: string;
 }
 
+/** Body của POST /api/admin/notifications/broadcast */
+export interface BroadcastNotificationPayload {
+  title: string;
+  message: string;
+}
+
 /** Kết quả GET /api/notifications — kèm số chưa đọc cho badge trên chuông. */
 export interface NotificationPage {
   items: AppNotification[];

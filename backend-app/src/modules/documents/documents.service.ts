@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,9 +16,12 @@ import { DocumentStatus } from '../../common/enums/document-status.enum';
 import { Role } from '../../common/enums/role.enum';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import { vietnamDayKey } from '../../common/utils/day-key.util';
-import { Prisma } from '../../generated/prisma/client';
+import { ExpReason, Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
+import { EXP_RULES } from '../gamification/gamification.constants';
+import { GamificationService } from '../gamification/gamification.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SettingsService } from '../settings/settings.service';
 import { CreateDocumentDto, DocumentFileInputDto } from './dto/create-document.dto';
 import { ListDocumentsQueryDto } from './dto/list-documents-query.dto';
 import { ResubmitDocumentDto } from './dto/resubmit-document.dto';
@@ -102,6 +107,8 @@ export class DocumentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly gamification: GamificationService,
+    private readonly settings: SettingsService,
   ) {}
 
   /** GET /api/documents — chỉ tài liệu APPROVED, chưa xóa. */
@@ -199,6 +206,16 @@ export class DocumentsService {
       }
     }
 
+    // Tác giả nhận EXP cho lượt xem hợp lệ; tự xem bài mình không cộng để tránh farm EXP.
+    if (viewCountedToday && !isOwner) {
+      await this.gamification.award({
+        userId: document.author.id,
+        delta: EXP_RULES.VIEW,
+        reason: ExpReason.VIEW,
+        refId: documentId,
+      });
+    }
+
     return this.toDetail(document, {
       viewCountedToday,
       viewCount,
@@ -223,6 +240,8 @@ export class DocumentsService {
     for (const file of dto.files) {
       this.assertFileInput(file);
     }
+
+    await this.assertWithinDailyLimit(authorId);
 
     const created = await this.prisma.document.create({
       data: {
@@ -387,6 +406,13 @@ export class DocumentsService {
       authorId: updated.author.id,
     });
 
+    await this.gamification.award({
+      userId: updated.author.id,
+      delta: EXP_RULES.DOCUMENT_APPROVED,
+      reason: ExpReason.DOCUMENT_APPROVED,
+      refId: updated.id,
+    });
+
     return this.toDetail(updated, { viewCountedToday: false });
   }
 
@@ -430,7 +456,7 @@ export class DocumentsService {
   async removeByAdmin(documentId: string, _adminId: string): Promise<{ id: string }> {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, deletedAt: null },
-      select: { id: true },
+      select: { id: true, title: true, authorId: true },
     });
 
     if (!document) {
@@ -442,7 +468,35 @@ export class DocumentsService {
       data: { deletedAt: new Date() },
     });
 
+    // Tác giả cần biết bài của mình bị xoá, không chỉ biết là nó tự nhiên mất.
+    await this.notifications.notifyDeleted({
+      id: document.id,
+      title: document.title,
+      authorId: document.authorId,
+    });
+
     return { id: documentId };
+  }
+
+  /** Chặn khi sinh viên vượt giới hạn đăng bài/ngày do admin cấu hình (0 = không giới hạn). */
+  private async assertWithinDailyLimit(authorId: string): Promise<void> {
+    const limit = await this.settings.getDocumentDailyLimit();
+
+    if (limit <= 0) {
+      return;
+    }
+
+    const startOfToday = new Date(`${vietnamDayKey()}T00:00:00+07:00`);
+    const createdToday = await this.prisma.document.count({
+      where: { authorId, createdAt: { gte: startOfToday } },
+    });
+
+    if (createdToday >= limit) {
+      throw new HttpException(
+        `Bạn đã đăng ${createdToday}/${limit} tài liệu hôm nay. Vui lòng quay lại vào ngày mai.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
   }
 
   /** File phải do POST /api/uploads trả về và đúng định dạng cho phép. */

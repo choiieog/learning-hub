@@ -8,12 +8,15 @@ import {
   AdminUserSummary,
   AdminUsersQuery,
   ApiResponse,
+  AppNotification,
+  BroadcastNotificationPayload,
   CreateSubjectPayload,
   DocumentDetail,
   DocumentSummary,
   ModerationQuery,
   Paginated,
   Subject,
+  SystemSettings,
   User,
 } from '../models';
 import { toHttpParams } from '../utils/http-params.util';
@@ -95,6 +98,30 @@ export class AdminService {
   warnUser(id: string, reason: string): Observable<AdminUserDetail> {
     return this.http
       .post<ApiResponse<AdminUserDetail>>(`${this.baseUrl}/users/${id}/warnings`, { reason })
+      .pipe(map((res) => res.data));
+  }
+
+  // --- Thông báo hàng loạt ---
+
+  /** Gửi một thông báo chung (userId = null) tới mọi sinh viên. */
+  broadcastNotification(payload: BroadcastNotificationPayload): Observable<AppNotification> {
+    return this.http
+      .post<ApiResponse<AppNotification>>(`${this.baseUrl}/notifications/broadcast`, payload)
+      .pipe(map((res) => res.data));
+  }
+
+  // --- Cấu hình hệ thống ---
+
+  settings(): Observable<SystemSettings> {
+    return this.http
+      .get<ApiResponse<SystemSettings>>(`${this.baseUrl}/settings`)
+      .pipe(map((res) => res.data));
+  }
+
+  /** `documentDailyLimit = 0` nghĩa là không giới hạn. */
+  updateSettings(payload: { documentDailyLimit: number }): Observable<SystemSettings> {
+    return this.http
+      .patch<ApiResponse<SystemSettings>>(`${this.baseUrl}/settings`, payload)
       .pipe(map((res) => res.data));
   }
 }

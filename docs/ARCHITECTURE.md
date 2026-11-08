@@ -29,14 +29,16 @@
 | `infra/mail` | ✅ driver `console` + `smtp` (nodemailer, `SMTP_*`) |
 | `infra/storage` | ✅ `StorageService` + interface `StorageDriver`, driver `local` (cloud: thêm driver) |
 | `modules/auth` | ✅ đăng ký, xác thực email, đăng nhập, refresh, đổi mật khẩu, quên/đặt lại mật khẩu |
-| `modules/users` | ✅ hồ sơ (xem/sửa), avatar, hồ sơ công khai, danh sách cho admin, cảnh báo (tự khoá ở lần 3) |
+| `modules/users` | ✅ hồ sơ (xem/sửa), avatar, khung avatar mở theo level, hồ sơ công khai, danh sách cho admin, cảnh báo (tự khoá ở lần 3) |
 | `modules/subjects` | ✅ đọc, thêm, xoá mềm (chặn khi còn tài liệu), `assertExists` |
 | `modules/documents` | ✅ danh sách, chi tiết + view, đăng, `GET /mine`, sửa & gửi duyệt lại, xoá mềm |
 | `modules/uploads` | ✅ `POST /api/uploads` (ghi qua `StorageService`, whitelist + giới hạn dung lượng) |
 | `modules/admin` | ✅ duyệt/từ chối/xoá bài, overview, môn học, tài khoản + cảnh báo |
 | `modules/dashboard` | ✅ `GET /api/dashboard/overview` — số liệu tổng quan của chính người dùng |
-| `modules/notifications` | 🟡 thông báo duyệt/từ chối + đọc tin; chưa có broadcast |
-| `modules/ratings`, `gamification`, `settings` | ⬜ chỉ có README (phase 2) |
+| `modules/notifications` | ✅ duyệt/từ chối/xoá, admin gửi thông báo hàng loạt, trang `/notifications` + đọc tin |
+| `modules/ratings` | ✅ đánh giá sao: upsert, phân bố 1–5 sao, cache `ratingAvg`/`ratingCount` |
+| `modules/gamification` | ✅ EXP theo sự kiện (`ExpLog`), level từ tổng EXP, `GET /api/leaderboard` |
+| `modules/settings` | ✅ `SystemSetting` key/value — giới hạn số bài đăng/ngày, admin `/admin/settings` |
 
 Xem [ROADMAP](ROADMAP.md) để biết chi tiết việc còn thiếu.
 
@@ -73,9 +75,9 @@ learning-hub/
 │   │       ├── uploads/             # POST /api/uploads
 │   │       ├── admin/               # duyệt bài, tổng quan, môn học, tài khoản + cảnh báo ✅
 │   │       ├── dashboard/            # tổng quan sinh viên: số liệu + top tài liệu
-│   │       ├── notifications/       # thông báo duyệt/từ chối + đọc tin (broadcast: phase 2)
-│   │       ├── ratings/             # (phase 2) đánh giá sao
-│   │       ├── gamification/        # (phase 2) level/exp/bảng xếp hạng
+│   │       ├── notifications/       # duyệt/từ chối/xoá, broadcast, trang /notifications + đọc tin
+│   │       ├── ratings/             # đánh giá sao: upsert + cache ratingAvg ✅
+│   │       ├── gamification/        # EXP theo sự kiện, level, /api/leaderboard ✅
 │   │       └── settings/            # (phase 2) cấu hình hệ thống
 │   └── test/                        # e2e (supertest)
 │
@@ -129,7 +131,9 @@ Duyệt / từ chối và thông báo:
 ```
 Admin duyệt  → DocumentsService.approve(id) → NotificationsService.notifyApproved()
 Admin từ chối → DocumentsService.reject(id, reason) → NotificationsService.notifyRejected(..., reason)
-Tác giả      → GET /api/notifications (kèm unreadCount) → chuông + badge trong UserLayout
+Admin xoá    → DocumentsService.removeByAdmin(id) → NotificationsService.notifyDeleted()
+Admin gửi chung → POST /api/admin/notifications/broadcast → một row `userId = null`
+Tác giả      → GET /api/notifications (kèm unreadCount) → chuông + badge, trang /notifications
              → PATCH /api/notifications/:id/read  |  PATCH /api/notifications/read-all
 ```
 

@@ -13,13 +13,13 @@ Ký hiệu: ✅ đã xong · 🟡 một phần · ⬜ chưa làm
 | Chi tiết tài liệu + đếm lượt xem | ✅ |
 | Tài liệu đã chia sẻ: trạng thái, lý do từ chối, sửa & gửi duyệt lại, xoá mềm | ✅ |
 | Admin duyệt bài: xem trước PDF/DOCX, duyệt, từ chối, xoá | ✅ |
-| Thông báo duyệt / từ chối cho tác giả (chuông + API) | ✅ (làm sớm từ giai đoạn 2) |
+| Thông báo duyệt / từ chối / xoá cho tác giả (chuông + trang `/notifications`) | ✅ |
 | Trang tổng quan sinh viên: thẻ số liệu, lượt xem 7 ngày, tài liệu gần đây, top tài liệu | ✅ |
 | Hồ sơ: sửa thông tin, mã sinh viên, giới thiệu, avatar, đổi mật khẩu | ✅ |
 | Admin: tổng quan, danh mục môn học, tài khoản & cảnh báo | ✅ |
 | `StorageService` (local → cloud) | 🟡 driver `local` ✅, driver cloud ⬜ |
 | Mail driver `smtp` | ✅ nodemailer, cấu hình `SMTP_*` |
-| Giai đoạn 2: rating, settings, avatar frame, EXP/level, broadcast | ⬜ |
+| Giai đoạn 2: broadcast ✅ · rating ✅ · EXP/level ✅ · avatar frame ✅ · settings ✅ | ✅ |
 
 ## Giai đoạn 1 — đã xong
 
@@ -78,32 +78,38 @@ Ký hiệu: ✅ đã xong · 🟡 một phần · ⬜ chưa làm
 
 ### Ưu tiên 2 — nên làm trước khi bảo vệ
 
-3. ⬜ **Trang danh sách thông báo đầy đủ** — hiện chỉ có dropdown 8 tin gần nhất trong header, chưa có route `/notifications` có phân trang.
-4. ⬜ **Thông báo khi admin xoá bài** — mới chỉ báo khi duyệt / từ chối.
-5. 🟡 **Kiểm thử tự động** — đã có unit test `auth.service.password-reset.spec.ts` (10 case) và
-   **e2e thật với Postgres** `test/password-reset.e2e-spec.ts` (4 case: message trung tính, chỉ lưu hash,
-   đổi mật khẩu + thu hồi phiên + token dùng lại, token hết hạn), kèm health e2e. Hạ tầng jest
-   đã chuyển sang **ESM** (NestJS 12 phát hành ESM-only). Còn thiếu test cho documents và notifications.
-6. 🟡 **Kiểm tra file tải lên** — **đã có rate limit theo IP** cho đăng nhập (10/5 phút), quên mật khẩu (5/15 phút),
-   đăng tài liệu (10/60 phút); còn thiếu kiểm magic bytes/MIME thực (hiện mới dựa vào đuôi file + MIME client gửi).
+3. ✅ **Trang danh sách thông báo đầy đủ** — route `/notifications` (`features/notifications`), 10 tin/trang,
+   lọc "chỉ chưa đọc", đọc từng tin / đọc tất cả; trạng thái nằm trên URL nên Back/Forward đúng; dropdown chuông có "Xem tất cả".
+4. ✅ **Thông báo khi admin xoá bài** — `NotificationsService.notifyDeleted` tạo `DOCUMENT_DELETED` cho tác giả,
+   không kèm link vì bài đã biến mất.
+5. ✅ **Kiểm thử tự động** — unit test `auth.service.password-reset.spec.ts` (10 case) và 3 bộ e2e thật với Postgres:
+   `password-reset` (message trung tính, chỉ lưu hash, thu hồi phiên, token dùng lại / hết hạn),
+   `documents` (upload + magic bytes, PENDING bị ẩn, lượt xem 1/ngày, từ chối → gửi duyệt lại, xoá mềm, file giả)
+   và `notifications` (duyệt / từ chối / xoá, phân trang, thông báo chung, đánh dấu đọc). Hạ tầng jest dùng **ESM**.
+6. ✅ **Kiểm tra file tải lên** — rate limit theo IP (đăng nhập 10/5 phút, quên mật khẩu 5/15 phút, đăng tài liệu 10/60 phút)
+   và **kiểm chữ ký nhị phân** (`matchesFileSignature`: `%PDF`, ZIP cho DOCX/PPTX, PNG, JPEG, RIFF/WEBP) —
+   file đổi đuôi bị từ chối 400 dù MIME client khai đúng.
 
 ## Giai đoạn 2 — "phát triển sau"
 
 | Tính năng | Nơi triển khai | Trạng thái |
 | --- | --- | --- |
-| Thông báo duyệt/từ chối + thông báo chung | `modules/notifications`, `Notification.userId = null` là broadcast | 🟡 đã có duyệt/từ chối + đọc tin; **thiếu** broadcast, thông báo xoá bài, trang danh sách |
-| Đánh giá sao bài viết | `modules/ratings` + `Document.ratingAvg/ratingCount` | ⬜ chỉ có README |
-| Cấu hình hệ thống (bật/tắt, giới hạn bài đăng) | `modules/settings` + `SystemSetting` | ⬜ chỉ có README |
-| Nâng cấp hồ sơ (khung avatar) | `AvatarFrame` + `User.avatarFrameId` | ⬜ chỉ có README |
-| Level / EXP / bảng xếp hạng | `modules/gamification` + `ExpLog` | ⬜ chỉ có README |
-| Gửi thông báo hàng loạt | `POST /api/admin/notifications/broadcast` | ⬜ |
+| Thông báo duyệt/từ chối/xoá + thông báo chung | `modules/notifications`, `Notification.userId = null` là broadcast | ✅ duyệt/từ chối/xoá, trang danh sách, đọc tin, admin gửi thông báo hàng loạt |
+| Đánh giá sao bài viết | `modules/ratings` + `Document.ratingAvg/ratingCount` | ✅ upsert 1 người/1 bài, phân bố sao, khối đánh giá ở trang chi tiết |
+| Cấu hình hệ thống (bật/tắt, giới hạn bài đăng) | `modules/settings` + `SystemSetting` | ✅ giới hạn số bài/ngày (0 = không giới hạn), trang `/admin/settings` |
+| Nâng cấp hồ sơ (khung avatar) | `AvatarFrame` + `User.avatarFrameId` | ✅ mở khoá theo cấp, chọn ở hồ sơ, hiện vòng quanh avatar trên header |
+| Level / EXP / bảng xếp hạng | `modules/gamification` + `ExpLog` | ✅ EXP theo sự kiện, level từ tổng EXP, `/api/leaderboard` + trang `/leaderboard` |
+| Gửi thông báo hàng loạt | `POST /api/admin/notifications/broadcast` + trang `/admin/broadcast` | ✅ |
 
 Ghi chú: thứ tự thực tế đã lệch so với kế hoạch ban đầu — thông báo được làm **trước** rating vì admin duyệt bài cần phản hồi cho tác giả.
 
 ## Việc chưa nằm trong kế hoạch nhưng nên bổ sung
 
 - **Đăng nhập bằng Google / OAuth** — chưa có; auth hiện dùng email + mật khẩu.
-- **CI + đóng gói triển khai** — chưa có `.github/workflows`, Dockerfile hay docker-compose; hướng dẫn chạy vẫn thủ công.
+- **CI** ✅ — `.github/workflows/ci.yml` chạy typecheck, lint, build, unit test và e2e (Postgres service) cho backend,
+  build frontend trên mọi push `main` và pull request.
+- **Đóng gói triển khai** ✅ — `backend-app/Dockerfile`, `frontend-app/Dockerfile` (nginx) và `docker-compose.yml`
+  dựng Postgres + migrate + backend + frontend bằng `docker compose up --build`.
 - **Nhật ký kiểm toán (audit log)** cho hành động admin (duyệt, từ chối, xoá, cảnh báo).
 - **Xuất dữ liệu / thống kê cho admin** (CSV tài liệu, user) nếu cần báo cáo.
 - **Trang 404 riêng** — hiện `**` redirect về `/documents`.
@@ -115,9 +121,54 @@ Ghi chú: thứ tự thực tế đã lệch so với kế hoạch ban đầu �
 3. Dashboard sinh viên và dashboard admin (cần API thống kê, làm cùng nhau).
 4. ~~`StorageService` + `MAIL_DRIVER=smtp`~~ — **đã xong**; trước khi demo chỉ cần điền `SMTP_*` thật vào `.env`.
 5. Test tự động cho auth/documents/notifications + CI.
-6. Giai đoạn 2: broadcast + thông báo xoá bài → rating → EXP/level → settings → avatar frame.
+6. Giai đoạn 2: ~~broadcast + thông báo xoá bài~~ ✅ → ~~rating~~ ✅ → ~~EXP/level~~ ✅ → ~~avatar frame~~ ✅ → ~~settings~~ ✅.
 
 ## Nhật ký cập nhật
+
+- **08/11/2026 (tiếp 13)** — **Docker**: backend multi-stage (deps → build có `prisma generate` → runtime chỉ prod deps,
+  chạy `node dist/main.js`), frontend multi-stage (Angular build → `nginx:alpine` phục vụ SPA, proxy `/api` sang backend,
+  `client_max_body_size 25m`), compose gồm `db` (Postgres 16 + healthcheck), `migrate` (`prisma migrate deploy`,
+  backend phải đợi service này xong),  `backend` (volume `uploads`, `TRUST_PROXY=true`) và `frontend` ở cổng 8080. Cả `backend` (`/api/health` qua `fetch` của Node)
+  và `frontend` (`index.html`) có healthcheck; frontend chỉ khởi động khi backend healthy.
+
+- **08/11/2026 (tiếp 12)** — **CI GitHub Actions** (`.github/workflows/ci.yml`): job backend dựng Postgres 16 service,
+  `npm ci` → `prisma generate` → `migrate deploy` → `tsc --noEmit` → `oxlint` → `nest build` → unit test → e2e;
+  job frontend `npm ci` → `ng build`. Chạy khi push `main` và mọi pull request, huỷ run cũ cùng nhánh.
+
+- **08/11/2026 (tiếp 11)** — **cấu hình hệ thống** (`modules/settings`): `SystemSetting` key/value,
+  `GET/PATCH /api/admin/settings` cho admin; giới hạn số bài đăng mỗi ngày (0 = không giới hạn)
+  được `DocumentsService.create` đọc ngay mỗi lần đăng, đếm theo ngày giờ Việt Nam, vượt → **429**.
+  UI `/admin/settings` (sidebar admin) sửa giới hạn, hiển thị giá trị đang áp dụng.
+  E2E `test/settings.e2e-spec.ts` (4 case) chạy Postgres thật. Giai đoạn 2 hoàn tất.
+
+- **08/11/2026 (tiếp 10)** — **khung avatar mở khoá theo level**: catalog 4 khung trong
+  `modules/users/avatar-frame.constants.ts` (Đồng cấp 1, Bạc cấp 3, Vàng cấp 5, Kim cương cấp 10);
+  `GET /api/avatar-frames` trả `unlocked` theo level, `PATCH /api/users/me/avatar-frame` chặn khung chưa đủ cấp;
+  login/hồ sơ trả `avatarFrameId` + `avatarFrameUrl`. UI: chọn khung ở `/profile`, vòng khung quanh avatar trên header.
+  E2E `test/avatar-frames.e2e-spec.ts` (3 case) chạy Postgres thật.
+
+- **08/11/2026 (tiếp 9)** — **EXP / level / bảng xếp hạng** (`modules/gamification`): EXP cộng theo sự kiện
+  (xem hợp lệ +1, đánh giá mới +5, bài được duyệt +20) và ghi `ExpLog` mỗi lần; `User.level` suy ra từ
+  tổng EXP với mốc `round(100 * level^1.5)`; `GET /api/leaderboard?limit=` trả top sinh viên + vị trí,
+  tiến độ của người gọi. UI: trang `/leaderboard`, link “Xếp hạng” trên header.
+  E2E `test/gamification.e2e-spec.ts` (3 case) chạy Postgres thật.
+
+- **08/11/2026 (tiếp 8)** — **đánh giá sao tài liệu** (`modules/ratings`): `GET/POST /api/documents/:id/ratings`,
+  unique `(documentId, userId)` nên gửi lại là cập nhật; phân bố 1–5 sao + `myRating`; cache
+  `Document.ratingAvg/ratingCount` tính lại trong cùng transaction; chặn tác giả tự đánh giá và tài liệu chưa duyệt.
+  UI: khối đánh giá trong trang chi tiết (chọn sao, nhận xét, danh sách + “Xem thêm”).
+  E2E `test/ratings.e2e-spec.ts` (3 case) chạy Postgres thật.
+
+- **08/11/2026 (tiếp 7)** — mở màn **giai đoạn 2** bằng **thông báo hàng loạt**: `POST /api/admin/notifications/broadcast`
+  (`AdminNotificationsController` + DTO 5–120 / 10–1000 ký tự) tạo một row `Notification.userId = null`;
+  UI `/admin/broadcast` (menu sidebar admin) gửi form có đếm ký tự và cảnh báo không thu hồi được;
+  e2e kiểm sinh viên nhận 403, broadcast hiện với mọi người, payload quá ngắn bị 400.
+
+- **08/11/2026 (tiếp 6)** — hoàn thành **toàn bộ ưu tiên 2**: (1) trang `/notifications` phân trang + lọc "chỉ chưa đọc",
+  dropdown chuông có link "Xem tất cả"; (2) admin xoá bài → tác giả nhận thông báo `DOCUMENT_DELETED`;
+  (3) **kiểm chữ ký nhị phân** khi upload (`matchesFileSignature`) chặn file đổi đuôi;
+  (4) thêm e2e `test/documents.e2e-spec.ts` và `test/notifications.e2e-spec.ts` chạy Postgres thật
+  (e2e dùng `UPLOAD_DIR` tạm).
 
 - **08/11/2026 (tiếp 5)** — thêm **e2e test cho luồng quên mật khẩu** (`test/password-reset.e2e-spec.ts`)
   chạy với Postgres thật, mock `MailService` để lấy token gửi trong mail; kiểm message trung tính,

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { Role } from '../../common/enums/role.enum';
 import { UPLOAD_URL_PREFIX } from '../../common/constants/upload.constants';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
+import { AVATAR_FRAMES, AvatarFrameDefinition } from './avatar-frame.constants';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 /** Hồ sơ của chính mình — không bao giờ trả passwordHash / refreshTokenHash. */
@@ -24,6 +26,8 @@ const SELF_PROFILE_SELECT = {
   studentCode: true,
   bio: true,
   avatarUrl: true,
+  avatarFrameId: true,
+  avatarFrame: { select: { id: true, name: true, assetUrl: true } },
   role: true,
   status: true,
   warningCount: true,
@@ -56,6 +60,9 @@ export interface SelfProfile {
   studentCode: string | null;
   bio: string | null;
   avatarUrl: string | null;
+  avatarFrameId: string | null;
+  /** gradient/ảnh của khung đang dùng — null khi không dùng khung. */
+  avatarFrameUrl: string | null;
   role: Role;
   status: string;
   warningCount: number;
@@ -69,6 +76,7 @@ export interface PublicProfile {
   id: string;
   fullName: string;
   avatarUrl: string | null;
+  avatarFrameUrl: string | null;
   level: number;
   documentCount: number;
   totalViews: number;
@@ -135,7 +143,7 @@ export class UsersService {
       throw new NotFoundException('Không tìm thấy tài khoản');
     }
 
-    return user as SelfProfile;
+    return toSelfProfile(user);
   }
 
   /** Hồ sơ công khai: tên, avatar, level, số tài liệu đã duyệt + tổng lượt xem. */
@@ -143,7 +151,13 @@ export class UsersService {
     const [user, stats] = await Promise.all([
       this.prisma.user.findFirst({
         where: { id: userId, deletedAt: null },
-        select: { id: true, fullName: true, avatarUrl: true, level: true },
+        select: {
+          id: true,
+          fullName: true,
+          avatarUrl: true,
+          level: true,
+          avatarFrame: { select: { assetUrl: true } },
+        },
       }),
       this.prisma.document.aggregate({
         where: { authorId: userId, status: DocumentStatus.APPROVED, deletedAt: null },
@@ -157,7 +171,11 @@ export class UsersService {
     }
 
     return {
-      ...user,
+      id: user.id,
+      fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
+      avatarFrameUrl: user.avatarFrame?.assetUrl ?? null,
+      level: user.level,
       documentCount: stats._count._all,
       totalViews: stats._sum.viewCount ?? 0,
     };
@@ -211,7 +229,7 @@ export class UsersService {
         select: SELF_PROFILE_SELECT,
       });
 
-      return user as SelfProfile;
+      return toSelfProfile(user);
     } catch (error) {
       // Chống race condition: hai request cùng set một mã sinh viên.
       if (isUniqueConstraintError(error)) {
@@ -355,6 +373,80 @@ export class UsersService {
     return this.findDetailForAdmin(userId);
   }
 
+  /** Danh sách khung avatar + trạng thái mở khoá theo level người gọi. */
+  async listAvatarFrames(userId: string): Promise<{
+    items: (AvatarFrameDefinition & { unlocked: boolean })[];
+    currentFrameId: string | null;
+  }> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { level: true, avatarFrameId: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy tài khoản');
+    }
+
+    await this.ensureAvatarFrames();
+
+    return {
+      items: AVATAR_FRAMES.map((frame) => ({
+        ...frame,
+        unlocked: user.level >= frame.minLevel,
+      })),
+      currentFrameId: user.avatarFrameId,
+    };
+  }
+
+  /** Chọn khung avatar (null = bỏ khung); chặn khung chưa đủ cấp. */
+  async setAvatarFrame(userId: string, frameId: string | null): Promise<SelfProfile> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true, level: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy tài khoản');
+    }
+
+    if (frameId === null) {
+      return this.update(userId, { avatarFrame: { disconnect: true } });
+    }
+
+    const frame = AVATAR_FRAMES.find((item) => item.id === frameId);
+    if (!frame) {
+      throw new BadRequestException('Khung avatar không tồn tại');
+    }
+
+    if (user.level < frame.minLevel) {
+      throw new ForbiddenException(
+        `Khung “${frame.name}” mở ở cấp ${frame.minLevel} — bạn đang ở cấp ${user.level}.`,
+      );
+    }
+
+    await this.ensureAvatarFrames([frame]);
+
+    return this.update(userId, { avatarFrame: { connect: { id: frame.id } } });
+  }
+
+  /** Upsert catalog vào bảng AvatarFrame để `User.avatarFrameId` luôn có khoá ngoại hợp lệ. */
+  private async ensureAvatarFrames(frames: AvatarFrameDefinition[] = AVATAR_FRAMES): Promise<void> {
+    await this.prisma.$transaction(
+      frames.map((frame) =>
+        this.prisma.avatarFrame.upsert({
+          where: { id: frame.id },
+          update: { name: frame.name, minLevel: frame.minLevel, assetUrl: frame.assetUrl },
+          create: {
+            id: frame.id,
+            name: frame.name,
+            minLevel: frame.minLevel,
+            assetUrl: frame.assetUrl,
+          },
+        }),
+      ),
+    );
+  }
+
   private async update(userId: string, data: Prisma.UserUpdateInput): Promise<SelfProfile> {
     const user = await this.prisma.user.update({
       where: { id: userId },
@@ -362,8 +454,21 @@ export class UsersService {
       select: SELF_PROFILE_SELECT,
     });
 
-    return user as SelfProfile;
+    return toSelfProfile(user);
   }
+}
+
+function toSelfProfile(
+  user: Prisma.UserGetPayload<{ select: typeof SELF_PROFILE_SELECT }>,
+): SelfProfile {
+  const { avatarFrame, ...rest } = user;
+
+  return {
+    ...rest,
+    // Prisma trả enum sinh tự động; API dùng enum chung của backend.
+    role: rest.role as Role,
+    avatarFrameUrl: avatarFrame?.assetUrl ?? null,
+  };
 }
 
 function toAdminUserSummary(user: {

@@ -1,10 +1,18 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppNotification } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { initials } from '../../core/utils/format.util';
 
 /** Khung giao diện cho sinh viên: header (nav + chuông thông báo) + nội dung trang. */
 @Component({
@@ -23,13 +31,16 @@ import { NotificationService } from '../../core/services/notification.service';
           </a>
 
           <nav
-            class="order-last flex w-full flex-wrap items-center gap-x-4 gap-y-2 whitespace-nowrap text-sm sm:order-none sm:w-auto sm:min-w-0 sm:flex-1 sm:flex-nowrap"
+            class="order-last flex w-full flex-wrap items-center gap-x-4 gap-y-2 whitespace-nowrap text-sm lg:order-none lg:w-auto lg:min-w-0 lg:flex-1 lg:flex-nowrap lg:overflow-x-auto"
           >
             <a routerLink="/dashboard" routerLinkActive="text-indigo-600 font-medium">Tổng quan</a>
             <a routerLink="/documents" routerLinkActive="text-indigo-600 font-medium">Tài liệu</a>
             <a routerLink="/upload" routerLinkActive="text-indigo-600 font-medium">Đăng tài liệu</a>
             <a routerLink="/my-documents" routerLinkActive="text-indigo-600 font-medium">
               Đã chia sẻ
+            </a>
+            <a routerLink="/leaderboard" routerLinkActive="text-indigo-600 font-medium">
+              Xếp hạng
             </a>
             <a routerLink="/profile" routerLinkActive="text-indigo-600 font-medium">Hồ sơ</a>
           </nav>
@@ -112,13 +123,40 @@ import { NotificationService } from '../../core/services/notification.service';
                     </ul>
                   }
                 </div>
+
+                <a
+                  routerLink="/notifications"
+                  class="block border-t border-slate-100 px-4 py-2.5 text-center text-xs font-semibold text-indigo-600 transition hover:bg-slate-50"
+                  (click)="panelOpen.set(false)"
+                >
+                  Xem tất cả thông báo
+                </a>
               </div>
             }
           </div>
 
-          <span class="hidden shrink-0 whitespace-nowrap text-sm text-slate-600 sm:inline">
-            {{ auth.currentUser()?.fullName }}
-          </span>
+          <a
+            routerLink="/profile"
+            class="hidden min-w-0 shrink-0 items-center gap-2 sm:flex"
+            title="Hồ sơ của bạn"
+          >
+            <span
+              class="flex h-8 w-8 items-center justify-center rounded-full"
+              [style.background]="headerFrame() ?? 'transparent'"
+              [class.p-0.5]="headerFrame() !== null"
+            >
+              @if (auth.currentUser()?.avatarUrl; as avatarUrl) {
+                <img [src]="avatarUrl" alt="" class="h-full w-full rounded-full object-cover" />
+              } @else {
+                <span
+                  class="flex h-full w-full items-center justify-center rounded-full bg-indigo-50 text-[11px] font-semibold text-indigo-700"
+                >
+                  {{ headerInitials() }}
+                </span>
+              }
+            </span>
+            <span class="max-w-32 truncate text-sm text-slate-600">{{ auth.currentUser()?.fullName }}</span>
+          </a>
           @if (auth.isAdmin()) {
             <a
               routerLink="/admin/dashboard"
@@ -148,6 +186,13 @@ export class UserLayout {
   private readonly notificationsApi = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly headerFrame = computed(
+    () => this.auth.currentUser()?.avatarFrameUrl ?? null,
+  );
+  protected readonly headerInitials = computed(() =>
+    initials(this.auth.currentUser()?.fullName ?? ''),
+  );
 
   protected readonly panelOpen = signal(false);
   protected readonly notifications = signal<AppNotification[]>([]);
