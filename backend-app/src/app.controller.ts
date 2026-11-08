@@ -5,8 +5,9 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  /** GET /api/health — dùng để kiểm tra server sống và cho healthcheck khi deploy. */
+  @Get('health')
+  getHealth() {
+    return this.appService.getHealth();
   }
 }
