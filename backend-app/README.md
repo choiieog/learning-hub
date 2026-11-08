@@ -1,114 +1,47 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# backend-app — Learning Hub API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS 12 (Express 5) + Prisma 7 + PostgreSQL. Prefix toàn bộ route: `/api`, response bọc `{ success, data }`.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Chạy local
 
 ```bash
-$ npm install
+npm ci
+cp .env.example .env      # sửa DATABASE_URL trỏ tới PostgreSQL
+npx prisma migrate deploy # hoặc: npm run db:migrate
+npm run db:seed           # admin@learninghub.local / Admin@12345 + 5 môn học
+npm run start:dev         # http://localhost:3000/api
 ```
 
-## Compile and run the project
+Biến môi trường quan trọng: `DATABASE_URL`, `JWT_*`, `APP_URL`, `UPLOAD_DIR`, `MAX_UPLOAD_SIZE_MB`, `MAIL_DRIVER`, `STORAGE_DRIVER`,
+`RATE_LIMIT_*` (giới hạn request theo IP), `TRUST_PROXY` (bật khi chạy sau reverse proxy).
+`MAIL_DRIVER=console` (mặc định) in link xác thực email ra log; `MAIL_DRIVER=smtp` gửi thật qua nodemailer
+(`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` — xem `.env.example`).
+`STORAGE_DRIVER=local` (mặc định) ghi file vào `UPLOAD_DIR` và phục vụ ở `/api/files/...`; các driver cloud chưa viết
+nên giá trị khác sẽ báo lỗi ngay lúc khởi động (xem `src/infra/storage/README.md`).
+
+## Kiểm tra
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run build           # nest build
+npx tsc --noEmit -p tsconfig.json
+npx oxlint src/
+npm test                # unit test (jest ESM, không cần database)
+npm run test:e2e        # e2e thật: cần DATABASE_URL + `npx prisma migrate deploy` trước
 ```
 
-## Run tests
+## Trạng thái module
 
-```bash
-# unit tests
-$ npm run test
+| Module | Trạng thái |
+| --- | --- |
+| `auth` | ✅ đăng ký, xác thực email, đăng nhập, refresh, đổi mật khẩu, quên/đặt lại mật khẩu |
+| `documents` | ✅ danh sách, chi tiết + đếm view, đăng, `GET /mine`, sửa & gửi duyệt lại, xoá mềm |
+| `uploads` | ✅ `POST /api/uploads` — validate rồi ghi qua `StorageService`, PDF/DOCX/PPTX, ≤ 20MB |
+| `infra/storage` | 🟡 `StorageService` + driver `local`; driver cloud (Cloudinary/S3) chưa viết |
+| `subjects` | ✅ đọc công khai + thêm/xoá mềm (chặn khi còn tài liệu) |
+| `users` | ✅ hồ sơ (xem/sửa), avatar, hồ sơ công khai, danh sách cho admin, cảnh báo (tự khoá ở lần 3) |
+| `admin` | ✅ duyệt/từ chối/xoá bài, overview, môn học, tài khoản + cảnh báo |
+| `infra/mail` | ✅ `console` + `smtp` (nodemailer) gửi email xác thực |
+| `notifications` | 🟡 thông báo duyệt/từ chối + đọc tin; chưa có broadcast — xem `src/modules/notifications/README.md` |
+| `ratings`, `gamification`, `settings` | ⬜ phase 2, mới có README |
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Observability
-
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Chi tiết việc còn thiếu: [../docs/ROADMAP.md](../docs/ROADMAP.md).
