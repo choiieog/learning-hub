@@ -1,0 +1,95 @@
+name: learning-hub
+
+# Chạy toàn bộ hệ thống bằng: docker compose up --build
+# Frontend: http://localhost:8080 · API: http://localhost:3000/api
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: learning_hub
+    # Không mở ra máy host để tránh đụng Postgres local; cần psql thì:
+    # docker compose exec db psql -U postgres learning_hub
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d learning_hub']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Chạy migration một lần trước khi backend khởi động (image build stage có Prisma CLI).
+  migrate:
+    build:
+      context: ./backend-app
+      target: build
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/learning_hub?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+
+  backend:
+    build:
+      context: ./backend-app
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      APP_URL: http://localhost:8080
+      CORS_ORIGIN: http://localhost:8080,http://localhost:4200
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/learning_hub?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret}
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_TTL: 7d
+      MAIL_DRIVER: console
+      MAIL_FROM: 'Learning Hub <no-reply@learninghub.local>'
+      STORAGE_DRIVER: local
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_SIZE_MB: 20
+      # Sau nginx: lấy IP thật từ X-Forwarded-For để rate limit đúng người dùng.
+      TRUST_PROXY: 'true'
+    ports:
+      - '3000:3000'
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      # node có sẵn fetch nên không cần cài curl/wget vào image runtime.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend-app
+    ports:
+      - '8080:80'
+    healthcheck:
+      # wget của BusyBox có trong image alpine của nginx.
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1/index.html || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  uploads:
