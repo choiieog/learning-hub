@@ -100,6 +100,7 @@ learning-hub/
 │       ├── profile/pages/           # hồ sơ (avatar), đổi mật khẩu ✅
 │       └── admin/pages/             # duyệt bài, tổng quan, môn học, tài khoản ✅
 │
+├── scripts/                         # script vận hành (setup-branch-protection.sh)
 └── docs/                            # kiến trúc, dữ liệu, API, roadmap, quyết định
 ```
 

@@ -71,10 +71,14 @@ Workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) chạy khi push 
 
 Chạy lại cục bộ: `cd backend-app && npm run lint && npm test && npm run test:e2e` — e2e cần `DATABASE_URL` trỏ tới PostgreSQL đã chạy `prisma migrate deploy`.
 
+Bảo vệ nhánh `main` (bắt buộc PR + hai check trên phải xanh trước khi merge): chạy
+`./scripts/setup-branch-protection.sh`, chi tiết và cách gỡ xem [docs/BRANCH-PROTECTION.md](docs/BRANCH-PROTECTION.md).
+
 ## Tài liệu thiết kế
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — cây thư mục đầy đủ + quy ước đặt code
 - [docs/DATA-MODEL.md](docs/DATA-MODEL.md) — mô hình dữ liệu (đã gồm cả phần phát triển sau)
 - [docs/API-CONVENTIONS.md](docs/API-CONVENTIONS.md) — quy ước REST, phân trang, lọc nhiều lựa chọn
 - [docs/ROADMAP.md](docs/ROADMAP.md) — hiện trạng (đã xong / còn thiếu) và phần phát triển sau
+- [docs/BRANCH-PROTECTION.md](docs/BRANCH-PROTECTION.md) — bảo vệ nhánh `main` (PR + CI bắt buộc)
 - [docs/DECISIONS.md](docs/DECISIONS.md) — các lựa chọn còn mở, kèm đề xuất mặc định
