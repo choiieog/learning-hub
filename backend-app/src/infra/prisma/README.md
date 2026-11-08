@@ -1,6 +1,6 @@
 # src/infra/prisma
 
-Chỗ đặt lớp truy cập DB (chưa tạo file vì chưa chốt ORM — xem `docs/DECISIONS.md` mục 1).
+Chỗ đặt lớp truy cập DB (chưa tạo file vì chưa chốt ORM).
 
 Khi chốt Prisma, thêm 2 file:
 

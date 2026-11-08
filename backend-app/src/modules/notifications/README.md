@@ -20,7 +20,7 @@ Tất cả endpoint đều sau `JwtAuthGuard` (khách chưa đăng nhập → 40
   (vì vậy `markRead` trả 404 cho broadcast, không đánh dấu đọc được).
 - Không thêm migration: model `Notification` + enum `NotificationType` đã có trong `schema.prisma`.
 
-## Còn thiếu (xem `docs/ROADMAP.md`)
+## Còn thiếu
 
 - `POST /api/admin/notifications/broadcast` — gửi thông báo chung (`userId = null`).
 - Thông báo khi admin **xoá** bài.
