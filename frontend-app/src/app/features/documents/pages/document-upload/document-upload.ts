@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  HostListener,
   OnInit,
   computed,
   inject,
@@ -52,9 +53,9 @@ const MIN_TITLE_LENGTH = 5;
       </div>
     }
 
-    <form class="mt-6 grid gap-6 lg:grid-cols-3" (submit)="submit($event)">
-      <div class="space-y-6 lg:col-span-2">
-        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+    <form class="mt-6 grid gap-6 grid-cols-3" (submit)="submit($event)">
+      <div class="space-y-6 col-span-2">
+        <section class="rounded-xl border border-slate-200 bg-white p-6">
           <div>
             <label class="mb-1.5 block text-sm font-medium text-slate-700" for="title">
               Tiêu đề <span class="text-rose-500">*</span>
@@ -77,7 +78,11 @@ const MIN_TITLE_LENGTH = 5;
             <label class="mb-1.5 block text-sm font-medium text-slate-700" for="subject">
               Môn học <span class="text-rose-500">*</span>
             </label>
-            <select id="subject" class="field-input" (change)="selectedSubjectId.set(readValue($event))">
+            <select
+              id="subject"
+              class="field-input"
+              (change)="selectedSubjectId.set(readValue($event))"
+            >
               <option value="" [selected]="selectedSubjectId() === ''">— Chọn môn học —</option>
               @for (subject of subjects(); track subject.id) {
                 <option
@@ -111,7 +116,7 @@ const MIN_TITLE_LENGTH = 5;
           </div>
         </section>
 
-        <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
+        <section class="rounded-xl border border-slate-200 bg-white p-6">
           <div class="flex items-center justify-between gap-3">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
               File đính kèm <span class="text-rose-500">*</span>
@@ -131,7 +136,12 @@ const MIN_TITLE_LENGTH = 5;
             (dragleave)="dragActive.set(false)"
             (drop)="onDrop($event)"
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" class="h-8 w-8 text-slate-400" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              class="h-8 w-8 text-slate-400"
+              aria-hidden="true"
+            >
               <path
                 d="M12 3a.75.75 0 0 1 .53.22l3.5 3.5a.75.75 0 0 1-1.06 1.06L12.75 5.56v9.69a.75.75 0 0 1-1.5 0V5.56L9.03 7.78a.75.75 0 0 1-1.06-1.06l3.5-3.5A.75.75 0 0 1 12 3Z"
               />
@@ -210,7 +220,10 @@ const MIN_TITLE_LENGTH = 5;
             <li>• Mỗi tài liệu thuộc đúng một môn học.</li>
             <li>• Tối đa {{ maxFiles }} file, mỗi file không quá {{ maxFileMb }}MB.</li>
             <li>• Chỉ nhận PDF, DOCX, PPTX.</li>
-            <li>• Tài liệu vào trạng thái <strong>chờ duyệt</strong>; chỉ bạn và admin thấy cho tới khi được duyệt.</li>
+            <li>
+              • Tài liệu vào trạng thái <strong>chờ duyệt</strong>; chỉ bạn và admin thấy cho tới
+              khi được duyệt.
+            </li>
           </ul>
         </section>
 
@@ -244,6 +257,8 @@ export class DocumentUpload implements OnInit {
   protected readonly description = signal('');
   protected readonly selectedSubjectId = signal('');
   protected readonly files = signal<File[]>([]);
+  /** File đã upload xong — giữ lại để lần gửi sau chỉ tải các file còn thiếu. */
+  private readonly uploaded = signal<{ file: File; stored: StoredFile }[]>([]);
   protected readonly errors = signal<string[]>([]);
   protected readonly progress = signal<string | null>(null);
   protected readonly submitting = signal(false);
@@ -256,6 +271,24 @@ export class DocumentUpload implements OnInit {
       this.selectedSubjectId() !== '' &&
       this.files().length > 0,
   );
+
+  /** Đã chọn file / điền nội dung mà chưa gửi → guard hỏi trước khi rời trang. */
+  hasUnsavedChanges(): boolean {
+    return (
+      this.files().length > 0 ||
+      this.title().trim() !== '' ||
+      this.description().trim() !== '' ||
+      this.selectedSubjectId() !== ''
+    );
+  }
+
+  /** F5 / đóng tab: guard không chạy nên phải hỏi bằng beforeunload. */
+  @HostListener('window:beforeunload', ['$event'])
+  protected warnBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) {
+      event.preventDefault();
+    }
+  }
 
   ngOnInit(): void {
     this.subjectsApi
@@ -290,7 +323,11 @@ export class DocumentUpload implements OnInit {
   }
 
   protected removeFile(index: number): void {
+    const [removed] = this.files().slice(index, index + 1);
+
     this.files.set(this.files().filter((_, position) => position !== index));
+    // Bỏ file thì bỏ luôn kết quả upload của nó, tránh dùng lại file không còn trong form.
+    this.uploaded.update((entries) => entries.filter((entry) => entry.file !== removed));
     this.errors.set([]);
   }
 
@@ -325,7 +362,7 @@ export class DocumentUpload implements OnInit {
     }
 
     this.submitting.set(true);
-    this.uploadAll([...this.files()], [], title, subjectId, this.description().trim());
+    this.uploadAll(title, subjectId, this.description().trim());
   }
 
   /** Thêm file có kiểm tra định dạng, dung lượng và số lượng — báo lỗi ngay tại chỗ. */
@@ -342,7 +379,9 @@ export class DocumentUpload implements OnInit {
       }
 
       if (file.size > MAX_FILE_BYTES) {
-        problems.push(`"${file.name}" nặng ${formatFileSize(file.size)} — vượt quá ${MAX_FILE_MB}MB.`);
+        problems.push(
+          `"${file.name}" nặng ${formatFileSize(file.size)} — vượt quá ${MAX_FILE_MB}MB.`,
+        );
         continue;
       }
 
@@ -367,32 +406,55 @@ export class DocumentUpload implements OnInit {
     this.errors.set(problems);
   }
 
-  /** Upload tuần tự để báo đúng file đang tải và dừng ngay khi một file lỗi. */
-  private uploadAll(
-    pending: File[],
-    uploaded: StoredFile[],
-    title: string,
-    subjectId: string,
-    description: string,
-  ): void {
-    if (pending.length === 0) {
-      this.createDocument(title, description, subjectId, uploaded);
+  /**
+   * Upload tuần tự, dừng ngay khi một file lỗi.
+   * File đã tải xong được giữ trong `uploaded`, nên bấm gửi lại chỉ tải phần còn thiếu
+   * (trước đây lỗi ở file thứ 3 làm 2 file đầu thành file mồ côi và phải tải lại cả 3).
+   */
+  private uploadAll(title: string, subjectId: string, description: string): void {
+    const missing = this.files().filter((file) => !this.storedFor(file));
+
+    if (missing.length === 0) {
+      this.createDocument(
+        title,
+        description,
+        subjectId,
+        this.files().map((file) => this.storedFor(file) as StoredFile),
+      );
       return;
     }
 
-    const [next, ...rest] = pending;
-    this.progress.set(`Đang tải ${next.name} (${uploaded.length + 1}/${this.files().length})…`);
+    const next = missing[0];
+    this.progress.set(
+      `Đang tải ${next.name} (${this.uploaded().length + 1}/${this.files().length})…`,
+    );
 
     this.uploadsApi
       .upload(next, 'documents')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (stored) => this.uploadAll(rest, [...uploaded, stored], title, subjectId, description),
+        next: (stored) => {
+          this.uploaded.update((entries) => [...entries, { file: next, stored }]);
+          this.uploadAll(title, subjectId, description);
+        },
         error: (error: unknown) => {
-          this.errors.set(getApiErrorMessages(error));
+          const done = this.uploaded().length;
+          this.errors.set([
+            ...getApiErrorMessages(error),
+            done > 0
+              ? `Đã tải xong ${done}/${this.files().length} file. Bấm "Đăng tài liệu" để chỉ tải tiếp các file còn lại.`
+              : 'Chưa file nào được tải lên. Kiểm tra kết nối rồi thử lại.',
+          ]);
           this.finish();
         },
       });
+  }
+
+  /** Kết quả upload của một file đã có trong `uploaded` (khớp theo tên + dung lượng). */
+  private storedFor(file: File): StoredFile | undefined {
+    return this.uploaded().find(
+      (entry) => entry.file.name === file.name && entry.file.size === file.size,
+    )?.stored;
   }
 
   private createDocument(
@@ -408,6 +470,7 @@ export class DocumentUpload implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (document) => {
+          this.uploaded.set([]);
           this.finish();
           // Chủ bài xem được tài liệu PENDING của mình ở trang chi tiết.
           void this.router.navigate(['/documents', document.id]);

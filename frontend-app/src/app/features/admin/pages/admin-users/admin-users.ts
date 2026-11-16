@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AdminUserDetail, AdminUserSummary, PaginationMeta } from '../../../../core/models';
 import { AdminService } from '../../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
@@ -38,12 +39,12 @@ const STATUS_LABEL: Record<string, string> = {
     </div>
 
     <form
-      class="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5"
+      class="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm grid-cols-5"
       [formGroup]="filters"
       (ngSubmit)="applyFilters()"
       novalidate
     >
-      <div class="field lg:col-span-2">
+      <div class="field col-span-2">
         <label class="field-label" for="keyword">Tìm kiếm</label>
         <input
           id="keyword"
@@ -96,9 +97,9 @@ const STATUS_LABEL: Record<string, string> = {
       </div>
     }
 
-    <div class="mt-5 grid gap-6 lg:grid-cols-5">
+    <div class="mt-5 grid gap-6 grid-cols-5">
       <!-- Danh sách tài khoản -->
-      <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:col-span-3">
+      <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm col-span-3">
         @if (loading()) {
           <div class="space-y-2 p-3" aria-busy="true">
             @for (placeholder of [1, 2, 3, 4, 5]; track placeholder) {
@@ -182,7 +183,7 @@ const STATUS_LABEL: Record<string, string> = {
       </section>
 
       <!-- Chi tiết + cảnh báo -->
-      <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
+      <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm col-span-2">
         @if (loadingDetail()) {
           <div class="space-y-3" aria-busy="true">
             <div class="h-5 w-1/2 animate-pulse rounded bg-slate-200"></div>
@@ -283,6 +284,8 @@ export class AdminUsers implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly adminService = inject(AdminService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly loading = signal(true);
   protected readonly loadingDetail = signal(false);
@@ -305,8 +308,21 @@ export class AdminUsers implements OnInit {
     reason: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
   });
 
+  /**
+   * URL là nguồn sự thật của bộ lọc: F5, Back hay gửi link cho đồng nghiệp đều
+   * giữ đúng keyword/role/status/warnedOnly/page.
+   */
   ngOnInit(): void {
-    this.fetch(1);
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.filters.setValue({
+        keyword: params.get('keyword') ?? '',
+        role: params.get('role') ?? '',
+        status: params.get('status') ?? '',
+        warnedOnly: params.get('warnedOnly') === 'true',
+      });
+
+      this.fetch(Number(params.get('page')) || 1);
+    });
   }
 
   protected userInitials(fullName: string): string {
@@ -333,7 +349,7 @@ export class AdminUsers implements OnInit {
 
   protected applyFilters(): void {
     this.success.set(null);
-    this.fetch(1);
+    this.writeUrl(1);
   }
 
   protected goToPage(page: number): void {
@@ -341,7 +357,35 @@ export class AdminUsers implements OnInit {
       return;
     }
 
-    this.fetch(page);
+    this.writeUrl(page);
+  }
+
+  /** Ghi bộ lọc hiện tại lên URL; subscription queryParamMap sẽ gọi fetch. */
+  private writeUrl(page: number): void {
+    const { keyword, role, status, warnedOnly } = this.filters.getRawValue();
+    const queryParams: Record<string, string | number> = {};
+
+    if (keyword.trim()) {
+      queryParams['keyword'] = keyword.trim();
+    }
+    if (role) {
+      queryParams['role'] = role;
+    }
+    if (status) {
+      queryParams['status'] = status;
+    }
+    if (warnedOnly) {
+      queryParams['warnedOnly'] = 'true';
+    }
+    if (page > 1) {
+      queryParams['page'] = page;
+    }
+
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      replaceUrl: true,
+    });
   }
 
   protected selectUser(id: string): void {

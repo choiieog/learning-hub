@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 
 /**
  * Sơ đồ route:
@@ -100,6 +101,7 @@ export const routes: Routes = [
       {
         path: 'upload',
         title: 'Đăng tài liệu · Learning Hub',
+        canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
           import('./features/documents/pages/document-upload/document-upload').then(
             (m) => m.DocumentUpload,
@@ -132,6 +134,7 @@ export const routes: Routes = [
       {
         path: 'profile',
         title: 'Hồ sơ · Learning Hub',
+        canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
           import('./features/profile/pages/profile/profile').then((m) => m.Profile),
       },

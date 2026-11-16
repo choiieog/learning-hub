@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  HostListener,
   OnInit,
   computed,
   inject,
@@ -46,13 +47,13 @@ const BIO_MAX = 500;
     </div>
 
     @if (loading()) {
-      <div class="mt-6 grid gap-6 lg:grid-cols-3" aria-busy="true">
+      <div class="mt-6 grid gap-6 grid-cols-3" aria-busy="true">
         <div class="animate-pulse rounded-xl border border-slate-200 bg-white p-6">
           <div class="mx-auto h-24 w-24 rounded-full bg-slate-200"></div>
           <div class="mx-auto mt-4 h-4 w-1/2 rounded bg-slate-100"></div>
           <div class="mx-auto mt-2 h-3 w-2/3 rounded bg-slate-100"></div>
         </div>
-        <div class="animate-pulse rounded-xl border border-slate-200 bg-white p-6 lg:col-span-2">
+        <div class="animate-pulse rounded-xl border border-slate-200 bg-white p-6 col-span-2">
           <div class="h-4 w-1/3 rounded bg-slate-200"></div>
           <div class="mt-4 space-y-4">
             @for (row of [1, 2, 3]; track row) {
@@ -76,7 +77,7 @@ const BIO_MAX = 500;
         </div>
       }
 
-      <div class="mt-6 grid gap-6 lg:grid-cols-3">
+      <div class="mt-6 grid gap-6 grid-cols-3">
         <!-- Thẻ định danh -->
         <section class="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           <div
@@ -198,7 +199,7 @@ const BIO_MAX = 500;
         </section>
 
         <!-- Form thông tin -->
-        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm col-span-2">
           <h2 class="text-base font-semibold">Thông tin cá nhân</h2>
           <p class="mt-1 text-sm text-slate-500">
             Email đăng nhập không đổi được tại đây — liên hệ admin nếu cần.
@@ -316,6 +317,19 @@ export class Profile implements OnInit {
   protected readonly roleLabel = computed(() =>
     this.user()?.role === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên',
   );
+
+  /** Có thay đổi chưa lưu trong form hồ sơ → guard sẽ hỏi trước khi rời trang. */
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty;
+  }
+
+  /** F5 / đóng tab: guard không chạy nên phải hỏi bằng beforeunload. */
+  @HostListener('window:beforeunload', ['$event'])
+  protected warnBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) {
+      event.preventDefault();
+    }
+  }
 
   ngOnInit(): void {
     this.form.controls.bio.valueChanges
