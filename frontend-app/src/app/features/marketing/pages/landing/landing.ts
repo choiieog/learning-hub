@@ -13,7 +13,7 @@ import { AuthService } from '../../../../core/services/auth.service';
   imports: [RouterLink],
   template: `
     <header class="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-md">
-      <div class="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
+      <div class="mx-auto flex h-16 max-w-6xl items-center gap-6 px-6">
         <a routerLink="/" class="flex shrink-0 items-center gap-2">
           <span
             class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/25"
@@ -38,7 +38,7 @@ import { AuthService } from '../../../../core/services/auth.service';
           </span>
         </a>
 
-        <nav class="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
+        <nav class="items-center gap-8 text-sm font-medium text-slate-600 flex">
           <a href="#tinh-nang" class="transition hover:text-indigo-600">Tính năng</a>
           <a href="#mon-hoc" class="transition hover:text-indigo-600">Môn học</a>
           <a href="#cach-hoat-dong" class="transition hover:text-indigo-600">Cách hoạt động</a>
@@ -75,7 +75,7 @@ import { AuthService } from '../../../../core/services/auth.service';
       <section class="relative overflow-hidden">
         <div class="landing-glow pointer-events-none absolute inset-0 -z-10" aria-hidden="true"></div>
 
-        <div class="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:py-24">
+        <div class="mx-auto grid max-w-6xl items-center gap-14 px-6 grid-cols-2 py-24">
           <div class="animate-fade-up">
             <span
               class="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50/80 px-3 py-1 text-xs font-semibold text-indigo-700"
@@ -85,18 +85,18 @@ import { AuthService } from '../../../../core/services/auth.service';
             </span>
 
             <h1
-              class="mt-6 text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl"
+              class="mt-6 font-bold leading-[1.1] tracking-tight text-slate-900 text-6xl"
             >
               Tài liệu học tập,
               <span class="landing-gradient-text">gom gọn một chỗ.</span>
             </h1>
 
-            <p class="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+            <p class="mt-5 max-w-xl leading-relaxed text-slate-600 text-lg">
               Nơi sinh viên chia sẻ bài giảng, đề cương và đề thi đã qua kiểm duyệt. Tìm đúng môn,
               mở đúng file, không lạc giữa hàng trăm link rời rạc.
             </p>
 
-            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div class="mt-8 flex gap-3 flex-row">
               <a
                 routerLink="/auth/register"
                 class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-600/30"
@@ -204,7 +204,7 @@ import { AuthService } from '../../../../core/services/auth.service';
       <!-- Số liệu -->
       <section class="border-y border-slate-200 bg-white">
         <dl
-          class="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-8 sm:px-6 md:grid-cols-4 md:py-10"
+          class="mx-auto grid max-w-6xl gap-6 px-6 grid-cols-4 py-10"
         >
           @for (stat of stats; track stat.label) {
             <div>
@@ -218,10 +218,10 @@ import { AuthService } from '../../../../core/services/auth.service';
       </section>
 
       <!-- Tính năng -->
-      <section id="tinh-nang" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 lg:py-24">
+      <section id="tinh-nang" class="mx-auto max-w-6xl scroll-mt-20 px-6 py-24">
         <div class="max-w-2xl">
           <p class="text-sm font-semibold text-indigo-600">Tính năng</p>
-          <h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 class="mt-2 font-bold tracking-tight text-slate-900 text-4xl">
             Đủ thứ để việc học bớt lộn xộn
           </h2>
           <p class="mt-3 text-slate-600">
@@ -230,7 +230,7 @@ import { AuthService } from '../../../../core/services/auth.service';
           </p>
         </div>
 
-        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="mt-10 grid gap-4 grid-cols-3">
           <article
             class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
           >
@@ -290,11 +290,11 @@ import { AuthService } from '../../../../core/services/auth.service';
 
       <!-- Môn học -->
       <section id="mon-hoc" class="scroll-mt-20 border-y border-slate-200 bg-white">
-        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-20">
+        <div class="mx-auto max-w-6xl px-6 py-20">
           <div class="flex flex-wrap items-end justify-between gap-4">
             <div class="max-w-2xl">
               <p class="text-sm font-semibold text-indigo-600">Môn học</p>
-              <h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              <h2 class="mt-2 font-bold tracking-tight text-slate-900 text-4xl">
                 Bắt đầu từ môn bạn đang học
               </h2>
               <p class="mt-3 text-slate-600">
@@ -309,7 +309,7 @@ import { AuthService } from '../../../../core/services/auth.service';
             </a>
           </div>
 
-          <div class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="mt-8 grid gap-3 grid-cols-3">
             @for (subject of subjects; track subject.code) {
               <a
                 routerLink="/documents"
@@ -342,15 +342,15 @@ import { AuthService } from '../../../../core/services/auth.service';
       </section>
 
       <!-- Cách hoạt động -->
-      <section id="cach-hoat-dong" class="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 lg:py-24">
+      <section id="cach-hoat-dong" class="mx-auto max-w-6xl scroll-mt-20 px-6 py-24">
         <div class="max-w-2xl">
           <p class="text-sm font-semibold text-indigo-600">Cách hoạt động</p>
-          <h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h2 class="mt-2 font-bold tracking-tight text-slate-900 text-4xl">
             Ba bước, không có bước thứ tư
           </h2>
         </div>
 
-        <ol class="mt-10 grid gap-6 md:grid-cols-3">
+        <ol class="mt-10 grid gap-6 grid-cols-3">
           @for (step of steps; track step.title; let i = $index) {
             <li class="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <span
@@ -366,18 +366,18 @@ import { AuthService } from '../../../../core/services/auth.service';
       </section>
 
       <!-- CTA -->
-      <section class="px-4 pb-20 sm:px-6">
+      <section class="pb-20 px-6">
         <div
-          class="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-600 px-6 py-14 text-center shadow-2xl shadow-indigo-600/25 sm:px-12"
+          class="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-600 to-violet-600 py-14 text-center shadow-2xl shadow-indigo-600/25 px-12"
         >
-          <h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h2 class="font-bold tracking-tight text-white text-4xl">
             Kỳ này bạn có tài liệu gì để chia sẻ?
           </h2>
           <p class="mx-auto mt-3 max-w-xl text-indigo-100">
             Đăng ký bằng email, xác thực một lần, rồi đăng tài liệu đầu tiên. Tài liệu sẽ hiển thị
             cho mọi người ngay sau khi được duyệt.
           </p>
-          <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <div class="mt-8 flex justify-center gap-3 flex-row">
             <a
               routerLink="/auth/register"
               class="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-indigo-700 shadow-lg shadow-indigo-900/20 transition hover:-translate-y-0.5 hover:bg-indigo-50"
@@ -397,7 +397,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 
     <footer class="border-t border-slate-200 bg-white">
       <div
-        class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between"
+        class="mx-auto flex max-w-6xl gap-6 py-10 px-6 flex-row items-center justify-between"
       >
         <div>
           <p class="flex items-center gap-2 text-base font-semibold text-slate-900">
@@ -422,7 +422,7 @@ import { AuthService } from '../../../../core/services/auth.service';
       </div>
 
       <div class="border-t border-slate-100 py-4">
-        <p class="mx-auto max-w-6xl px-4 text-xs text-slate-400 sm:px-6">
+        <p class="mx-auto max-w-6xl text-xs text-slate-400 px-6">
           © {{ year }} Learning Hub · Dự án học tập
         </p>
       </div>

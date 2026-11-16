@@ -50,15 +50,15 @@ const STATUS_LABEL: Record<DocumentStatus, string> = {
     </a>
 
     @if (loading()) {
-      <div class="mt-4 animate-pulse rounded-2xl border border-slate-200 bg-white p-6 sm:p-8" aria-busy="true">
+      <div class="mt-4 animate-pulse rounded-2xl border border-slate-200 bg-white p-8" aria-busy="true">
         <div class="h-4 w-16 rounded bg-slate-200"></div>
         <div class="mt-4 h-8 w-3/4 rounded bg-slate-200"></div>
         <div class="mt-3 h-4 w-full rounded bg-slate-100"></div>
         <div class="mt-2 h-4 w-2/3 rounded bg-slate-100"></div>
         <div class="mt-6 h-4 w-1/2 rounded bg-slate-100"></div>
       </div>
-      <div class="mt-6 grid gap-6 lg:grid-cols-3">
-        <div class="animate-pulse rounded-xl border border-slate-200 bg-white p-6 lg:col-span-2">
+      <div class="mt-6 grid gap-6 grid-cols-3">
+        <div class="animate-pulse rounded-xl border border-slate-200 bg-white p-6 col-span-2">
           <div class="h-4 w-32 rounded bg-slate-200"></div>
           <div class="mt-4 h-12 w-full rounded bg-slate-100"></div>
           <div class="mt-2 h-12 w-full rounded bg-slate-100"></div>
@@ -83,7 +83,7 @@ const STATUS_LABEL: Record<DocumentStatus, string> = {
       </div>
     } @else if (item(); as doc) {
       <article class="mt-4">
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-8">
           <div class="flex flex-wrap items-center gap-2">
             @for (type of fileTypes(doc.files); track type) {
               <span class="rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-600">
@@ -103,7 +103,7 @@ const STATUS_LABEL: Record<DocumentStatus, string> = {
             }
           </div>
 
-          <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+          <h1 class="mt-3 font-semibold tracking-tight text-slate-900 text-3xl">
             {{ doc.title }}
           </h1>
 
@@ -175,8 +175,8 @@ const STATUS_LABEL: Record<DocumentStatus, string> = {
           }
         </section>
 
-        <div class="mt-6 grid gap-6 lg:grid-cols-3">
-          <div class="space-y-6 lg:col-span-2">
+        <div class="mt-6 grid gap-6 grid-cols-3">
+          <div class="space-y-6 col-span-2">
             <section class="rounded-xl border border-slate-200 bg-white p-6">
               <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
                 Tệp đính kèm ({{ doc.files.length }})

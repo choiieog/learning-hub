@@ -39,7 +39,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
 
     @if (loading()) {
       <div class="mt-6 space-y-6" aria-busy="true">
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 grid-cols-4">
           @for (placeholder of [1, 2, 3, 4]; track placeholder) {
             <div class="animate-pulse rounded-xl border border-slate-200 bg-white p-5">
               <div class="h-3 w-1/2 rounded bg-slate-200"></div>
@@ -47,7 +47,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
             </div>
           }
         </div>
-        <div class="grid gap-6 lg:grid-cols-2">
+        <div class="grid gap-6 grid-cols-2">
           @for (placeholder of [1, 2]; track placeholder) {
             <div class="animate-pulse rounded-xl border border-slate-200 bg-white p-5">
               <div class="h-4 w-1/3 rounded bg-slate-200"></div>
@@ -78,7 +78,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
         </div>
       }
 
-      <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="mt-6 grid gap-4 grid-cols-4">
         <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Người dùng</p>
           <p class="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
@@ -122,7 +122,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
         </div>
       </div>
 
-      <div class="mt-6 grid gap-6 lg:grid-cols-2">
+      <div class="mt-6 grid gap-6 grid-cols-2">
         <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
           <header class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
             <h2 class="text-base font-semibold">Tài liệu nhiều lượt xem</h2>

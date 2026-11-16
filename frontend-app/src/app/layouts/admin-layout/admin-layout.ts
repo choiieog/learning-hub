@@ -9,15 +9,15 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="min-h-screen bg-slate-100 text-slate-900">
-      <div class="flex min-h-screen flex-col md:flex-row">
+      <div class="flex min-h-screen flex-row">
         <aside
-          class="w-full shrink-0 border-b border-slate-200 bg-white px-4 py-4 md:min-h-screen md:w-60 md:border-b-0 md:border-r md:py-6"
+          class="shrink-0 border-slate-200 bg-white px-4 min-h-screen w-60 border-b-0 border-r py-6"
         >
-          <p class="mb-4 whitespace-nowrap text-lg font-semibold text-indigo-600 md:mb-6">
+          <p class="whitespace-nowrap text-lg font-semibold text-indigo-600 mb-6">
             Learning Hub · Admin
           </p>
 
-          <nav class="flex flex-wrap gap-1 text-sm md:flex-col">
+          <nav class="flex flex-wrap gap-1 text-sm flex-col">
             <a
               routerLink="/admin/dashboard"
               routerLinkActive="bg-indigo-50 text-indigo-700 font-medium"
@@ -62,13 +62,13 @@ import { AuthService } from '../../core/services/auth.service';
             </a>
           </nav>
 
-          <div class="mt-4 flex items-center justify-between gap-4 border-t border-slate-200 pt-4 text-sm md:mt-8 md:block">
+          <div class="items-center justify-between gap-4 border-t border-slate-200 pt-4 text-sm mt-8 block">
             <a routerLink="/documents" class="text-slate-500 hover:text-slate-700">
               ← Về giao diện sinh viên
             </a>
             <button
               type="button"
-              class="rounded-md border border-slate-300 px-3 py-1 text-left hover:bg-slate-100 md:mt-3 md:block md:w-full"
+              class="rounded-md border border-slate-300 px-3 py-1 text-left hover:bg-slate-100 mt-3 block w-full"
               (click)="logout()"
             >
               Đăng xuất
@@ -76,7 +76,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
         </aside>
 
-        <main class="mx-auto min-w-0 w-full max-w-6xl flex-1 px-4 py-6 md:px-8">
+        <main class="mx-auto min-w-0 w-full max-w-6xl flex-1 py-6 px-8">
           <router-outlet />
         </main>
       </div>

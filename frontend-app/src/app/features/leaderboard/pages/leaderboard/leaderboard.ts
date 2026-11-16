@@ -151,7 +151,7 @@ import { initials } from '../../../../core/utils/format.util';
                   </p>
                 </div>
 
-                <div class="hidden w-40 shrink-0 sm:block">
+                <div class="w-40 shrink-0 block">
                   <div class="h-1.5 overflow-hidden rounded-full bg-slate-100">
                     <div
                       class="h-full rounded-full bg-indigo-400"
@@ -170,7 +170,7 @@ import { initials } from '../../../../core/utils/format.util';
 
       <section class="mt-6 rounded-xl border border-slate-200 bg-white p-5">
         <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Cách kiếm EXP</h2>
-        <ul class="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
+        <ul class="mt-3 grid gap-3 text-sm text-slate-600 grid-cols-3">
           <li class="rounded-lg bg-slate-50 px-4 py-3">
             <span class="font-semibold text-slate-900">+1 EXP</span> cho mỗi lượt xem tài liệu hợp lệ
             (mỗi người 1 lượt/ngày).

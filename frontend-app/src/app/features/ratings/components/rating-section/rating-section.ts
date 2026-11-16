@@ -60,7 +60,7 @@ type StarKey = '1' | '2' | '3' | '4' | '5';
           <div class="h-3 w-2/3 rounded bg-slate-100"></div>
         </div>
       } @else if (summary(); as s) {
-        <div class="mt-4 grid gap-6 sm:grid-cols-2">
+        <div class="mt-4 grid gap-6 grid-cols-2">
           <div class="flex items-center gap-4">
             <p class="text-4xl font-semibold text-slate-900">{{ ratingLabel(s.ratingAvg) }}</p>
             <div>

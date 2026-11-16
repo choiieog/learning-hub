@@ -31,7 +31,7 @@ import { initials } from '../../core/utils/format.util';
           </a>
 
           <nav
-            class="order-last flex w-full flex-wrap items-center gap-x-4 gap-y-2 whitespace-nowrap text-sm lg:order-none lg:w-auto lg:min-w-0 lg:flex-1 lg:flex-nowrap lg:overflow-x-auto"
+            class="flex items-center gap-x-4 gap-y-2 whitespace-nowrap text-sm order-none w-auto min-w-0 flex-1 flex-nowrap overflow-x-auto"
           >
             <a routerLink="/dashboard" routerLinkActive="text-indigo-600 font-medium">Tổng quan</a>
             <a routerLink="/documents" routerLinkActive="text-indigo-600 font-medium">Tài liệu</a>
@@ -72,7 +72,7 @@ import { initials } from '../../core/utils/format.util';
             @if (panelOpen()) {
               <div class="fixed inset-0 z-30" (click)="panelOpen.set(false)" aria-hidden="true"></div>
               <div
-                class="fixed inset-x-4 top-16 z-40 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80"
+                class="inset-x-4 z-40 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg absolute inset-x-auto right-0 top-full mt-2 w-80"
               >
                 <div class="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2.5">
                   <p class="text-sm font-semibold text-slate-900">Thông báo</p>
@@ -137,7 +137,7 @@ import { initials } from '../../core/utils/format.util';
 
           <a
             routerLink="/profile"
-            class="hidden min-w-0 shrink-0 items-center gap-2 sm:flex"
+            class="min-w-0 shrink-0 items-center gap-2 flex"
             title="Hồ sơ của bạn"
           >
             <span

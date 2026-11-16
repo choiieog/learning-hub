@@ -177,7 +177,7 @@ function toggleValue(list: string[], value: string): string[] {
     }
 
     @if (loading()) {
-      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+      <div class="mt-6 grid gap-4 grid-cols-3" aria-busy="true">
         @for (placeholder of [1, 2, 3, 4, 5, 6]; track placeholder) {
           <div class="animate-pulse rounded-xl border border-slate-200 bg-white p-5">
             <div class="h-4 w-14 rounded bg-slate-200"></div>
@@ -212,7 +212,7 @@ function toggleValue(list: string[], value: string): string[] {
         }
       </div>
     } @else {
-      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="mt-6 grid gap-4 grid-cols-3">
         @for (item of items(); track item.id) {
           <a
             [routerLink]="['/documents', item.id]"

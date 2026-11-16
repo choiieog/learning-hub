@@ -124,7 +124,7 @@ const EMPTY_STATE: Record<StatusFilter, { title: string; hint: string }> = {
     }
 
     @if (loading()) {
-      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+      <div class="mt-6 grid gap-4 grid-cols-3" aria-busy="true">
         @for (placeholder of [1, 2, 3, 4, 5, 6]; track placeholder) {
           <div class="animate-pulse rounded-xl border border-slate-200 bg-white p-5">
             <div class="h-4 w-20 rounded bg-slate-200"></div>
@@ -157,7 +157,7 @@ const EMPTY_STATE: Record<StatusFilter, { title: string; hint: string }> = {
         }
       </div>
     } @else {
-      <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="mt-6 grid gap-4 grid-cols-3">
         @for (item of items(); track item.id) {
           <article
             class="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
@@ -302,7 +302,7 @@ const EMPTY_STATE: Record<StatusFilter, { title: string; hint: string }> = {
     }
 
     @if (editTarget(); as target) {
-      <div class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 sm:items-center">
+      <div class="fixed inset-0 z-50 flex justify-center overflow-y-auto bg-slate-900/40 p-4 items-center">
         <form
           role="dialog"
           aria-modal="true"
