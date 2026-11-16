@@ -51,29 +51,35 @@ export interface LeaderboardResponse {
 export class GamificationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Cộng (hoặc trừ, nếu delta âm) EXP và cập nhật level trong cùng transaction. */
-  async award(input: AwardInput): Promise<AwardResult> {
+  /**
+   * Cộng (hoặc trừ, nếu delta âm) EXP và cập nhật level trong cùng transaction.
+   * Truyền `tx` khi được gọi từ transaction khác (duyệt bài, đánh giá) để EXP
+   * không commit lệch với nghiệp vụ chính.
+   */
+  async award(input: AwardInput, tx?: Prisma.TransactionClient): Promise<AwardResult> {
     const { userId, delta, reason, refId = null } = input;
 
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        await tx.expLog.create({ data: { userId, delta, reason, refId } });
+    const apply = async (db: Prisma.TransactionClient): Promise<AwardResult> => {
+      await db.expLog.create({ data: { userId, delta, reason, refId } });
 
-        const updated = await tx.user.update({
-          where: { id: userId },
-          data: { exp: { increment: delta } },
-          select: { exp: true, level: true },
-        });
-
-        const exp = Math.max(0, updated.exp);
-        const level = levelFromExp(exp);
-
-        if (level !== updated.level) {
-          await tx.user.update({ where: { id: userId }, data: { level } });
-        }
-
-        return { exp, level, delta, leveledUp: level > updated.level };
+      const updated = await db.user.update({
+        where: { id: userId },
+        data: { exp: { increment: delta } },
+        select: { exp: true, level: true },
       });
+
+      const exp = Math.max(0, updated.exp);
+      const level = levelFromExp(exp);
+
+      if (level !== updated.level) {
+        await db.user.update({ where: { id: userId }, data: { level } });
+      }
+
+      return { exp, level, delta, leveledUp: level > updated.level };
+    };
+
+    try {
+      return tx ? await apply(tx) : await this.prisma.$transaction((inner) => apply(inner));
     } catch (error) {
       // Tài khoản đã bị xoá cứng giữa chừng: bỏ qua thay vì làm hỏng request chính.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {

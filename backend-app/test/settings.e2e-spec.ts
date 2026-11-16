@@ -38,6 +38,9 @@ describe('Cấu hình hệ thống (e2e)', () => {
 
   const userIds: string[] = [];
 
+  /** Map token → userId để seed `UploadedFile` (create document cần file đã upload). */
+  const userIdByToken = new Map<string, string>();
+
   const server = () => request(app.getHttpServer());
   const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
 
@@ -58,6 +61,25 @@ describe('Cấu hình hệ thống (e2e)', () => {
   }
 
   async function createDocument(token: string, title: string): Promise<number> {
+    // Tạo sẵn bản ghi UploadedFile thay cho bước upload nhị phân: body chỉ được
+    // tham chiếu file đã tồn tại và thuộc chính người dùng.
+    const ownerId = userIdByToken.get(token);
+    const publicId = `documents/e2e-${Date.now()}-${Math.random().toString(16).slice(2)}.pdf`;
+
+    if (ownerId) {
+      await prisma.uploadedFile.create({
+        data: {
+          publicId,
+          url: `/api/files/${publicId}`,
+          name: 'e2e-limit.pdf',
+          size: 1024,
+          mimeType: 'application/pdf',
+          folder: 'documents',
+          ownerId,
+        },
+      });
+    }
+
     const response = await server()
       .post('/api/documents')
       .set(bearer(token))
@@ -67,7 +89,8 @@ describe('Cấu hình hệ thống (e2e)', () => {
         subjectId,
         files: [
           {
-            url: '/api/files/documents/e2e-limit.pdf',
+            publicId,
+            url: `/api/files/${publicId}`,
             name: 'e2e-limit.pdf',
             size: 1024,
             mimeType: 'application/pdf',
@@ -122,6 +145,9 @@ describe('Cấu hình hệ thống (e2e)', () => {
     adminToken = await login(admin.email);
     userToken = await login(user.email);
     secondUserToken = await login(secondUser.email);
+    userIdByToken.set(adminToken, admin.id);
+    userIdByToken.set(userToken, user.id);
+    userIdByToken.set(secondUserToken, secondUser.id);
 
     // Trạng thái đầu của suite: không giới hạn.
     await prisma.systemSetting.upsert({

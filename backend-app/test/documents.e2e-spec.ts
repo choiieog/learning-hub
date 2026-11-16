@@ -24,6 +24,8 @@ interface DocumentPayload {
 
 interface UploadPayload {
   url: string;
+  /** Khoá trên storage — phải được gửi lại khi tạo tài liệu. */
+  publicId: string;
   name: string;
   size: number;
   mimeType: string;
@@ -62,6 +64,16 @@ describe('Tài liệu (e2e)', () => {
   }
 
   async function createDocument(title: string): Promise<DocumentPayload> {
+    // Mỗi tài liệu cần một file mới: một file chỉ được gắn cho đúng một tài liệu
+    // (UploadedFile.documentId), nên upload lại thay vì dùng lại uploadedPdf.
+    const upload = await server()
+      .post('/api/uploads')
+      .set(bearer(authorToken))
+      .field('folder', 'documents')
+      .attach('file', PDF_BYTES, { filename: 'bai-giang.pdf', contentType: 'application/pdf' })
+      .expect(201);
+    const file = (upload.body as Envelope<UploadPayload>).data;
+
     const response = await server()
       .post('/api/documents')
       .set(bearer(authorToken))
@@ -71,10 +83,11 @@ describe('Tài liệu (e2e)', () => {
         subjectId,
         files: [
           {
-            url: uploadedPdf.url,
-            name: uploadedPdf.name,
-            size: uploadedPdf.size,
-            mimeType: uploadedPdf.mimeType,
+            publicId: file.publicId,
+            url: file.url,
+            name: file.name,
+            size: file.size,
+            mimeType: file.mimeType,
           },
         ],
       })

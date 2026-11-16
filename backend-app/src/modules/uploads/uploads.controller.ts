@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { maxUploadSizeBytes } from '../../common/constants/upload.constants';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { UploadsService } from './uploads.service';
 
@@ -37,11 +38,15 @@ export class UploadsController {
     // Multer chặn sớm khi file quá lớn (→ 413) trước khi buffer cả file vào RAM.
     FileInterceptor('file', { limits: { fileSize: maxUploadSizeBytes(), files: 1 } }),
   )
-  upload(@UploadedFile() file: UploadedFileLike | undefined, @Body('folder') folder?: string) {
+  upload(
+    @UploadedFile() file: UploadedFileLike | undefined,
+    @Body('folder') folder: string | undefined,
+    @CurrentUser('id') userId: string,
+  ) {
     if (folder !== undefined && typeof folder !== 'string') {
       throw new BadRequestException('Tham số folder không hợp lệ.');
     }
 
-    return this.uploadsService.upload(file, folder ?? 'documents');
+    return this.uploadsService.upload(file, folder ?? 'documents', userId);
   }
 }

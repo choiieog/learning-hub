@@ -5,45 +5,23 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
-  IsInt,
   IsOptional,
   IsString,
   IsUUID,
-  Max,
   MaxLength,
-  Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { maxUploadSizeBytes } from '../../../common/constants/upload.constants';
 
+/**
+ * File đính kèm: chỉ cần `publicId` trả về từ POST /api/uploads.
+ * url/name/size/mimeType đọc từ bảng `UploadedFile` ở server, không nhận từ client.
+ */
 export class DocumentFileInputDto {
-  /** url trả về từ POST /api/uploads */
-  @IsString()
-  @MinLength(1)
-  @MaxLength(500)
-  url: string;
-  /** key trên storage để xóa file khi cần */
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  publicId?: string;
-
   @IsString()
   @MinLength(1)
   @MaxLength(255)
-  name: string;
-
-  /** bytes */
-  @IsInt()
-  @Min(1)
-  @Max(maxUploadSizeBytes())
-  size: number;
-
-  @IsString()
-  @MinLength(1)
-  @MaxLength(120)
-  mimeType: string;
+  publicId: string;
 }
 
 export class CreateDocumentDto {

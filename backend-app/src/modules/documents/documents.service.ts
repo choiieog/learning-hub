@@ -11,23 +11,35 @@ import {
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
 } from '../../common/dto/pagination-query.dto';
-import { UPLOAD_URL_PREFIX } from '../../common/constants/upload.constants';
 import { DocumentStatus } from '../../common/enums/document-status.enum';
 import { Role } from '../../common/enums/role.enum';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import { vietnamDayKey } from '../../common/utils/day-key.util';
 import { ExpReason, Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
+import { StorageService } from '../../infra/storage/storage.service';
 import { EXP_RULES } from '../gamification/gamification.constants';
 import { GamificationService } from '../gamification/gamification.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SettingsService } from '../settings/settings.service';
-import { CreateDocumentDto, DocumentFileInputDto } from './dto/create-document.dto';
+import {
+  CreateDocumentDto,
+  DocumentFileInputDto,
+} from './dto/create-document.dto';
 import { ListDocumentsQueryDto } from './dto/list-documents-query.dto';
 import { ResubmitDocumentDto } from './dto/resubmit-document.dto';
 
 const SORTABLE_FIELDS = ['createdAt', 'viewCount', 'ratingAvg'] as const;
 const DOCUMENT_FILE_EXTENSIONS = ['pdf', 'docx', 'pptx'] as const;
+
+/** Metadata file lấy từ `UploadedFile` để ghi vào `DocumentFile`. */
+type ResolvedDocumentFile = {
+  url: string;
+  publicId: string;
+  name: string;
+  size: number;
+  mimeType: string;
+};
 type SortableField = (typeof SORTABLE_FIELDS)[number];
 
 /** Chỉ các cột cần cho danh sách — không trả deletedAt/rejectReason ra ngoài. */
@@ -42,8 +54,18 @@ const DOCUMENT_SUMMARY_SELECT = {
   createdAt: true,
   publishedAt: true,
   subject: { select: { id: true, code: true, name: true } },
-  author: { select: { id: true, fullName: true, avatarUrl: true, level: true } },
-  files: { select: { url: true, publicId: true, name: true, size: true, mimeType: true } },
+  author: {
+    select: { id: true, fullName: true, avatarUrl: true, level: true },
+  },
+  files: {
+    select: {
+      url: true,
+      publicId: true,
+      name: true,
+      size: true,
+      mimeType: true,
+    },
+  },
 } satisfies Prisma.DocumentSelect;
 
 export interface DocumentSummary {
@@ -57,8 +79,19 @@ export interface DocumentSummary {
   createdAt: Date;
   publishedAt: Date | null;
   subject: { id: string; code: string; name: string };
-  author: { id: string; fullName: string; avatarUrl: string | null; level: number };
-  files: { url: string; publicId: string | null; name: string; size: number; mimeType: string }[];
+  author: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+    level: number;
+  };
+  files: {
+    url: string;
+    publicId: string | null;
+    name: string;
+    size: number;
+    mimeType: string;
+  }[];
 }
 
 export interface DocumentDetail extends DocumentSummary {
@@ -109,6 +142,7 @@ export class DocumentsService {
     private readonly notifications: NotificationsService,
     private readonly gamification: GamificationService,
     private readonly settings: SettingsService,
+    private readonly storage: StorageService,
   ) {}
 
   /** GET /api/documents — chỉ tài liệu APPROVED, chưa xóa. */
@@ -125,7 +159,10 @@ export class DocumentsService {
     query: ListDocumentsQueryDto,
   ): Promise<PaginatedDocuments<MyDocumentSummary>> {
     const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
-    const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE));
+    const limit = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE),
+    );
 
     const where: Prisma.DocumentWhereInput = { authorId, deletedAt: null };
     if (query.status) {
@@ -227,7 +264,10 @@ export class DocumentsService {
    * Đăng tài liệu: luôn vào PENDING, chỉ chủ bài và admin thấy cho tới khi duyệt.
    * File phải do POST /api/uploads trả về để không nhận URL lạ trong body.
    */
-  async create(authorId: string, dto: CreateDocumentDto): Promise<DocumentSummary> {
+  async create(
+    authorId: string,
+    dto: CreateDocumentDto,
+  ): Promise<DocumentSummary> {
     const subject = await this.prisma.subject.findFirst({
       where: { id: dto.subjectId, deletedAt: null },
       select: { id: true },
@@ -237,31 +277,29 @@ export class DocumentsService {
       throw new BadRequestException('Môn học không tồn tại hoặc đã bị xoá.');
     }
 
-    for (const file of dto.files) {
-      this.assertFileInput(file);
-    }
+    const files = await this.resolveFileInputs(dto.files, authorId);
 
     await this.assertWithinDailyLimit(authorId);
 
-    const created = await this.prisma.document.create({
-      data: {
-        title: dto.title.trim(),
-        description: dto.description?.trim() || null,
-        content: dto.content?.trim() || null,
-        status: DocumentStatus.PENDING,
-        subjectId: subject.id,
-        authorId,
-        files: {
-          create: dto.files.map((file) => ({
-            url: file.url,
-            publicId: file.publicId ?? null,
-            name: file.name,
-            size: file.size,
-            mimeType: file.mimeType,
-          })),
+    // Tạo bài + đánh dấu file đã dùng trong cùng transaction: một file không thể
+    // bị hai tài liệu cùng tham chiếu, và không có bài nào trỏ tới file "ma".
+    const created = await this.prisma.$transaction(async (tx) => {
+      const document = await tx.document.create({
+        data: {
+          title: dto.title.trim(),
+          description: dto.description?.trim() || null,
+          content: dto.content?.trim() || null,
+          status: DocumentStatus.PENDING,
+          subjectId: subject.id,
+          authorId,
+          files: { create: files },
         },
-      },
-      select: DOCUMENT_SUMMARY_SELECT,
+        select: DOCUMENT_SUMMARY_SELECT,
+      });
+
+      await this.markFilesUsed(tx, files, document.id, authorId);
+
+      return document;
     });
 
     return created as DocumentSummary;
@@ -291,7 +329,9 @@ export class DocumentsService {
     }
 
     if (document.status !== DocumentStatus.REJECTED) {
-      throw new BadRequestException('Chỉ gửi duyệt lại được tài liệu đã bị từ chối.');
+      throw new BadRequestException(
+        'Chỉ gửi duyệt lại được tài liệu đã bị từ chối.',
+      );
     }
 
     const subject = await this.prisma.subject.findFirst({
@@ -303,39 +343,43 @@ export class DocumentsService {
       throw new BadRequestException('Môn học không tồn tại hoặc đã bị xoá.');
     }
 
-    for (const file of dto.files ?? []) {
-      this.assertFileInput(file);
-    }
+    const files = dto.files?.length
+      ? await this.resolveFileInputs(dto.files, userId)
+      : null;
+    const previousFiles = files
+      ? await this.prisma.documentFile.findMany({
+          where: { documentId },
+          select: { publicId: true },
+        })
+      : [];
 
-    const files = dto.files?.length ? dto.files : null;
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const document = await tx.document.update({
+        where: { id: documentId },
+        data: {
+          title: dto.title.trim(),
+          description: dto.description?.trim() || null,
+          content: dto.content?.trim() || null,
+          subjectId: subject.id,
+          status: DocumentStatus.PENDING,
+          rejectReason: null,
+          publishedAt: null,
+          ...(files ? { files: { deleteMany: {}, create: files } } : {}),
+        },
+        select: DOCUMENT_DETAIL_SELECT,
+      });
 
-    const updated = await this.prisma.document.update({
-      where: { id: documentId },
-      data: {
-        title: dto.title.trim(),
-        description: dto.description?.trim() || null,
-        content: dto.content?.trim() || null,
-        subjectId: subject.id,
-        status: DocumentStatus.PENDING,
-        rejectReason: null,
-        publishedAt: null,
-        ...(files
-          ? {
-              files: {
-                deleteMany: {},
-                create: files.map((file) => ({
-                  url: file.url,
-                  publicId: file.publicId ?? null,
-                  name: file.name,
-                  size: file.size,
-                  mimeType: file.mimeType,
-                })),
-              },
-            }
-          : {}),
-      },
-      select: DOCUMENT_DETAIL_SELECT,
+      if (files) {
+        await this.markFilesUsed(tx, files, documentId, userId);
+      }
+
+      return document;
     });
+
+    // File cũ bị thay thế: xoá khỏi storage để không còn tải được bằng URL cũ.
+    if (files) {
+      await this.deleteStoredFiles(previousFiles.map((file) => file.publicId));
+    }
 
     return this.toDetail(updated, { viewCountedToday: false });
   }
@@ -348,7 +392,11 @@ export class DocumentsService {
   async removeOwn(documentId: string, userId: string): Promise<{ id: string }> {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, deletedAt: null },
-      select: { id: true, authorId: true },
+      select: {
+        id: true,
+        authorId: true,
+        files: { select: { publicId: true } },
+      },
     });
 
     if (!document) {
@@ -363,6 +411,8 @@ export class DocumentsService {
       where: { id: documentId },
       data: { deletedAt: new Date() },
     });
+
+    await this.deleteStoredFiles(document.files.map((file) => file.publicId));
 
     return { id: documentId };
   }
@@ -390,27 +440,39 @@ export class DocumentsService {
       throw new BadRequestException('Tài liệu này đã được duyệt.');
     }
 
-    const updated = await this.prisma.document.update({
-      where: { id: documentId },
-      data: {
-        status: DocumentStatus.APPROVED,
-        publishedAt: new Date(),
-        rejectReason: null,
-      },
-      select: DOCUMENT_DETAIL_SELECT,
-    });
+    // Đổi trạng thái + thông báo + EXP cùng một transaction: hoặc cả ba cùng xảy ra,
+    // hoặc không cái nào — tránh bài đã duyệt mà tác giả không có thông báo/EXP.
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const document = await tx.document.update({
+        where: { id: documentId },
+        data: {
+          status: DocumentStatus.APPROVED,
+          publishedAt: new Date(),
+          rejectReason: null,
+        },
+        select: DOCUMENT_DETAIL_SELECT,
+      });
 
-    await this.notifications.notifyApproved({
-      id: updated.id,
-      title: updated.title,
-      authorId: updated.author.id,
-    });
+      await this.notifications.notifyApproved(
+        {
+          id: document.id,
+          title: document.title,
+          authorId: document.author.id,
+        },
+        tx,
+      );
 
-    await this.gamification.award({
-      userId: updated.author.id,
-      delta: EXP_RULES.DOCUMENT_APPROVED,
-      reason: ExpReason.DOCUMENT_APPROVED,
-      refId: updated.id,
+      await this.gamification.award(
+        {
+          userId: document.author.id,
+          delta: EXP_RULES.DOCUMENT_APPROVED,
+          reason: ExpReason.DOCUMENT_APPROVED,
+          refId: document.id,
+        },
+        tx,
+      );
+
+      return document;
     });
 
     return this.toDetail(updated, { viewCountedToday: false });
@@ -420,7 +482,11 @@ export class DocumentsService {
    * Từ chối tài liệu kèm lý do. Lý do được lưu và chỉ chủ bài / admin thấy
    * ở trang chi tiết, để tác giả biết cần sửa gì.
    */
-  async reject(documentId: string, _adminId: string, reason: string): Promise<DocumentDetail> {
+  async reject(
+    documentId: string,
+    _adminId: string,
+    reason: string,
+  ): Promise<DocumentDetail> {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, deletedAt: null },
       select: { id: true, status: true },
@@ -434,46 +500,66 @@ export class DocumentsService {
       throw new BadRequestException('Tài liệu này đã bị từ chối.');
     }
 
-    const updated = await this.prisma.document.update({
-      where: { id: documentId },
-      data: {
-        status: DocumentStatus.REJECTED,
-        rejectReason: reason.trim(),
-        publishedAt: null,
-      },
-      select: DOCUMENT_DETAIL_SELECT,
-    });
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const document = await tx.document.update({
+        where: { id: documentId },
+        data: {
+          status: DocumentStatus.REJECTED,
+          rejectReason: reason.trim(),
+          publishedAt: null,
+        },
+        select: DOCUMENT_DETAIL_SELECT,
+      });
 
-    await this.notifications.notifyRejected(
-      { id: updated.id, title: updated.title, authorId: updated.author.id },
-      reason,
-    );
+      await this.notifications.notifyRejected(
+        {
+          id: document.id,
+          title: document.title,
+          authorId: document.author.id,
+        },
+        reason,
+        tx,
+      );
+
+      return document;
+    });
 
     return this.toDetail(updated, { viewCountedToday: false });
   }
 
   /** Xoá mềm tài liệu vi phạm — biến mất khỏi mọi danh sách nhưng giữ dữ liệu để đối soát. */
-  async removeByAdmin(documentId: string, _adminId: string): Promise<{ id: string }> {
+  async removeByAdmin(
+    documentId: string,
+    _adminId: string,
+  ): Promise<{ id: string }> {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, deletedAt: null },
-      select: { id: true, title: true, authorId: true },
+      select: {
+        id: true,
+        title: true,
+        authorId: true,
+        files: { select: { publicId: true } },
+      },
     });
 
     if (!document) {
       throw new NotFoundException('Không tìm thấy tài liệu');
     }
 
-    await this.prisma.document.update({
-      where: { id: documentId },
-      data: { deletedAt: new Date() },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.document.update({
+        where: { id: documentId },
+        data: { deletedAt: new Date() },
+      });
+
+      // Tác giả cần biết bài của mình bị xoá, không chỉ biết là nó tự nhiên mất.
+      await this.notifications.notifyDeleted(
+        { id: document.id, title: document.title, authorId: document.authorId },
+        tx,
+      );
     });
 
-    // Tác giả cần biết bài của mình bị xoá, không chỉ biết là nó tự nhiên mất.
-    await this.notifications.notifyDeleted({
-      id: document.id,
-      title: document.title,
-      authorId: document.authorId,
-    });
+    await this.deleteStoredFiles(document.files.map((file) => file.publicId));
 
     return { id: documentId };
   }
@@ -499,22 +585,99 @@ export class DocumentsService {
     }
   }
 
-  /** File phải do POST /api/uploads trả về và đúng định dạng cho phép. */
-  private assertFileInput(file: DocumentFileInputDto): void {
-    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
-    if (!DOCUMENT_FILE_EXTENSIONS.includes(extension as 'pdf' | 'docx' | 'pptx')) {
-      throw new BadRequestException(`"${file.name}": chỉ nhận file PDF, DOCX, PPTX.`);
+  /**
+   * Client chỉ gửi `publicId`; metadata (url/name/size/mimeType) đọc từ `UploadedFile`
+   * nên không thể bịa. `markFilesUsed` chặn file đã gắn tài liệu khác, kể cả khi hai
+   * request đồng thời cùng tham chiếu một file.
+   */
+  private async resolveFileInputs(
+    files: DocumentFileInputDto[],
+    ownerId: string,
+  ): Promise<ResolvedDocumentFile[]> {
+    const resolved: ResolvedDocumentFile[] = [];
+
+    for (const { publicId } of files) {
+      const record = await this.prisma.uploadedFile.findFirst({
+        where: { publicId, ownerId },
+        select: {
+          url: true,
+          publicId: true,
+          name: true,
+          size: true,
+          mimeType: true,
+        },
+      });
+
+      if (!record) {
+        throw new BadRequestException(
+          `File ${publicId} không tồn tại hoặc không phải do bạn tải lên.`,
+        );
+      }
+
+      const extension = record.name.split('.').pop()?.toLowerCase() ?? '';
+      if (
+        !DOCUMENT_FILE_EXTENSIONS.includes(extension as 'pdf' | 'docx' | 'pptx')
+      ) {
+        throw new BadRequestException(
+          `"${record.name}": chỉ nhận file PDF, DOCX, PPTX.`,
+        );
+      }
+
+      resolved.push(record);
     }
 
-    if (!file.url.startsWith(`${UPLOAD_URL_PREFIX}/`)) {
-      throw new BadRequestException(`"${file.name}": file phải được tải lên qua /api/uploads.`);
+    return resolved;
+  }
+
+  /** Gắn file vào tài liệu; nếu file vừa bị dùng ở request khác thì rollback cả transaction. */
+  private async markFilesUsed(
+    tx: Prisma.TransactionClient,
+    files: { publicId: string }[],
+    documentId: string,
+    ownerId: string,
+  ): Promise<void> {
+    if (files.length === 0) {
+      return;
+    }
+
+    const publicIds = files.map((file) => file.publicId);
+    const { count } = await tx.uploadedFile.updateMany({
+      where: { publicId: { in: publicIds }, ownerId, documentId: null },
+      data: { documentId },
+    });
+
+    if (count !== publicIds.length) {
+      throw new BadRequestException(
+        'Có file vừa được dùng cho tài liệu khác. Vui lòng tải lại file và thử lại.',
+      );
+    }
+  }
+
+  /** Xoá file khỏi storage (best-effort, xem `StorageService.removeMany`) và row `UploadedFile`. */
+  private async deleteStoredFiles(publicIds: (string | null)[]): Promise<void> {
+    await this.storage.removeMany(publicIds);
+
+    const ids = publicIds.filter((publicId): publicId is string =>
+      Boolean(publicId),
+    );
+
+    if (ids.length > 0) {
+      await this.prisma.uploadedFile.deleteMany({
+        where: { publicId: { in: ids } },
+      });
     }
   }
 
   /** Gom document đã select thành payload chi tiết; ẩn rejectReason với người không liên quan. */
   private toDetail(
-    document: Prisma.DocumentGetPayload<{ select: typeof DOCUMENT_DETAIL_SELECT }>,
-    options: { viewCountedToday: boolean; viewCount?: number; hideRejectReason?: boolean },
+    document: Prisma.DocumentGetPayload<{
+      select: typeof DOCUMENT_DETAIL_SELECT;
+    }>,
+    options: {
+      viewCountedToday: boolean;
+      viewCount?: number;
+      hideRejectReason?: boolean;
+    },
   ): DocumentDetail {
     const { content, rejectReason, ...summary } = document;
 
@@ -530,9 +693,14 @@ export class DocumentsService {
   }
 
   /** Truy vấn dùng chung cho danh sách công khai và hàng chờ duyệt. */
-  private async listDocuments(query: ListDocumentsQueryDto): Promise<PaginatedDocuments> {
+  private async listDocuments(
+    query: ListDocumentsQueryDto,
+  ): Promise<PaginatedDocuments> {
     const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
-    const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE));
+    const limit = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE),
+    );
 
     const where: Prisma.DocumentWhereInput = { deletedAt: null };
     if (query.status) {
@@ -591,13 +759,18 @@ export class DocumentsService {
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  );
 }
 
 /** Whitelist field + hướng sắp xếp; thêm `id` để phân trang ổn định. */
 function parseSort(sort?: string): Prisma.DocumentOrderByWithRelationInput[] {
   const [field, direction] = (sort ?? 'createdAt:desc').split(':');
-  const safeField: SortableField = SORTABLE_FIELDS.includes(field as SortableField)
+  const safeField: SortableField = SORTABLE_FIELDS.includes(
+    field as SortableField,
+  )
     ? (field as SortableField)
     : 'createdAt';
   const safeDirection: Prisma.SortOrder = direction === 'asc' ? 'asc' : 'desc';

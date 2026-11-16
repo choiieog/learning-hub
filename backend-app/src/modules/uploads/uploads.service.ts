@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, PayloadTooLargeException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  PayloadTooLargeException,
+} from '@nestjs/common';
 import { extname } from 'node:path';
 import {
   MIME_BY_EXTENSION,
@@ -7,12 +11,18 @@ import {
   matchesFileSignature,
   maxUploadSizeBytes,
 } from '../../common/constants/upload.constants';
+import { PrismaService } from '../../infra/prisma/prisma.service';
 import { StorageService } from '../../infra/storage/storage.service';
 import type { StoredFile } from '../../infra/storage/storage.types';
 import type { UploadedFileLike } from './uploads.controller';
 
 /**
- * Kiểm tra file tải lên (thư mục, dung lượng, đuôi ↔ MIME) rồi giao việc lưu cho `StorageService`.
+ * Kiểm tra file tải lên (thư mục, dung lượng, đuôi ↔ MIME, chữ ký nhị phân) rồi giao
+ * việc lưu cho `StorageService`.
+ *
+ * Metadata được ghi vào bảng `UploadedFile`: đó là nguồn sự thật cho name/size/mimeType.
+ * Body tạo tài liệu chỉ được tham chiếu `publicId` đã có trong bảng này, nên client
+ * không tự khai được metadata sai.
  *
  * Nơi lưu thật do `STORAGE_DRIVER` quyết định (hiện có `local`); service này không biết
  * file nằm ở đĩa hay cloud nên đổi driver không phải sửa nghiệp vụ.
@@ -21,15 +31,26 @@ import type { UploadedFileLike } from './uploads.controller';
 export class UploadsService {
   private readonly maxSizeBytes = maxUploadSizeBytes();
 
-  constructor(private readonly storage: StorageService) {}
+  constructor(
+    private readonly storage: StorageService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-  async upload(file: UploadedFileLike | undefined, folder: string): Promise<StoredFile> {
+  async upload(
+    file: UploadedFileLike | undefined,
+    folder: string,
+    ownerId: string,
+  ): Promise<StoredFile> {
     if (!file || !file.buffer?.length) {
-      throw new BadRequestException('Thiếu file — gửi multipart với field tên "file".');
+      throw new BadRequestException(
+        'Thiếu file — gửi multipart với field tên "file".',
+      );
     }
 
     if (!UPLOAD_FOLDERS.includes(folder as UploadFolder)) {
-      throw new BadRequestException(`Thư mục không hợp lệ, chỉ nhận: ${UPLOAD_FOLDERS.join(', ')}.`);
+      throw new BadRequestException(
+        `Thư mục không hợp lệ, chỉ nhận: ${UPLOAD_FOLDERS.join(', ')}.`,
+      );
     }
 
     if (file.size > this.maxSizeBytes) {
@@ -53,16 +74,35 @@ export class UploadsService {
       );
     }
 
-    // Đuôi + MIME đều do client khai, nên kiểm luôn chữ ký nhị phân của nội dung.
+    // Đuôi + MIME đều do client khai, nên kiểm luôn chữ ký nhị phân của nội dung
+    // (DOCX/PPTX còn phải có entry word/ hoặc ppt/ bên trong container ZIP).
     if (!matchesFileSignature(extension, file.buffer)) {
       throw new BadRequestException(
         `Nội dung file không phải ${extension.toUpperCase()} thật — file có thể đã bị đổi đuôi.`,
       );
     }
 
-    return this.storage.upload(
-      { buffer: file.buffer, originalName: file.originalname, mimeType: expectedMimeType },
+    const stored = await this.storage.upload(
+      {
+        buffer: file.buffer,
+        originalName: file.originalname,
+        mimeType: expectedMimeType,
+      },
       folder as UploadFolder,
     );
+
+    await this.prisma.uploadedFile.create({
+      data: {
+        publicId: stored.publicId,
+        url: stored.url,
+        name: stored.name,
+        size: stored.size,
+        mimeType: stored.mimeType,
+        folder,
+        ownerId,
+      },
+    });
+
+    return stored;
   }
 }
