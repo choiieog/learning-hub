@@ -225,7 +225,7 @@ export class NotificationList implements OnInit {
   protected open(item: AppNotification): void {
     if (!item.readAt) {
       this.notificationState
-        .markRead(item.id, true)
+        .markRead(item.id)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
@@ -283,7 +283,7 @@ export class NotificationList implements OnInit {
         next: (result) => {
           this.items.set(result.items);
           this.meta.set(result.meta);
-          this.notificationState.syncFromPage(result);
+          this.notificationState.sync(result);
           this.loading.set(false);
         },
         error: (error: unknown) => {

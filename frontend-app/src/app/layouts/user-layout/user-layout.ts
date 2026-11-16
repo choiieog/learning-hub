@@ -219,7 +219,7 @@ export class UserLayout {
   protected openNotification(item: AppNotification): void {
     if (!item.readAt) {
       this.notificationState
-        .markRead(item.id, true)
+        .markRead(item.id)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
@@ -265,7 +265,7 @@ export class UserLayout {
       .subscribe({
         next: (page) => {
           this.notifications.set(page.items);
-          this.notificationState.syncFromPage(page);
+          this.notificationState.sync(page);
           this.loading.set(false);
         },
         error: () => this.loading.set(false),
