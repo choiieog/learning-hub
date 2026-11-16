@@ -31,7 +31,7 @@ export interface NotificationSummary {
 export interface PaginatedNotifications {
   items: NotificationSummary[];
   meta: { page: number; limit: number; total: number; totalPages: number };
-  /** Tổng chưa đọc (gồm cả thông báo chung) để hiện badge trên chuông. */
+  /** Tổng chưa đọc (tin cá nhân + tin chung chưa đọc bởi chính người gọi). */
   unreadCount: number;
 }
 
@@ -45,17 +45,26 @@ export interface ReviewedDocument {
 /**
  * Thông báo trong app (phase 2).
  *
- * Hiện tại: tạo thông báo khi admin duyệt / từ chối bài (kèm lý do) và API đọc
- * thông báo của chính người dùng. `userId = null` là thông báo chung (broadcast);
- * các thông báo đó không đánh dấu đọc riêng được nên markRead chỉ nhận thông báo cá nhân.
+ * `userId = null` là thông báo chung (broadcast): mọi người thấy cùng một row, nên
+ * trạng thái đã đọc không thể nằm ở `Notification.readAt` — nó sẽ đánh dấu đọc cho
+ * tất cả mọi người. Vì vậy tin chung dùng bảng `NotificationRead(userId,
+ * notificationId)`: mỗi người có trạng thái đọc riêng, mở tin hay "đọc tất cả" đều
+ * ghi vào bảng này.
  */
 @Injectable()
 export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Tác giả nhận tin bài đã duyệt và đang hiển thị công khai. */
-  async notifyApproved(document: ReviewedDocument): Promise<void> {
-    await this.prisma.notification.create({
+  /**
+   * Tác giả nhận tin bài đã duyệt và đang hiển thị công khai.
+   * `tx` cho phép chạy trong transaction của `DocumentsService.approve()`: thông báo
+   * và đổi trạng thái bài cùng commit hoặc cùng rollback.
+   */
+  async notifyApproved(
+    document: ReviewedDocument,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    await (tx ?? this.prisma).notification.create({
       data: {
         type: NotificationType.DOCUMENT_APPROVED,
         title: 'Tài liệu đã được duyệt',
@@ -67,11 +76,15 @@ export class NotificationsService {
   }
 
   /** Tác giả nhận tin bài bị từ chối kèm lý do để biết cần sửa gì. */
-  async notifyRejected(document: ReviewedDocument, reason: string | null): Promise<void> {
+  async notifyRejected(
+    document: ReviewedDocument,
+    reason: string | null,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
     const trimmed = reason?.trim();
     const suffix = trimmed ? ` Lý do: ${trimmed}` : '';
 
-    await this.prisma.notification.create({
+    await (tx ?? this.prisma).notification.create({
       data: {
         type: NotificationType.DOCUMENT_REJECTED,
         title: 'Tài liệu bị từ chối',
@@ -83,8 +96,11 @@ export class NotificationsService {
   }
 
   /** Tác giả nhận tin bài bị admin xoá vì vi phạm; bài đã biến mất nên không kèm link. */
-  async notifyDeleted(document: ReviewedDocument): Promise<void> {
-    await this.prisma.notification.create({
+  async notifyDeleted(
+    document: ReviewedDocument,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    await (tx ?? this.prisma).notification.create({
       data: {
         type: NotificationType.DOCUMENT_DELETED,
         title: 'Tài liệu đã bị xoá',
@@ -97,7 +113,7 @@ export class NotificationsService {
 
   /**
    * Admin gửi thông báo hàng loạt: một row `userId = null` là đủ — mọi người thấy cùng một tin,
-   * không cần copy cho từng tài khoản (và không có trạng thái đọc riêng cho broadcast).
+   * trạng thái đọc riêng nằm ở `NotificationRead`.
    */
   async broadcast(input: { title: string; message: string }): Promise<NotificationSummary> {
     const created = await this.prisma.notification.create({
@@ -122,41 +138,69 @@ export class NotificationsService {
     const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
     const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE));
 
-    const where: Prisma.NotificationWhereInput = { OR: [{ userId }, { userId: null }] };
-    if (query.unreadOnly) {
-      where.readAt = null;
-    }
+    const visible: Prisma.NotificationWhereInput = { OR: [{ userId }, { userId: null }] };
+    // Tin cá nhân chưa đọc dùng readAt; tin chung chưa đọc = chưa có NotificationRead của user.
+    const unread: Prisma.NotificationWhereInput = {
+      OR: [
+        { userId, readAt: null },
+        { userId: null, reads: { none: { userId } } },
+      ],
+    };
+    const where: Prisma.NotificationWhereInput = query.unreadOnly
+      ? { AND: [visible, unread] }
+      : visible;
 
-    const [total, items, unreadCount] = await this.prisma.$transaction([
+    const [total, rows, personalUnread, broadcastUnread] = await this.prisma.$transaction([
       this.prisma.notification.count({ where }),
       this.prisma.notification.findMany({
         where,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: (page - 1) * limit,
         take: limit,
-        select: NOTIFICATION_SELECT,
+        select: {
+          ...NOTIFICATION_SELECT,
+          reads: { where: { userId }, select: { readAt: true } },
+        },
       }),
-      this.prisma.notification.count({
-        where: { OR: [{ userId }, { userId: null }], readAt: null },
-      }),
+      this.prisma.notification.count({ where: { userId, readAt: null } }),
+      this.prisma.notification.count({ where: { userId: null, reads: { none: { userId } } } }),
     ]);
 
+    const items: NotificationSummary[] = rows.map(({ reads, ...row }) => ({
+      ...row,
+      readAt: row.readAt ?? reads[0]?.readAt ?? null,
+    }));
+
     return {
-      items: items as NotificationSummary[],
+      items,
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
-      unreadCount,
+      unreadCount: personalUnread + broadcastUnread,
     };
   }
 
-  /** Đánh dấu đã đọc một thông báo của chính mình. */
+  /**
+   * Đánh dấu đã đọc một thông báo: tin cá nhân ghi `readAt`, tin chung ghi
+   * `NotificationRead` của riêng người gọi.
+   */
   async markRead(id: string, userId: string): Promise<{ id: string; readAt: Date }> {
     const notification = await this.prisma.notification.findFirst({
-      where: { id, userId },
-      select: { id: true, readAt: true },
+      where: { id, OR: [{ userId }, { userId: null }] },
+      select: { id: true, userId: true, readAt: true },
     });
 
     if (!notification) {
       throw new NotFoundException('Không tìm thấy thông báo');
+    }
+
+    if (notification.userId === null) {
+      const created = await this.prisma.notificationRead.upsert({
+        where: { userId_notificationId: { userId, notificationId: id } },
+        update: {},
+        create: { userId, notificationId: id },
+        select: { readAt: true },
+      });
+
+      return { id, readAt: created.readAt };
     }
 
     if (notification.readAt) {
@@ -172,13 +216,26 @@ export class NotificationsService {
     return { id: updated.id, readAt: updated.readAt ?? new Date() };
   }
 
-  /** Đọc tất cả thông báo cá nhân chưa đọc. */
+  /** Đọc tất cả: tin cá nhân + mọi tin chung chưa đọc của người gọi. */
   async markAllRead(userId: string): Promise<{ updated: number }> {
-    const result = await this.prisma.notification.updateMany({
-      where: { userId, readAt: null },
-      data: { readAt: new Date() },
-    });
+    const [personal, broadcasts] = await this.prisma.$transaction([
+      this.prisma.notification.updateMany({
+        where: { userId, readAt: null },
+        data: { readAt: new Date() },
+      }),
+      this.prisma.notification.findMany({
+        where: { userId: null, reads: { none: { userId } } },
+        select: { id: true },
+      }),
+    ]);
 
-    return { updated: result.count };
+    if (broadcasts.length > 0) {
+      await this.prisma.notificationRead.createMany({
+        data: broadcasts.map((item) => ({ userId, notificationId: item.id })),
+        skipDuplicates: true,
+      });
+    }
+
+    return { updated: personal.count + broadcasts.length };
   }
 }

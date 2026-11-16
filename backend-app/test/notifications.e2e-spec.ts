@@ -46,6 +46,7 @@ describe('Thông báo (e2e)', () => {
   let otherToken: string;
   let adminToken: string;
   let approveNotificationId: string;
+  let broadcastId: string;
 
   const userIds: string[] = [];
   const notificationIds: string[] = [];
@@ -187,6 +188,7 @@ describe('Thông báo (e2e)', () => {
       select: { id: true },
     });
     notificationIds.push(...created.map((item) => item.id));
+    broadcastId = broadcast.id;
 
     const firstPage = await notifications(authorToken, '?limit=2&page=1');
     expect(firstPage.items).toHaveLength(2);
@@ -207,7 +209,7 @@ describe('Thông báo (e2e)', () => {
     expect(otherPage.items[0].id).toBe(broadcast.id);
   });
 
-  it('đọc từng tin: chỉ chủ tin đọc được; đọc tất cả chỉ áp dụng tin cá nhân', async () => {
+  it('đọc từng tin: chỉ chủ tin đọc được; đọc tất cả áp dụng cho cả tin chung', async () => {
     await server()
       .patch(`/api/notifications/${approveNotificationId}/read`)
       .set(bearer(otherToken))
@@ -227,11 +229,24 @@ describe('Thông báo (e2e)', () => {
       .patch('/api/notifications/read-all')
       .set(bearer(authorToken))
       .expect(200);
-    expect((markAll.body as Envelope<{ updated: number }>).data.updated).toBe(3);
+    // 3 tin cá nhân + 1 tin chung chưa đọc.
+    expect((markAll.body as Envelope<{ updated: number }>).data.updated).toBe(4);
 
     page = await notifications(authorToken, '?limit=50');
-    // Chỉ còn tin chung là chưa đọc: markAllRead không đụng thông báo broadcast.
-    expect(page.unreadCount).toBe(1);
+    expect(page.unreadCount).toBe(0);
+
+    // Trạng thái đọc của tin chung tính riêng từng người: người khác vẫn chưa đọc.
+    const otherAfter = await notifications(otherToken, '?limit=50');
+    expect(otherAfter.unreadCount).toBe(1);
+
+    await server()
+      .patch(`/api/notifications/${broadcastId}/read`)
+      .set(bearer(otherToken))
+      .expect(200);
+
+    const otherRead = await notifications(otherToken, '?limit=50');
+    expect(otherRead.unreadCount).toBe(0);
+    expect(otherRead.items[0].readAt).not.toBeNull();
   });
 
   it('từ chối bài → thông báo kèm lý do để tác giả sửa', async () => {

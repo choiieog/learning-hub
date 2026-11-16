@@ -13,7 +13,7 @@ import {
 import { DocumentStatus } from '../../common/enums/document-status.enum';
 import { Role } from '../../common/enums/role.enum';
 import { UPLOAD_URL_PREFIX } from '../../common/constants/upload.constants';
-import { Prisma } from '../../generated/prisma/client';
+import { NotificationType, Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { AVATAR_FRAMES, AvatarFrameDefinition } from './avatar-frame.constants';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -160,7 +160,11 @@ export class UsersService {
         },
       }),
       this.prisma.document.aggregate({
-        where: { authorId: userId, status: DocumentStatus.APPROVED, deletedAt: null },
+        where: {
+          authorId: userId,
+          status: DocumentStatus.APPROVED,
+          deletedAt: null,
+        },
         _count: { _all: true },
         _sum: { viewCount: true },
       }),
@@ -181,7 +185,10 @@ export class UsersService {
     };
   }
 
-  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<SelfProfile> {
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<SelfProfile> {
     const current = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
       select: { id: true, studentCode: true },
@@ -201,7 +208,10 @@ export class UsersService {
       const studentCode = dto.studentCode.trim();
       data.studentCode = studentCode === '' ? null : studentCode;
 
-      if (data.studentCode !== null && data.studentCode !== current.studentCode) {
+      if (
+        data.studentCode !== null &&
+        data.studentCode !== current.studentCode
+      ) {
         // Mã sinh viên là unique toàn bảng (kể cả tài khoản đã xoá mềm).
         const taken = await this.prisma.user.findFirst({
           where: { studentCode: data.studentCode, NOT: { id: userId } },
@@ -209,7 +219,9 @@ export class UsersService {
         });
 
         if (taken) {
-          throw new ConflictException('Mã sinh viên đã được dùng bởi tài khoản khác');
+          throw new ConflictException(
+            'Mã sinh viên đã được dùng bởi tài khoản khác',
+          );
         }
       }
     }
@@ -233,7 +245,9 @@ export class UsersService {
     } catch (error) {
       // Chống race condition: hai request cùng set một mã sinh viên.
       if (isUniqueConstraintError(error)) {
-        throw new ConflictException('Mã sinh viên đã được dùng bởi tài khoản khác');
+        throw new ConflictException(
+          'Mã sinh viên đã được dùng bởi tài khoản khác',
+        );
       }
 
       throw error;
@@ -254,7 +268,10 @@ export class UsersService {
   /** Danh sách tài khoản cho admin: tìm theo email/tên/mã SV, lọc role, status, đã bị cảnh báo. */
   async findAllForAdmin(query: AdminUsersQuery): Promise<PaginatedUsers> {
     const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
-    const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE));
+    const limit = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE),
+    );
 
     const where: Prisma.UserWhereInput = { deletedAt: null };
 
@@ -332,10 +349,15 @@ export class UsersService {
   }
 
   /**
-   * Cảnh báo tài khoản: ghi `UserWarning`, tăng `warningCount`.
+   * Cảnh báo tài khoản: ghi `UserWarning`, tăng `warningCount` và gửi thông báo trong app
+   * để sinh viên biết mình vừa bị cảnh báo (kèm lý do + số cảnh báo).
    * Đủ 3 cảnh báo → tự khoá (`BANNED`); `JwtAuthGuard` và login đã chặn tài khoản bị khoá.
    */
-  async warn(userId: string, adminId: string, reason: string): Promise<AdminUserDetail> {
+  async warn(
+    userId: string,
+    adminId: string,
+    reason: string,
+  ): Promise<AdminUserDetail> {
     if (userId === adminId) {
       throw new BadRequestException('Không thể tự gửi cảnh báo cho chính mình');
     }
@@ -350,22 +372,41 @@ export class UsersService {
     }
 
     if (target.role === Role.ADMIN) {
-      throw new BadRequestException('Không thể gửi cảnh báo cho tài khoản quản trị');
+      throw new BadRequestException(
+        'Không thể gửi cảnh báo cho tài khoản quản trị',
+      );
     }
 
     if (target.status === 'BANNED') {
-      throw new ConflictException('Tài khoản đã bị khoá, không gửi cảnh báo thêm được');
+      throw new ConflictException(
+        'Tài khoản đã bị khoá, không gửi cảnh báo thêm được',
+      );
     }
 
     const nextCount = target.warningCount + 1;
+    const banned = nextCount >= 3;
+    const trimmedReason = reason.trim();
 
     await this.prisma.$transaction([
-      this.prisma.userWarning.create({ data: { reason: reason.trim(), userId, adminId } }),
+      this.prisma.userWarning.create({
+        data: { reason: trimmedReason, userId, adminId },
+      }),
       this.prisma.user.update({
         where: { id: userId },
+        data: { warningCount: nextCount, status: banned ? 'BANNED' : 'WARNED' },
+      }),
+      // Cùng transaction với cảnh báo: không có chuyện bị cảnh báo mà không nhận thông báo.
+      this.prisma.notification.create({
         data: {
-          warningCount: nextCount,
-          status: nextCount >= 3 ? 'BANNED' : 'WARNED',
+          type: NotificationType.ACCOUNT_WARNING,
+          title: banned
+            ? 'Tài khoản của bạn đã bị khoá'
+            : `Bạn nhận cảnh báo thứ ${nextCount}/3`,
+          message: banned
+            ? `Lý do: ${trimmedReason} — đây là cảnh báo thứ 3 nên tài khoản đã bị khoá. Liên hệ quản trị viên nếu cần giải thích.`
+            : `Lý do: ${trimmedReason} — bạn đang có ${nextCount}/3 cảnh báo; đủ 3 cảnh báo tài khoản sẽ bị khoá.`,
+          link: '/profile',
+          userId,
         },
       }),
     ]);
@@ -399,7 +440,10 @@ export class UsersService {
   }
 
   /** Chọn khung avatar (null = bỏ khung); chặn khung chưa đủ cấp. */
-  async setAvatarFrame(userId: string, frameId: string | null): Promise<SelfProfile> {
+  async setAvatarFrame(
+    userId: string,
+    frameId: string | null,
+  ): Promise<SelfProfile> {
     const user = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
       select: { id: true, level: true },
@@ -430,12 +474,18 @@ export class UsersService {
   }
 
   /** Upsert catalog vào bảng AvatarFrame để `User.avatarFrameId` luôn có khoá ngoại hợp lệ. */
-  private async ensureAvatarFrames(frames: AvatarFrameDefinition[] = AVATAR_FRAMES): Promise<void> {
+  private async ensureAvatarFrames(
+    frames: AvatarFrameDefinition[] = AVATAR_FRAMES,
+  ): Promise<void> {
     await this.prisma.$transaction(
       frames.map((frame) =>
         this.prisma.avatarFrame.upsert({
           where: { id: frame.id },
-          update: { name: frame.name, minLevel: frame.minLevel, assetUrl: frame.assetUrl },
+          update: {
+            name: frame.name,
+            minLevel: frame.minLevel,
+            assetUrl: frame.assetUrl,
+          },
           create: {
             id: frame.id,
             name: frame.name,
@@ -447,7 +497,10 @@ export class UsersService {
     );
   }
 
-  private async update(userId: string, data: Prisma.UserUpdateInput): Promise<SelfProfile> {
+  private async update(
+    userId: string,
+    data: Prisma.UserUpdateInput,
+  ): Promise<SelfProfile> {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data,
