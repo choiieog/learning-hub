@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RateLimitGuard } from './common/guards/rate-limit.guard';
+import { RateLimitStoreService } from './common/guards/rate-limit.store';
 import { MailModule } from './infra/mail/mail.module';
 import { PrismaModule } from './infra/prisma/prisma.module';
 import { StorageModule } from './infra/storage/storage.module';
@@ -42,7 +43,9 @@ import { UsersModule } from './modules/users/users.module';
   controllers: [AppController],
   providers: [
     AppService,
-    // Global nhưng chỉ áp dụng cho route có @RateLimit (login, forgot-password, đăng tài liệu).
+    // Bộ đếm rate limit: Redis khi có REDIS_URL, ngược lại RAM của process.
+    RateLimitStoreService,
+    // Global nhưng chỉ áp dụng cho route có @RateLimit (login, register, quên mật khẩu…).
     { provide: APP_GUARD, useClass: RateLimitGuard },
   ],
 })

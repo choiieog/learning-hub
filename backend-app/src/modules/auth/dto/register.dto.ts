@@ -1,5 +1,11 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MESSAGES,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_PATTERN,
+} from '../../../common/validators/password.constraints';
 
 const normalizeEmail = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim().toLowerCase() : value;
@@ -11,8 +17,9 @@ export class RegisterDto {
   email: string;
 
   @IsString()
-  @MinLength(8, { message: 'Mật khẩu phải có ít nhất 8 ký tự' })
-  @MaxLength(72, { message: 'Mật khẩu tối đa 72 ký tự' })
+  @MinLength(PASSWORD_MIN_LENGTH, { message: PASSWORD_MESSAGES.minLength })
+  @MaxLength(PASSWORD_MAX_LENGTH, { message: PASSWORD_MESSAGES.maxLength })
+  @Matches(PASSWORD_PATTERN, { message: PASSWORD_MESSAGES.composition })
   password: string;
 
   @IsString()

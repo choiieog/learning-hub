@@ -1,16 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
-import {
-  API_BASE_URL,
-  AUTH_TOKEN_KEY,
-  AUTH_USER_KEY,
-  REFRESH_TOKEN_KEY,
-} from '../constants/api.constants';
+import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
+import { API_BASE_URL, AUTH_USER_KEY } from '../constants/api.constants';
 import {
   ApiResponse,
   AuthResponse,
   ChangePasswordPayload,
+  ChangePasswordResult,
   LoginPayload,
   MessageResult,
   RegisterPayload,
@@ -22,8 +18,12 @@ import {
  * Trạng thái đăng nhập dùng signals → component đọc trực tiếp:
  *   auth.isAuthenticated() | auth.currentUser() | auth.isAdmin()
  *
- * TODO(phase 1): lưu refresh token an toàn hơn, và gọi POST /auth/refresh
- * trong errorInterceptor khi access token hết hạn (401).
+ * Bảo mật:
+ *  - access token (15 phút) chỉ nằm trong memory, không ghi localStorage;
+ *  - refresh token nằm trong cookie HttpOnly do backend set, JavaScript không đọc được;
+ *  - sau F5, `bootstrapSession()` đổi cookie lấy access token mới;
+ *  - khi API trả 401, `errorInterceptor` gọi `refreshAccessToken()` rồi chạy lại
+ *    request một lần (nhiều request đồng thời dùng chung một lần refresh).
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -31,11 +31,19 @@ export class AuthService {
   private readonly baseUrl = `${API_BASE_URL}/auth`;
 
   private readonly userSignal = signal<User | null>(readStoredUser());
+  private accessToken: string | null = null;
+  /** Dùng chung cho mọi request cùng lúc bị 401 — tránh gọi /refresh N lần. */
+  private refreshRequest$: Observable<AuthResponse> | null = null;
 
   readonly currentUser = this.userSignal.asReadonly();
   readonly isAuthenticated = computed(() => this.userSignal() !== null);
   readonly isAdmin = computed(() => this.userSignal()?.role === 'ADMIN');
   readonly level = computed(() => this.userSignal()?.level ?? 1);
+
+  /** Access token hiện tại — chỉ interceptor dùng. */
+  token(): string | null {
+    return this.accessToken;
+  }
 
   /**
    * Creates an unverified account and triggers the verification email.
@@ -80,20 +88,76 @@ export class AuthService {
 
   login(payload: LoginPayload): Observable<AuthResponse> {
     return this.http
-      .post<ApiResponse<AuthResponse>>(`${this.baseUrl}/login`, payload)
+      .post<ApiResponse<AuthResponse>>(`${this.baseUrl}/login`, payload, { withCredentials: true })
       .pipe(
         map((res) => res.data),
         tap((session) => this.setSession(session)),
       );
   }
 
-  changePassword(payload: ChangePasswordPayload): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/password`, payload);
+  /**
+   * Đổi mật khẩu. Server cấp lại cặp token cho phiên hiện tại (các thiết bị khác bị
+   * đăng xuất), nên người dùng **không** phải đăng nhập lại.
+   */
+  changePassword(payload: ChangePasswordPayload): Observable<ChangePasswordResult> {
+    return this.http
+      .patch<ApiResponse<ChangePasswordResult>>(`${this.baseUrl}/password`, payload, {
+        withCredentials: true,
+      })
+      .pipe(
+        map((res) => res.data),
+        tap((result) => this.setSession({ accessToken: result.accessToken, user: result.user })),
+      );
+  }
+
+  /**
+   * Đổi refresh token (trong cookie) lấy access token mới. Lỗi thì xoá phiên.
+   * `shareReplay` + biến `refreshRequest$`: nhiều request 401 cùng lúc chỉ refresh một lần.
+   */
+  refreshAccessToken(): Observable<AuthResponse> {
+    if (!this.refreshRequest$) {
+      this.refreshRequest$ = this.http
+        .post<ApiResponse<AuthResponse>>(`${this.baseUrl}/refresh`, {}, { withCredentials: true })
+        .pipe(
+          map((res) => res.data),
+          tap((session) => this.setSession(session)),
+          catchError((error: unknown) => {
+            this.clearSession();
+            return throwError(() => error);
+          }),
+          finalize(() => {
+            this.refreshRequest$ = null;
+          }),
+          shareReplay({ bufferSize: 1, refCount: false }),
+        );
+    }
+
+    return this.refreshRequest$;
+  }
+
+  /** Chạy lúc app khởi động: đã từng đăng nhập thì thử lấy lại access token từ cookie. */
+  bootstrapSession(): Observable<void> {
+    if (!this.userSignal()) {
+      return of(undefined);
+    }
+
+    return this.refreshAccessToken().pipe(
+      map(() => undefined),
+      catchError(() => of(undefined)),
+    );
   }
 
   logout(): void {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    // Thu hồi phiên ở backend (xoá hash + cookie); lỗi mạng vẫn phải xoá state local.
+    this.http
+      .post(`${this.baseUrl}/logout`, {}, { withCredentials: true })
+      .subscribe({ error: () => undefined });
+    this.clearSession();
+  }
+
+  /** Xoá state local ngay (không gọi API) — dùng khi refresh thất bại. */
+  clearSession(): void {
+    this.accessToken = null;
     localStorage.removeItem(AUTH_USER_KEY);
     this.userSignal.set(null);
   }
@@ -104,9 +168,9 @@ export class AuthService {
     this.userSignal.set(user);
   }
 
-  private setSession(session: AuthResponse): void {
-    localStorage.setItem(AUTH_TOKEN_KEY, session.accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, session.refreshToken);
+  /** Lưu phiên server vừa trả: access token vào memory, user vào signal + localStorage. */
+  setSession(session: AuthResponse): void {
+    this.accessToken = session.accessToken;
     this.setCurrentUser(session.user);
   }
 }

@@ -121,9 +121,9 @@ describe('Quên mật khẩu (e2e)', () => {
       .post('/api/auth/login')
       .send({ email, password: oldPassword })
       .expect(201);
-    const loginBody = loginResponse.body as ApiEnvelope<{ refreshToken: string }>;
-    const oldRefreshToken = loginBody.data.refreshToken;
-    expect(oldRefreshToken).toBeTruthy();
+    // Refresh token nằm trong cookie HttpOnly, không trả về body.
+    const oldRefreshCookies = loginResponse.headers['set-cookie'] as unknown as string[];
+    expect(oldRefreshCookies.some((cookie) => cookie.startsWith('lh_refresh='))).toBe(true);
 
     const resetResponse = await request(app.getHttpServer())
       .post('/api/auth/reset-password')
@@ -141,7 +141,7 @@ describe('Quên mật khẩu (e2e)', () => {
     // Phiên cũ bị thu hồi: refresh token trước đó không còn hiệu lực.
     await request(app.getHttpServer())
       .post('/api/auth/refresh')
-      .send({ refreshToken: oldRefreshToken })
+      .set('Cookie', oldRefreshCookies)
       .expect(401);
 
     // Mật khẩu cũ không đăng nhập được, mật khẩu mới thì được.

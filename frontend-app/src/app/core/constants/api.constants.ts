@@ -9,6 +9,9 @@
  */
 export const API_BASE_URL = '/api';
 
-export const AUTH_TOKEN_KEY = 'lh_access_token';
-export const REFRESH_TOKEN_KEY = 'lh_refresh_token';
+/**
+ * Chỉ giữ hồ sơ user trong localStorage (không phải bí mật) để F5 vẫn vẽ được UI ngay.
+ * Access token nằm trong memory, refresh token nằm trong cookie HttpOnly —
+ * không có token nào trong localStorage.
+ */
 export const AUTH_USER_KEY = 'lh_user';

@@ -19,6 +19,24 @@ interface AccessTokenPayload {
   type?: string;
 }
 
+interface CachedUser {
+  id: string;
+  email: string;
+  role: Role;
+  status: string;
+  emailVerifiedAt: Date | null;
+  expiresAt: number;
+}
+
+/**
+ * Cache user 30 giây: đổi role/ban vẫn có hiệu lực gần như ngay, nhưng một trang
+ * gọi 5 API song song không còn 5 query `User` trùng nhau.
+ *
+ * Đặt ở module scope vì guard được Nest khởi tạo theo từng chỗ `@UseGuards`.
+ */
+const USER_CACHE_TTL_MS = 30_000;
+const USER_CACHE = new Map<string, CachedUser>();
+
 /**
  * Verifies the Bearer access token and attaches `request.user`.
  * Usage: `@UseGuards(JwtAuthGuard)` on any controller that must be private,
@@ -55,14 +73,7 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Token không hợp lệ cho thao tác này');
     }
 
-    const user = await this.prisma.user.findFirst({
-      where: { id: payload.sub, deletedAt: null },
-      select: { id: true, email: true, role: true, status: true, emailVerifiedAt: true },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Tài khoản không tồn tại');
-    }
+    const user = await this.loadUser(payload.sub);
 
     if (user.status === 'BANNED') {
       throw new ForbiddenException('Tài khoản đã bị khóa');
@@ -78,10 +89,39 @@ export class JwtAuthGuard implements CanActivate {
     request.user = {
       id: user.id,
       email: user.email,
-      role: user.role as Role,
+      role: user.role,
     };
 
     return true;
+  }
+
+  /** User theo id, cache 30s; không tồn tại (đã xoá cứng) thì 401. */
+  private async loadUser(userId: string): Promise<CachedUser> {
+    const cached = USER_CACHE.get(userId);
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached;
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true, email: true, role: true, status: true, emailVerifiedAt: true },
+    });
+
+    if (!user) {
+      USER_CACHE.delete(userId);
+      throw new UnauthorizedException('Tài khoản không tồn tại');
+    }
+
+    const entry: CachedUser = {
+      ...user,
+      role: user.role as Role,
+      expiresAt: Date.now() + USER_CACHE_TTL_MS,
+    };
+
+    USER_CACHE.set(userId, entry);
+
+    return entry;
   }
 }
 

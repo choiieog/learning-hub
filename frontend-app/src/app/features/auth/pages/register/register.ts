@@ -10,6 +10,7 @@ import { RouterLink } from '@angular/router';
 import { RegisterPayload } from '../../../../core/models';
 import { AuthService } from '../../../../core/services/auth.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
+import { passwordValidators } from '../../../../core/validators/password.validator';
 
 /** Cross-field check: the confirmation must equal the password. */
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
@@ -123,9 +124,9 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
             formControlName="password"
             autocomplete="new-password"
           />
-          <p class="field-hint">Ít nhất 8 ký tự.</p>
+          <p class="field-hint">Ít nhất 8 ký tự, gồm cả chữ cái và chữ số.</p>
           @if (showError('password')) {
-            <p class="field-error">Mật khẩu phải có ít nhất 8 ký tự.</p>
+            <p class="field-error">Mật khẩu phải có ít nhất 8 ký tự, gồm cả chữ cái và chữ số.</p>
           }
         </div>
 
@@ -161,10 +162,10 @@ export class Register {
 
   protected readonly form = this.fb.nonNullable.group(
     {
-      fullName: ['', [Validators.required]],
+      fullName: ['', [Validators.required, Validators.maxLength(120)]],
       email: ['', [Validators.required, Validators.email]],
-      studentCode: [''],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      studentCode: ['', [Validators.maxLength(20)]],
+      password: ['', passwordValidators],
       confirmPassword: ['', [Validators.required]],
     },
     { validators: passwordsMatch },

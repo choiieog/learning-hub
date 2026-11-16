@@ -9,6 +9,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
+import { passwordValidators } from '../../../../core/validators/password.validator';
 
 /** `confirmPassword` phải trùng `newPassword`. */
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
@@ -121,15 +122,7 @@ export class ResetPassword {
 
   protected readonly form = this.fb.nonNullable.group(
     {
-      newPassword: [
-        '',
-        [
-          Validators.required,
-          Validators.minLength(8),
-          Validators.maxLength(72),
-          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/),
-        ],
-      ],
+      newPassword: ['', passwordValidators],
       confirmPassword: ['', [Validators.required]],
     },
     { validators: passwordMatchValidator },

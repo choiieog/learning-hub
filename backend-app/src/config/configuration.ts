@@ -4,6 +4,9 @@
  * and validate with Joi/zod so a missing required variable fails fast.
  */
 export interface AppConfiguration {
+  env: {
+    isProduction: boolean;
+  };
   port: number;
   /** Frontend origin, used to build the email verification link. */
   appUrl: string;
@@ -41,8 +44,16 @@ export interface AppConfiguration {
     trustProxy: boolean;
     login: { limit: number; windowMs: number };
     forgotPassword: { limit: number; windowMs: number };
+    /** Đăng ký gửi email xác thực, nên phải chặn spam. */
+    register: { limit: number; windowMs: number };
+    resendVerification: { limit: number; windowMs: number };
     documentCreate: { limit: number; windowMs: number };
   };
+  /**
+   * Redis cho rate limit khi chạy nhiều instance (null = dùng bộ đếm trong RAM).
+   * Ví dụ: redis://localhost:6379
+   */
+  redisUrl: string | null;
 }
 
 /** Parses "15m" / "7d" / "30s" / "12h" into seconds; falls back when malformed. */
@@ -53,14 +64,57 @@ function positiveInt(value: string | undefined, fallback: number): number {
 }
 
 /** Số phút → ms; sai/thiếu thì dùng mặc định. */
-function minutesToMs(value: string | undefined, fallbackMinutes: number): number {
+function minutesToMs(
+  value: string | undefined,
+  fallbackMinutes: number,
+): number {
   const parsed = Number(value);
-  const safeMinutes = Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMinutes;
+  const safeMinutes =
+    Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMinutes;
 
   return Math.round(safeMinutes * 60 * 1000);
 }
 
-function parseDuration(value: string | undefined, fallbackSeconds: number): number {
+/**
+ * Chặn khởi động khi production thiếu/để mặc định secret JWT.
+ * Trước đây quên set env vẫn chạy bình thường với `dev-access-secret`, nghĩa là
+ * ai đọc source cũng ký được token `role: ADMIN`.
+ */
+export function assertSecureSecrets(): void {
+  const config = loadConfiguration();
+
+  if (!config.env.isProduction) {
+    return;
+  }
+
+  const problems: string[] = [];
+  const secretProblems: [string, string, string][] = [
+    ['JWT_ACCESS_SECRET', config.jwt.accessSecret, 'dev-access-secret'],
+    ['JWT_REFRESH_SECRET', config.jwt.refreshSecret, 'dev-refresh-secret'],
+  ];
+
+  for (const [name, value, devDefault] of secretProblems) {
+    if (!process.env[name] || value === devDefault || value.length < 32) {
+      problems.push(`${name} phải được set và dài tối thiểu 32 ký tự`);
+    }
+  }
+
+  if (config.jwt.accessSecret === config.jwt.refreshSecret) {
+    problems.push('JWT_ACCESS_SECRET và JWT_REFRESH_SECRET phải khác nhau');
+  }
+
+  if (problems.length > 0) {
+    throw new Error(
+      `Cấu hình không an toàn cho production:\n- ${problems.join('\n- ')}\n` +
+        'Sinh secret bằng: openssl rand -hex 32',
+    );
+  }
+}
+
+function parseDuration(
+  value: string | undefined,
+  fallbackSeconds: number,
+): number {
   const match = /^(\d+)\s*([smhd])$/.exec(value?.trim() ?? '');
 
   if (!match) {
@@ -74,50 +128,78 @@ function parseDuration(value: string | undefined, fallbackSeconds: number): numb
   return amount * secondsPerUnit;
 }
 
-export default (): AppConfiguration => ({
-  port: Number(process.env.PORT ?? 3000),
-  appUrl: process.env.APP_URL ?? 'http://localhost:4200',
-  corsOrigins: (process.env.CORS_ORIGIN ?? 'http://localhost:4200').split(','),
-  jwt: {
-    accessSecret: process.env.JWT_ACCESS_SECRET ?? 'dev-access-secret',
-    accessTtl: process.env.JWT_ACCESS_TTL ?? '15m',
-    accessTtlSeconds: parseDuration(process.env.JWT_ACCESS_TTL, 15 * 60),
-    refreshSecret: process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret',
-    refreshTtl: process.env.JWT_REFRESH_TTL ?? '7d',
-    refreshTtlSeconds: parseDuration(process.env.JWT_REFRESH_TTL, 7 * 24 * 60 * 60),
-  },
-  mail: {
-    driver: (process.env.MAIL_DRIVER as AppConfiguration['mail']['driver']) ?? 'console',
-    from: process.env.MAIL_FROM ?? 'Learning Hub <no-reply@learninghub.local>',
-    smtp: {
-      host: process.env.SMTP_HOST ?? '',
-      port: Number(process.env.SMTP_PORT ?? 587),
-      user: process.env.SMTP_USER ?? '',
-      pass: process.env.SMTP_PASS ?? '',
-      secure:
-        process.env.SMTP_SECURE !== undefined
-          ? process.env.SMTP_SECURE === 'true'
-          : Number(process.env.SMTP_PORT ?? 587) === 465,
+function loadConfiguration(): AppConfiguration {
+  return {
+    env: {
+      isProduction: process.env.NODE_ENV === 'production',
     },
-  },
-  storage: {
-    driver: (process.env.STORAGE_DRIVER as AppConfiguration['storage']['driver']) ?? 'local',
-    uploadDir: process.env.UPLOAD_DIR ?? './uploads',
-    maxUploadSizeMb: Number(process.env.MAX_UPLOAD_SIZE_MB ?? 20),
-  },
-  rateLimit: {
-    trustProxy: process.env.TRUST_PROXY === 'true',
-    login: {
-      limit: positiveInt(process.env.RATE_LIMIT_LOGIN_MAX, 10),
-      windowMs: minutesToMs(process.env.RATE_LIMIT_LOGIN_WINDOW_MIN, 5),
+    port: Number(process.env.PORT ?? 3000),
+    appUrl: process.env.APP_URL ?? 'http://localhost:4200',
+    corsOrigins: (process.env.CORS_ORIGIN ?? 'http://localhost:4200').split(
+      ',',
+    ),
+    jwt: {
+      accessSecret: process.env.JWT_ACCESS_SECRET ?? 'dev-access-secret',
+      accessTtl: process.env.JWT_ACCESS_TTL ?? '15m',
+      accessTtlSeconds: parseDuration(process.env.JWT_ACCESS_TTL, 15 * 60),
+      refreshSecret: process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret',
+      refreshTtl: process.env.JWT_REFRESH_TTL ?? '7d',
+      refreshTtlSeconds: parseDuration(
+        process.env.JWT_REFRESH_TTL,
+        7 * 24 * 60 * 60,
+      ),
     },
-    forgotPassword: {
-      limit: positiveInt(process.env.RATE_LIMIT_FORGOT_MAX, 5),
-      windowMs: minutesToMs(process.env.RATE_LIMIT_FORGOT_WINDOW_MIN, 15),
+    mail: {
+      driver:
+        (process.env.MAIL_DRIVER as AppConfiguration['mail']['driver']) ??
+        'console',
+      from:
+        process.env.MAIL_FROM ?? 'Learning Hub <no-reply@learninghub.local>',
+      smtp: {
+        host: process.env.SMTP_HOST ?? '',
+        port: Number(process.env.SMTP_PORT ?? 587),
+        user: process.env.SMTP_USER ?? '',
+        pass: process.env.SMTP_PASS ?? '',
+        secure:
+          process.env.SMTP_SECURE !== undefined
+            ? process.env.SMTP_SECURE === 'true'
+            : Number(process.env.SMTP_PORT ?? 587) === 465,
+      },
     },
-    documentCreate: {
-      limit: positiveInt(process.env.RATE_LIMIT_DOCUMENT_MAX, 10),
-      windowMs: minutesToMs(process.env.RATE_LIMIT_DOCUMENT_WINDOW_MIN, 60),
+    storage: {
+      driver:
+        (process.env.STORAGE_DRIVER as AppConfiguration['storage']['driver']) ??
+        'local',
+      uploadDir: process.env.UPLOAD_DIR ?? './uploads',
+      maxUploadSizeMb: Number(process.env.MAX_UPLOAD_SIZE_MB ?? 20),
     },
-  },
-});
+    rateLimit: {
+      trustProxy: process.env.TRUST_PROXY === 'true',
+      login: {
+        limit: positiveInt(process.env.RATE_LIMIT_LOGIN_MAX, 10),
+        windowMs: minutesToMs(process.env.RATE_LIMIT_LOGIN_WINDOW_MIN, 5),
+      },
+      forgotPassword: {
+        limit: positiveInt(process.env.RATE_LIMIT_FORGOT_MAX, 5),
+        windowMs: minutesToMs(process.env.RATE_LIMIT_FORGOT_WINDOW_MIN, 15),
+      },
+      register: {
+        limit: positiveInt(process.env.RATE_LIMIT_REGISTER_MAX, 5),
+        windowMs: minutesToMs(process.env.RATE_LIMIT_REGISTER_WINDOW_MIN, 60),
+      },
+      resendVerification: {
+        limit: positiveInt(process.env.RATE_LIMIT_RESEND_MAX, 3),
+        windowMs: minutesToMs(process.env.RATE_LIMIT_RESEND_WINDOW_MIN, 15),
+      },
+      documentCreate: {
+        limit: positiveInt(process.env.RATE_LIMIT_DOCUMENT_MAX, 10),
+        windowMs: minutesToMs(process.env.RATE_LIMIT_DOCUMENT_WINDOW_MIN, 60),
+      },
+    },
+    redisUrl: process.env.REDIS_URL?.trim()
+      ? process.env.REDIS_URL.trim()
+      : null,
+  };
+}
+
+export default loadConfiguration;

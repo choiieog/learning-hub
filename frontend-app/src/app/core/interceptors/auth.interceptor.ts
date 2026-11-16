@@ -1,9 +1,13 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { AUTH_TOKEN_KEY } from '../constants/api.constants';
+import { inject } from '@angular/core';
+import { AuthService } from '../services/auth.service';
 
-/** Gắn Bearer token vào mọi request ra API. */
+/**
+ * Gắn Bearer token vào mọi request ra API.
+ * Token nằm trong memory (AuthService), không ở localStorage → XSS không đọc được.
+ */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const token = inject(AuthService).token();
 
   if (!token) {
     return next(req);

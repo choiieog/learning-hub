@@ -18,6 +18,12 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 const BCRYPT_ROUNDS = 10;
+
+/**
+ * Hash giả cho nhánh "email không tồn tại": vẫn tốn đúng một lần bcrypt.compare
+ * nên thời gian phản hồi không tiết lộ email nào đã đăng ký.
+ */
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync('learning-hub-timing-guard', BCRYPT_ROUNDS);
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 5 * 60 * 1000;
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
@@ -192,7 +198,12 @@ export class AuthService {
       where: { email: dto.email, deletedAt: null },
     });
 
-    if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
+    const passwordMatches = await bcrypt.compare(
+      dto.password,
+      user?.passwordHash ?? DUMMY_PASSWORD_HASH,
+    );
+
+    if (!user || !passwordMatches) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
@@ -240,7 +251,38 @@ export class AuthService {
     return this.issueTokens(user.id);
   }
 
-  async changePassword(userId: string, dto: ChangePasswordDto): Promise<{ message: string }> {
+  /**
+   * Logout: xoá hash refresh token của phiên hiện tại. Token sai/hết hạn thì bỏ qua
+   * — client vẫn xoá cookie nên thao tác luôn thành công.
+   */
+  async revokeSession(refreshToken: string | null): Promise<void> {
+    if (!refreshToken) {
+      return;
+    }
+
+    try {
+      const payload = await this.jwt.verifyAsync<{ sub: string; type?: string }>(refreshToken, {
+        secret: this.config.jwt.refreshSecret,
+      });
+
+      if (payload.type !== 'refresh') {
+        return;
+      }
+
+      await this.prisma.user.updateMany({
+        where: { id: payload.sub },
+        data: { refreshTokenHash: null },
+      });
+    } catch {
+      // Token hết hạn hoặc đã bị rotate: coi như phiên đã kết thúc.
+    }
+  }
+
+  /**
+   * Đổi mật khẩu. Phiên hiện tại được giữ: cấp lại token (hash refresh token mới thay
+   * hash cũ) nên các thiết bị khác bị đăng xuất, còn người vừa đổi không phải login lại.
+   */
+  async changePassword(userId: string, dto: ChangePasswordDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
@@ -257,15 +299,16 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: {
-        passwordHash: await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS),
-        // Revoke every existing session.
-        refreshTokenHash: null,
-      },
+      data: { passwordHash: await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS) },
     });
 
+    // Cấp lại cặp token: hash mới ghi đè hash cũ ⇒ thiết bị khác mất phiên,
+    // còn request này trả token mới để frontend tiếp tục dùng.
+    const session = await this.issueTokens(userId);
+
     return {
-      message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại trên các thiết bị khác.',
+      message: 'Đổi mật khẩu thành công. Các thiết bị khác đã bị đăng xuất.',
+      ...session,
     };
   }
 

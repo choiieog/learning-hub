@@ -10,6 +10,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
+import { passwordValidators } from '../../../../core/validators/password.validator';
 
 /** `confirmPassword` phải trùng `newPassword`. */
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
@@ -27,8 +28,8 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
  * Đổi mật khẩu.
  *
  * Backend (PATCH /api/auth/password) kiểm mật khẩu cũ, từ chối mật khẩu mới trùng mật khẩu cũ
- * và thu hồi mọi refresh token. Vì vậy sau khi đổi thành công, client xoá phiên hiện tại
- * và yêu cầu đăng nhập lại.
+ * rồi cấp lại token cho phiên hiện tại: các thiết bị khác bị đăng xuất nhưng người vừa đổi
+ * mật khẩu tiếp tục dùng bình thường, không phải đăng nhập lại.
  */
 @Component({
   selector: 'app-change-password',
@@ -39,7 +40,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
       <div>
         <h1 class="text-2xl font-semibold tracking-tight">Đổi mật khẩu</h1>
         <p class="mt-1 text-sm text-slate-500">
-          Sau khi đổi, bạn cần đăng nhập lại trên mọi thiết bị.
+          Các thiết bị khác sẽ bị đăng xuất; phiên đang dùng vẫn tiếp tục.
         </p>
       </div>
       <a routerLink="/profile" class="btn-secondary w-auto">Quay lại hồ sơ</a>
@@ -92,9 +93,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
             [attr.aria-invalid]="showError('newPassword')"
           />
           @if (showError('newPassword')) {
-            <p class="field-error">
-              Mật khẩu 8–72 ký tự, gồm ít nhất một chữ cái và một chữ số.
-            </p>
+            <p class="field-error">Mật khẩu 8–72 ký tự, gồm ít nhất một chữ cái và một chữ số.</p>
           }
         </div>
 
@@ -132,23 +131,13 @@ export class ChangePassword {
   protected readonly form = this.fb.nonNullable.group(
     {
       currentPassword: ['', [Validators.required]],
-      newPassword: [
-        '',
-        [
-          Validators.required,
-          Validators.minLength(8),
-          Validators.maxLength(72),
-          Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/),
-        ],
-      ],
+      newPassword: ['', passwordValidators],
       confirmPassword: ['', [Validators.required]],
     },
     { validators: passwordMatchValidator },
   );
 
-  protected showError(
-    control: 'currentPassword' | 'newPassword' | 'confirmPassword',
-  ): boolean {
+  protected showError(control: 'currentPassword' | 'newPassword' | 'confirmPassword'): boolean {
     const field = this.form.controls[control];
     if (field.touched && field.invalid) {
       return true;
@@ -177,14 +166,12 @@ export class ChangePassword {
       .changePassword({ currentPassword, newPassword })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => {
+        next: (result) => {
           this.submitting.set(false);
-          // Backend đã thu hồi refresh token → xoá phiên hiện tại.
-          this.auth.logout();
+          // Backend cấp lại token cho phiên hiện tại → không phải đăng nhập lại.
+          this.auth.setSession({ accessToken: result.accessToken, user: result.user });
           this.form.reset();
-          this.success.set(
-            'Mật khẩu đã được cập nhật. Vui lòng đăng nhập lại bằng mật khẩu mới.',
-          );
+          this.success.set(result.message);
         },
         error: (error: unknown) => {
           this.submitting.set(false);

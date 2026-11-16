@@ -59,9 +59,9 @@ export interface ResendVerificationPayload {
   email: string;
 }
 
+/** Response của POST /auth/login và /auth/refresh — refresh token nằm trong cookie HttpOnly. */
 export interface AuthResponse {
   accessToken: string;
-  refreshToken: string;
   user: User;
 }
 
@@ -84,6 +84,13 @@ export interface UpdateProfilePayload {
 export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
+}
+
+/** Response của PATCH /auth/password — kèm token mới để giữ phiên hiện tại. */
+export interface ChangePasswordResult {
+  message: string;
+  accessToken: string;
+  user: User;
 }
 
 export interface UserWarning {
