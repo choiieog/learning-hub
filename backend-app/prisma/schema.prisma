@@ -36,6 +36,8 @@ enum NotificationType {
   DOCUMENT_REJECTED
   DOCUMENT_DELETED
   SYSTEM
+  /// Admin gửi cảnh báo cho tài khoản (kèm lý do, đếm tới 3 thì khoá)
+  ACCOUNT_WARNING
 }
 
 enum ExpReason {
@@ -72,8 +74,10 @@ model User {
   ratings       Rating[]
   warnings      UserWarning[]  @relation("WarningTarget")
   givenWarnings UserWarning[]  @relation("WarningAdmin")
-  notifications Notification[]
-  expLogs       ExpLog[]
+    notifications   Notification[]
+  notificationReads NotificationRead[]
+  expLogs         ExpLog[]
+  uploadedFiles   UploadedFile[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
 
@@ -114,7 +118,6 @@ model Subject {
   code          String     @unique // vd: INT2204
   name          String
   description   String?
-  documentCount Int        @default(0)
   deletedAt     DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -145,9 +148,10 @@ model Document {
   subject   Subject  @relation(fields: [subjectId], references: [id])
   author    User     @relation(fields: [authorId], references: [id])
 
-  files   DocumentFile[]
-  views   DocumentView[]
-  ratings Rating[]
+  files         DocumentFile[]
+  views         DocumentView[]
+  ratings       Rating[]
+  uploadedFiles UploadedFile[]
 
   @@index([status, publishedAt])
   @@index([subjectId, status])
@@ -167,6 +171,32 @@ model DocumentFile {
 
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
+  @@index([documentId])
+}
+
+///
+/// File đã upload qua POST /api/uploads — nguồn sự thật cho metadata.
+/// Nhờ bảng này, body tạo tài liệu chỉ được tham chiếu `publicId` đã tồn tại
+/// (không tự khai name/size/mimeType), và biết được file nào chưa gắn tài liệu
+/// để dọn file mồ côi.
+///
+model UploadedFile {
+  id         String   @id @default(uuid())
+  publicId   String   @unique
+  url        String
+  name       String
+  size       Int
+  mimeType   String
+  folder     String
+  ownerId    String
+  /// Tài liệu đang dùng file này; null = chưa dùng.
+  documentId String?
+  createdAt  DateTime @default(now())
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  document Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId, createdAt])
   @@index([documentId])
 }
 
@@ -224,10 +254,28 @@ model Notification {
   readAt    DateTime?
   createdAt DateTime         @default(now())
 
-  user User? @relation(fields: [userId], references: [id])
+  user  User?            @relation(fields: [userId], references: [id])
+  reads NotificationRead[]
 
   @@index([userId, readAt])
   @@index([createdAt])
+}
+
+///
+/// Trạng thái "đã đọc" của **thông báo chung** (userId = null), tách theo từng người.
+/// Tin chung chỉ có một row nhưng mỗi user đọc riêng, nên không thể dùng
+/// `Notification.readAt` (sẽ đánh dấu đọc cho tất cả mọi người).
+///
+model NotificationRead {
+  userId         String
+  notificationId String
+  readAt         DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, notificationId])
+  @@index([notificationId])
 }
 
 model ExpLog {
