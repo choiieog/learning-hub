@@ -50,7 +50,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
       <div class="alert alert-success mt-6" role="status">
         <p class="font-medium">Đổi mật khẩu thành công</p>
         <p class="mt-1">{{ success() }}</p>
-        <a routerLink="/auth/login" class="btn-primary mt-3 w-auto">Đăng nhập lại</a>
+        <a routerLink="/profile" class="btn-primary mt-3 w-auto">Về hồ sơ</a>
       </div>
     } @else {
       <form
