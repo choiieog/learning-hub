@@ -23,4 +23,5 @@ artifacts/
 
 # tài liệu thiết kế và script vận hành (giữ cục bộ, không track)
 docs/
-scripts/
+# script tiện ích ở gốc repo (backend-app/scripts/ là mã nguồn, phải commit)
+/scripts/
