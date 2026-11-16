@@ -48,7 +48,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
         <h2 class="text-base font-semibold">Thêm môn học</h2>
 
         <form
-          class="mt-4 grid max-w-3xl gap-4 sm:grid-cols-2"
+          class="mt-4 grid max-w-3xl gap-4 grid-cols-2"
           [formGroup]="form"
           (ngSubmit)="create()"
           novalidate
@@ -85,7 +85,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
             }
           </div>
 
-          <div class="field sm:col-span-2">
+          <div class="field col-span-2">
             <label class="field-label" for="description">Mô tả (không bắt buộc)</label>
             <textarea
               id="description"
@@ -97,7 +97,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
             ></textarea>
           </div>
 
-          <div class="sm:col-span-2">
+          <div class="col-span-2">
             <button class="btn-primary w-auto" type="submit" [disabled]="saving()">
               {{ saving() ? 'Đang thêm...' : 'Thêm môn học' }}
             </button>
@@ -120,7 +120,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
     } @else {
       <div class="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div
-          class="hidden grid-cols-12 gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 md:grid"
+          class="grid-cols-12 gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 grid"
         >
           <span class="col-span-2">Mã môn</span>
           <span class="col-span-4">Tên môn</span>
@@ -131,19 +131,19 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
 
         @for (subject of subjects(); track subject.id) {
           <div
-            class="grid grid-cols-1 gap-2 border-b border-slate-100 px-5 py-3.5 last:border-b-0 md:grid-cols-12 md:items-center md:gap-3"
+            class="grid border-b border-slate-100 px-5 py-3.5 last:border-b-0 grid-cols-12 items-center gap-3"
           >
-            <p class="font-mono text-sm font-semibold text-indigo-700 md:col-span-2">
+            <p class="text-sm font-semibold text-indigo-700 col-span-2">
               {{ subject.code }}
             </p>
-            <p class="text-sm font-medium text-slate-900 md:col-span-4">{{ subject.name }}</p>
-            <p class="line-clamp-2 text-sm text-slate-500 md:col-span-3">
+            <p class="text-sm font-medium text-slate-900 col-span-4">{{ subject.name }}</p>
+            <p class="line-clamp-2 text-sm text-slate-500 col-span-3">
               {{ subject.description || '—' }}
             </p>
-            <p class="text-sm text-slate-600 md:col-span-2 md:text-right">
+            <p class="text-sm text-slate-600 col-span-2 text-right">
               {{ subject.documentCount }} tài liệu
             </p>
-            <div class="md:col-span-1 md:text-right">
+            <div class="col-span-1 text-right">
               <button
                 type="button"
                 class="rounded-md px-2 py-1 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
@@ -166,7 +166,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
         <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true">
           <h2 class="text-lg font-semibold">Xoá môn {{ target.code }}?</h2>
           <p class="mt-2 text-sm text-slate-600">
-            Môn “{{ target.name }}” sẽ bị ẩn khỏi danh mục. Hành động này không xoá tài liệu.
+            Môn “{{ target.name }}” sẽ bị xoá vĩnh viễn khỏi cơ sở dữ liệu. Chỉ xoá được khi môn không còn tài liệu nào.
           </p>
 
           @if (deleteError()) {
@@ -291,7 +291,7 @@ export class AdminSubjects implements OnInit {
         next: () => {
           this.deleting.set(false);
           this.deleteTarget.set(null);
-          this.success.set(`Đã xoá môn ${target.code}.`);
+          this.success.set(`Đã xoá môn ${target.code} khỏi cơ sở dữ liệu.`);
           this.fetch();
         },
         error: (error: unknown) => {

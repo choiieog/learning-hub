@@ -1,7 +1,12 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { DocumentStatus } from '../../common/enums/document-status.enum';
 import { PrismaService } from '../../infra/prisma/prisma.service';
+import { StorageService } from '../../infra/storage/storage.service';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 
 export interface SubjectSummary {
@@ -19,7 +24,9 @@ const SUBJECT_SELECT = {
   description: true,
   _count: {
     select: {
-      documents: { where: { status: DocumentStatus.APPROVED, deletedAt: null } },
+      documents: {
+        where: { status: DocumentStatus.APPROVED, deletedAt: null },
+      },
     },
   },
 } as const;
@@ -32,7 +39,10 @@ const SUBJECT_SELECT = {
  */
 @Injectable()
 export class SubjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
   /** Danh sách môn học + số tài liệu đã duyệt của mỗi môn. */
   async findAll(_query?: PaginationQueryDto): Promise<SubjectSummary[]> {
@@ -84,14 +94,27 @@ export class SubjectsService {
     return toSummary(subject);
   }
 
-  /** Xoá mềm; chặn khi môn còn tài liệu (kể cả bài đang chờ duyệt / bị từ chối). */
+  /**
+   * Xoá **thật** khỏi cơ sở dữ liệu (trước đây chỉ set `deletedAt` nên bảng vẫn còn row).
+   *
+   * - Chặn khi môn còn tài liệu chưa xoá (kể cả PENDING/REJECTED).
+   * - Tài liệu đã xoá mềm vẫn giữ khoá ngoại tới môn, nên dọn chúng trước khi
+   *   `delete`, nếu không Postgres chặn bằng FK. File của chúng đã bị xoá lúc xoá bài;
+   *   lượt xoá ở đây chỉ dọn nốt file còn sót từ dữ liệu cũ.
+   */
   async remove(id: string): Promise<{ id: string; message: string }> {
     const subject = await this.prisma.subject.findFirst({
       where: { id, deletedAt: null },
       select: {
         id: true,
         code: true,
-        _count: { select: { documents: { where: { deletedAt: null } } } },
+        documents: {
+          select: {
+            id: true,
+            deletedAt: true,
+            files: { select: { publicId: true } },
+          },
+        },
       },
     });
 
@@ -99,15 +122,33 @@ export class SubjectsService {
       throw new NotFoundException('Không tìm thấy môn học');
     }
 
-    if (subject._count.documents > 0) {
+    const activeCount = subject.documents.filter(
+      (document) => !document.deletedAt,
+    ).length;
+
+    if (activeCount > 0) {
       throw new ConflictException(
-        `Không thể xoá môn ${subject.code}: còn ${subject._count.documents} tài liệu đang dùng môn này.`,
+        `Không thể xoá môn ${subject.code}: còn ${activeCount} tài liệu đang dùng môn này.`,
       );
     }
 
-    await this.prisma.subject.update({ where: { id }, data: { deletedAt: new Date() } });
+    const documentIds = subject.documents.map((document) => document.id);
+    const publicIds = subject.documents.flatMap((document) =>
+      document.files.map((file) => file.publicId),
+    );
 
-    return { id, message: `Đã xoá môn ${subject.code}.` };
+    await this.prisma.$transaction(async (tx) => {
+      // UploadedFile.documentId là SetNull nên phải xoá tay để không còn metadata mồ côi.
+      await tx.uploadedFile.deleteMany({
+        where: { documentId: { in: documentIds } },
+      });
+      await tx.document.deleteMany({ where: { id: { in: documentIds } } });
+      await tx.subject.delete({ where: { id } });
+    });
+
+    await this.storage.removeMany(publicIds);
+
+    return { id, message: `Đã xoá môn ${subject.code} khỏi cơ sở dữ liệu.` };
   }
 
   /** Dùng nội bộ khi tạo tài liệu: ném NotFoundException nếu môn không tồn tại. */
