@@ -11,6 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { AppNotification, PaginationMeta } from '../../../../core/models';
+import { NotificationStateService } from '../../../../core/services/notification-state.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
 
@@ -161,6 +162,7 @@ const PAGE_SIZE = 10;
 })
 export class NotificationList implements OnInit {
   private readonly notificationsApi = inject(NotificationService);
+  private readonly notificationState = inject(NotificationStateService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -172,7 +174,8 @@ export class NotificationList implements OnInit {
     total: 0,
     totalPages: 0,
   });
-  protected readonly unreadCount = signal(0);
+  /** Dùng chung với chuông trên header nên badge đổi ngay, không cần reload. */
+  protected readonly unreadCount = this.notificationState.unreadCount;
   protected readonly unreadOnly = signal(false);
   protected readonly loading = signal(true);
   protected readonly errors = signal<string[]>([]);
@@ -221,8 +224,8 @@ export class NotificationList implements OnInit {
   /** Mở thông báo: đánh dấu đã đọc rồi đi tới tài liệu liên quan (nếu có). */
   protected open(item: AppNotification): void {
     if (!item.readAt) {
-      this.notificationsApi
-        .markRead(item.id)
+      this.notificationState
+        .markRead(item.id, true)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
@@ -233,7 +236,6 @@ export class NotificationList implements OnInit {
                   : notification,
               ),
             );
-            this.unreadCount.update((count) => Math.max(0, count - 1));
           },
           error: () => undefined,
         });
@@ -247,7 +249,7 @@ export class NotificationList implements OnInit {
   protected markAllRead(): void {
     this.markingAll.set(true);
 
-    this.notificationsApi
+    this.notificationState
       .markAllRead()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -281,7 +283,7 @@ export class NotificationList implements OnInit {
         next: (result) => {
           this.items.set(result.items);
           this.meta.set(result.meta);
-          this.unreadCount.set(result.unreadCount);
+          this.notificationState.syncFromPage(result);
           this.loading.set(false);
         },
         error: (error: unknown) => {

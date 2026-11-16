@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppNotification } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationStateService } from '../../core/services/notification-state.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { initials } from '../../core/utils/format.util';
 
@@ -184,6 +185,7 @@ import { initials } from '../../core/utils/format.util';
 export class UserLayout {
   protected readonly auth = inject(AuthService);
   private readonly notificationsApi = inject(NotificationService);
+  private readonly notificationState = inject(NotificationStateService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -196,7 +198,8 @@ export class UserLayout {
 
   protected readonly panelOpen = signal(false);
   protected readonly notifications = signal<AppNotification[]>([]);
-  protected readonly unreadCount = signal(0);
+  /** Dùng chung với trang /notifications để badge đổi ngay khi đọc tin ở đó. */
+  protected readonly unreadCount = this.notificationState.unreadCount;
   protected readonly loading = signal(false);
 
   constructor() {
@@ -215,15 +218,14 @@ export class UserLayout {
   /** Mở thông báo: đánh dấu đã đọc rồi đi tới tài liệu liên quan. */
   protected openNotification(item: AppNotification): void {
     if (!item.readAt) {
-      this.notificationsApi
-        .markRead(item.id)
+      this.notificationState
+        .markRead(item.id, true)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
             this.notifications.update((list) =>
               list.map((n) => (n.id === item.id ? { ...n, readAt: new Date().toISOString() } : n)),
             );
-            this.unreadCount.update((count) => Math.max(0, count - 1));
           },
           error: () => undefined,
         });
@@ -237,14 +239,13 @@ export class UserLayout {
   }
 
   protected markAllRead(): void {
-    this.notificationsApi
+    this.notificationState
       .markAllRead()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           const now = new Date().toISOString();
           this.notifications.update((list) => list.map((n) => ({ ...n, readAt: n.readAt ?? now })));
-          this.unreadCount.set(0);
         },
         error: () => undefined,
       });
@@ -264,7 +265,7 @@ export class UserLayout {
       .subscribe({
         next: (page) => {
           this.notifications.set(page.items);
-          this.unreadCount.set(page.unreadCount);
+          this.notificationState.syncFromPage(page);
           this.loading.set(false);
         },
         error: () => this.loading.set(false),
