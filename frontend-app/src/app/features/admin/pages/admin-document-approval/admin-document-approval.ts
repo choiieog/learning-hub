@@ -9,7 +9,6 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import {
   DocumentFile,
@@ -20,6 +19,7 @@ import {
 import { AdminService } from '../../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
 import { fileExtension, formatFileSize, initials } from '../../../../core/utils/format.util';
+import { DocumentPreview } from '../../../documents/components/document-preview/document-preview';
 
 const PAGE_SIZE = 10;
 const MIN_REJECT_REASON = 10;
@@ -36,7 +36,7 @@ type StatusTab = { value: DocumentStatus; label: string; hint: string };
 @Component({
   selector: 'app-admin-document-approval',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, DocumentPreview],
   template: `
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
@@ -228,32 +228,9 @@ type StatusTab = { value: DocumentStatus; label: string; hint: string };
                 }
               </div>
 
-              @if (previewUrl(); as url) {
-                <iframe
-                  [src]="url"
-                  [title]="'Xem trước ' + (selectedFile()?.name ?? 'tài liệu')"
-                  class="mt-4 h-[420px] w-full rounded-lg border border-slate-200 bg-slate-50"
-                ></iframe>
-                <p class="mt-2 text-xs text-slate-400">
-                  PDF hiển thị trực tiếp. Nếu khung trống, trình duyệt không có trình đọc PDF —
-                  <a [href]="selectedFile()?.url" target="_blank" rel="noopener noreferrer" class="text-indigo-600">
-                    mở file ở tab mới
-                  </a>.
-                </p>
-              } @else if (selectedFile(); as file) {
-                <div class="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-                  <p class="text-sm font-medium text-slate-700">Không xem trước được {{ fileTypeName(file) }}</p>
-                  <p class="mt-1 text-xs text-slate-500">
-                    Định dạng này cần tải về để mở bằng Word/PowerPoint.
-                  </p>
-                  <a
-                    [href]="file.url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="btn-secondary mt-4"
-                  >
-                    Mở file ở tab mới
-                  </a>
+              @if (selectedFile(); as file) {
+                <div class="mt-4">
+                  <app-document-preview [file]="file" />
                 </div>
               } @else {
                 <p class="mt-4 text-sm text-slate-500">Tài liệu không có file đính kèm.</p>
@@ -345,7 +322,6 @@ type StatusTab = { value: DocumentStatus; label: string; hint: string };
 export class AdminDocumentApproval implements OnInit {
   private readonly adminApi = inject(AdminService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly sanitizer = inject(DomSanitizer);
 
   protected readonly minRejectReason = MIN_REJECT_REASON;
 
@@ -376,15 +352,6 @@ export class AdminDocumentApproval implements OnInit {
   protected readonly selectedFile = computed<DocumentFile | null>(() => {
     const item = this.selected();
     return item?.files[this.selectedFileIndex()] ?? null;
-  });
-
-  protected readonly previewUrl = computed<SafeResourceUrl | null>(() => {
-    const file = this.selectedFile();
-    if (!file || fileExtension(file.name) !== 'PDF') {
-      return null;
-    }
-
-    return this.sanitizer.bypassSecurityTrustResourceUrl(file.url);
   });
 
   ngOnInit(): void {
