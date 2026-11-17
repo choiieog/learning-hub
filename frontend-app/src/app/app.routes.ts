@@ -101,7 +101,6 @@ export const routes: Routes = [
       {
         path: 'upload',
         title: 'Đăng tài liệu · Learning Hub',
-        canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
           import('./features/documents/pages/document-upload/document-upload').then(
             (m) => m.DocumentUpload,

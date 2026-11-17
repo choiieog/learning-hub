@@ -6,7 +6,8 @@ export interface HasUnsavedChanges {
 }
 
 /**
- * Chặn điều hướng khi dữ liệu chưa lưu (đang điền form hồ sơ, đã chọn file upload…).
+ * Chặn điều hướng khi dữ liệu chưa lưu — hiện dùng cho form hồ sơ (`/profile`).
+ * Trang Đăng tài liệu không dùng guard: tự dọn form sau khi tạo bài để không tạo bài trùng.
  *
  * Dùng ở route-level: `canDeactivate: [unsavedChangesGuard]`. Với F5/đóng tab,
  * component tự nghe `beforeunload` (guard không chạy trong trường hợp đó).

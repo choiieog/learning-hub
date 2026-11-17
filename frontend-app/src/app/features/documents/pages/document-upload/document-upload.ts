@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  HostListener,
   OnInit,
   computed,
   inject,
@@ -272,24 +271,6 @@ export class DocumentUpload implements OnInit {
       this.files().length > 0,
   );
 
-  /** Đã chọn file / điền nội dung mà chưa gửi → guard hỏi trước khi rời trang. */
-  hasUnsavedChanges(): boolean {
-    return (
-      this.files().length > 0 ||
-      this.title().trim() !== '' ||
-      this.description().trim() !== '' ||
-      this.selectedSubjectId() !== ''
-    );
-  }
-
-  /** F5 / đóng tab: guard không chạy nên phải hỏi bằng beforeunload. */
-  @HostListener('window:beforeunload', ['$event'])
-  protected warnBeforeUnload(event: BeforeUnloadEvent): void {
-    if (this.hasUnsavedChanges()) {
-      event.preventDefault();
-    }
-  }
-
   ngOnInit(): void {
     this.subjectsApi
       .list()
@@ -470,7 +451,12 @@ export class DocumentUpload implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (document) => {
+          // Dọn form trước khi rời trang: bấm lại "Đăng tài liệu" không tạo bài trùng.
           this.uploaded.set([]);
+          this.files.set([]);
+          this.title.set('');
+          this.description.set('');
+          this.selectedSubjectId.set('');
           this.finish();
           // Chủ bài xem được tài liệu PENDING của mình ở trang chi tiết.
           void this.router.navigate(['/documents', document.id]);
