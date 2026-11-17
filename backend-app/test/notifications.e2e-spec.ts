@@ -282,6 +282,8 @@ describe('Thông báo (e2e)', () => {
     expect(deleted?.message).toContain(title);
     // Bài đã biến mất nên thông báo không kèm link.
     expect(deleted?.link).toBeNull();
+    // Admin gỡ là xoá cứng: không còn row Document nào của bài.
+    expect(await prisma.document.findUnique({ where: { id: documentId } })).toBeNull();
   });
 
   it('admin gửi thông báo hàng loạt → mọi người thấy, sinh viên không gửi được', async () => {
@@ -321,5 +323,90 @@ describe('Thông báo (e2e)', () => {
       .set(bearer(adminToken))
       .send({ title: 'ab', message: 'ngan' })
       .expect(400);
+  });
+
+  it('sinh viên xoá được thông báo cá nhân, không xoá được thông báo chung', async () => {
+    const personal = await prisma.notification.create({
+      data: {
+        type: NotificationType.DOCUMENT_APPROVED,
+        title: `Tin cá nhân ${suffix}`,
+        message: 'Bài của bạn đã được duyệt.',
+        userId: authorId,
+      },
+      select: { id: true },
+    });
+    const broadcast = await prisma.notification.create({
+      data: {
+        type: NotificationType.SYSTEM,
+        title: `Tin chung ${suffix}`,
+        message: 'Thông báo chung dùng để kiểm quyền xoá.',
+      },
+      select: { id: true },
+    });
+    notificationIds.push(personal.id, broadcast.id);
+
+    // Tin chung là row dùng chung: sinh viên không xoá được.
+    await server()
+      .delete(`/api/notifications/${broadcast.id}`)
+      .set(bearer(authorToken))
+      .expect(403);
+
+    // Người khác cũng không xoá được tin cá nhân của tác giả.
+    await server()
+      .delete(`/api/notifications/${personal.id}`)
+      .set(bearer(otherToken))
+      .expect(403);
+
+    await server()
+      .delete(`/api/notifications/${personal.id}`)
+      .set(bearer(authorToken))
+      .expect(200);
+
+    const page = await notifications(authorToken, '?limit=50');
+    expect(page.items.some((item) => item.id === personal.id)).toBe(false);
+    expect(await prisma.notification.findUnique({ where: { id: personal.id } })).toBeNull();
+    expect(await prisma.notification.findUnique({ where: { id: broadcast.id } })).not.toBeNull();
+  });
+
+  it('admin xem lại và thu hồi thông báo chung → biến mất với mọi người', async () => {
+    const broadcast = await prisma.notification.create({
+      data: {
+        type: NotificationType.SYSTEM,
+        title: `Tin chung thu hồi ${suffix}`,
+        message: 'Tin chung này sẽ bị quản trị viên thu hồi.',
+      },
+      select: { id: true },
+    });
+    notificationIds.push(broadcast.id);
+    await prisma.notificationRead.create({
+      data: { userId: authorId, notificationId: broadcast.id },
+    });
+
+    const list = await server()
+      .get('/api/admin/notifications')
+      .query({ limit: 50 })
+      .set(bearer(adminToken))
+      .expect(200);
+    const listBody = list.body as Envelope<{ items: { id: string }[] }>;
+    expect(listBody.data.items.map((item) => item.id)).toContain(broadcast.id);
+
+    // Sinh viên không gọi được endpoint thu hồi.
+    await server()
+      .delete(`/api/admin/notifications/${broadcast.id}`)
+      .set(bearer(authorToken))
+      .expect(403);
+
+    await server()
+      .delete(`/api/admin/notifications/${broadcast.id}`)
+      .set(bearer(adminToken))
+      .expect(200);
+
+    const authorPage = await notifications(authorToken, '?limit=50');
+    expect(authorPage.items.some((item) => item.id === broadcast.id)).toBe(false);
+    expect(await prisma.notification.findUnique({ where: { id: broadcast.id } })).toBeNull();
+    // Trạng thái đọc của mọi người bị xoá theo cascade.
+    expect(
+      await prisma.notificationRead.count({ where: { notificationId: broadcast.id } }),
+    ).toBe(0);
   });
 });

@@ -28,4 +28,11 @@ export class NotificationService {
       .patch<ApiResponse<{ updated: number }>>(`${this.baseUrl}/read-all`, {})
       .pipe(map((res) => res.data));
   }
+
+  /** Xoá thông báo cá nhân của chính mình; tin chung là việc của admin. */
+  remove(id: string): Observable<{ id: string }> {
+    return this.http
+      .delete<ApiResponse<{ id: string }>>(`${this.baseUrl}/${id}`)
+      .pipe(map((res) => res.data));
+  }
 }

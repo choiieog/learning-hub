@@ -1,7 +1,9 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { AppNotification } from '../../../../core/models';
 import { AdminService } from '../../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
 
@@ -10,12 +12,13 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
  *
  * Backend lưu một row `Notification.userId = null` (`POST /api/admin/notifications/broadcast`),
  * nên mọi sinh viên thấy cùng một tin trong chuông và trang `/notifications`.
- * Không sửa/xoá được sau khi gửi — nội dung nên là thông báo chung (bảo trì, lịch thi, quy định).
+ * Không sửa được sau khi gửi; gửi nhầm thì thu hồi ở danh sách "Đã gửi gần đây" (xoá hẳn
+ * row dùng chung, `NotificationRead` của mọi người bị dọn theo cascade).
  */
 @Component({
   selector: 'app-admin-broadcast',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe],
   template: `
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -88,14 +91,53 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
       </div>
 
       <div class="mt-2 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        Thông báo gửi đi không sửa hay thu hồi được. Chỉ dùng cho thông tin chung, không dùng để
-        nhắc riêng một tài khoản (dùng “Quản lý tài khoản” → gửi cảnh báo).
+        Thông báo gửi đi không sửa được. Chỉ dùng cho thông tin chung, không dùng để nhắc riêng một
+        tài khoản (dùng “Quản lý tài khoản” → gửi cảnh báo). Gửi nhầm thì thu hồi ở danh sách bên dưới.
       </div>
 
       <button class="btn-primary mt-6" type="submit" [disabled]="submitting()">
         {{ submitting() ? 'Đang gửi...' : 'Gửi tới tất cả sinh viên' }}
       </button>
     </form>
+
+    <section class="mt-10 max-w-3xl">
+      <h2 class="text-lg font-semibold tracking-tight">Đã gửi gần đây</h2>
+      <p class="mt-1 text-sm text-slate-500">
+        Thu hồi thông báo gửi nhầm — tin biến mất khỏi chuông của mọi sinh viên.
+      </p>
+
+      @if (loadingSent()) {
+        <p class="mt-4 text-sm text-slate-500" aria-busy="true">Đang tải...</p>
+      } @else if (sentItems().length === 0) {
+        <p
+          class="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500"
+        >
+          Chưa gửi thông báo chung nào.
+        </p>
+      } @else {
+        <ul class="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+          @for (item of sentItems(); track item.id) {
+            <li class="flex items-start gap-3 px-4 py-3">
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-slate-900">{{ item.title }}</p>
+                <p class="mt-1 text-sm text-slate-600">{{ item.message }}</p>
+                <p class="mt-1 text-xs text-slate-400">
+                  {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+                </p>
+              </div>
+              <button
+                type="button"
+                class="shrink-0 self-center rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 transition hover:border-rose-300 hover:text-rose-600"
+                [attr.aria-label]="'Thu hồi thông báo: ' + item.title"
+                (click)="revoke(item)"
+              >
+                Thu hồi
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
   `,
 })
 export class AdminBroadcast {
@@ -106,6 +148,45 @@ export class AdminBroadcast {
   protected readonly submitting = signal(false);
   protected readonly sent = signal<string | null>(null);
   protected readonly errors = signal<string[]>([]);
+  protected readonly sentItems = signal<AppNotification[]>([]);
+  protected readonly loadingSent = signal(true);
+
+  constructor() {
+    this.loadSent();
+  }
+
+  private loadSent(): void {
+    this.loadingSent.set(true);
+
+    this.adminApi
+      .broadcastNotifications()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          this.sentItems.set(page.items);
+          this.loadingSent.set(false);
+        },
+        error: () => this.loadingSent.set(false),
+      });
+  }
+
+  /** Thu hồi thông báo chung: xoá hẳn nên cần xác nhận trước. */
+  protected revoke(item: AppNotification): void {
+    if (!confirm(`Thu hồi “${item.title}” khỏi chuông của mọi sinh viên?`)) {
+      return;
+    }
+
+    this.errors.set([]);
+
+    this.adminApi
+      .removeBroadcastNotification(item.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () =>
+          this.sentItems.update((list) => list.filter((sent) => sent.id !== item.id)),
+        error: (error: unknown) => this.errors.set(getApiErrorMessages(error)),
+      });
+  }
 
   protected readonly form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(120)]],
@@ -140,6 +221,7 @@ export class AdminBroadcast {
           this.submitting.set(false);
           this.sent.set(notification.title);
           this.form.reset();
+          this.loadSent();
         },
         error: (error: unknown) => {
           this.submitting.set(false);

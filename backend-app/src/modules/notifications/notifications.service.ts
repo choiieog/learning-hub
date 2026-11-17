@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -14,6 +14,8 @@ const NOTIFICATION_SELECT = {
   title: true,
   message: true,
   link: true,
+  // `null` = thông báo chung; client cần biết để chỉ hiện nút xoá với tin cá nhân.
+  userId: true,
   readAt: true,
   createdAt: true,
 } satisfies Prisma.NotificationSelect;
@@ -24,6 +26,8 @@ export interface NotificationSummary {
   title: string;
   message: string;
   link: string | null;
+  /** `null` = thông báo chung (mọi người thấy cùng một row). */
+  userId: string | null;
   readAt: Date | null;
   createdAt: Date;
 }
@@ -237,5 +241,79 @@ export class NotificationsService {
     }
 
     return { updated: personal.count + broadcasts.length };
+  }
+
+  /**
+   * Người dùng xoá một thông báo cá nhân của mình. Thông báo chung là row dùng chung
+   * nên chỉ admin mới thu hồi được (`deleteBroadcast`).
+   */
+  async deleteOwn(id: string, userId: string): Promise<{ id: string }> {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id },
+      select: { id: true, userId: true },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Không tìm thấy thông báo');
+    }
+
+    if (notification.userId !== userId) {
+      throw new ForbiddenException(
+        notification.userId === null
+          ? 'Thông báo chung chỉ quản trị viên mới thu hồi được.'
+          : 'Bạn chỉ có thể xoá thông báo của mình.',
+      );
+    }
+
+    await this.prisma.notification.delete({ where: { id } });
+
+    return { id };
+  }
+
+  /**
+   * Admin thu hồi thông báo chung: xoá row dùng chung, `NotificationRead` của mọi người
+   * bị xoá theo cascade nên tin biến mất khỏi tất cả chuông.
+   */
+  async deleteBroadcast(id: string): Promise<{ id: string }> {
+    const notification = await this.prisma.notification.findFirst({
+      where: { id, userId: null },
+      select: { id: true },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Không tìm thấy thông báo chung');
+    }
+
+    await this.prisma.notification.delete({ where: { id } });
+
+    return { id };
+  }
+
+  /** Thông báo chung admin đã gửi, mới nhất trước — để xem lại và thu hồi. */
+  async findBroadcasts(
+    query: ListNotificationsQueryDto,
+  ): Promise<Omit<PaginatedNotifications, 'unreadCount'>> {
+    const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
+    const limit = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE),
+    );
+    const where: Prisma.NotificationWhereInput = { userId: null };
+
+    const [total, items] = await this.prisma.$transaction([
+      this.prisma.notification.count({ where }),
+      this.prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: NOTIFICATION_SELECT,
+      }),
+    ]);
+
+    return {
+      items,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 }

@@ -1,28 +1,29 @@
 # modules/notifications
 
-Thông báo trong app — **đã triển khai** cho luồng duyệt bài (làm sớm từ giai đoạn 2).
+Thông báo trong app: kết quả duyệt/từ chối/xoá bài, cảnh báo tài khoản, tin chung của admin.
 
 ## Đang có
 
-- `DocumentsService.approve()` → tạo `Notification` type `DOCUMENT_APPROVED`
-  (message: "“<title>” đã được duyệt và hiển thị công khai với mọi sinh viên.", `link = /documents/<id>`).
-- `DocumentsService.reject(id, reason)` → tạo `Notification` type `DOCUMENT_REJECTED`, message kèm `Lý do: <reason>`.
-- `GET /api/notifications?page&limit&unreadOnly` — thông báo của tôi, mới nhất trước, trả kèm `unreadCount`.
-- `PATCH /api/notifications/:id/read` — đánh dấu 1 tin đã đọc (`readAt`), 404 nếu không phải thông báo của mình.
-- `PATCH /api/notifications/read-all` — đánh dấu tất cả tin cá nhân chưa đọc của mình.
+Sinh viên (`JwtAuthGuard`):
 
-Tất cả endpoint đều sau `JwtAuthGuard` (khách chưa đăng nhập → 401).
+- `GET /api/notifications?page&limit&unreadOnly` — tin cá nhân + tin chung, mới nhất trước, kèm `unreadCount`.
+  Mỗi item có `userId` (`null` = tin chung) để client biết tin nào mình được xoá.
+- `PATCH /api/notifications/:id/read` — đánh dấu 1 tin đã đọc.
+- `PATCH /api/notifications/read-all` — đánh dấu tất cả tin chưa đọc của mình.
+- `DELETE /api/notifications/:id` — xoá **thông báo cá nhân của mình**; tin chung trả 403 (chỉ admin thu hồi).
+
+Admin (`RolesGuard`, `ADMIN`):
+
+- `POST /api/admin/notifications/broadcast` — gửi tin chung (`userId = null`).
+- `GET /api/admin/notifications` — tin chung đã gửi, mới nhất trước.
+- `DELETE /api/admin/notifications/:id` — thu hồi tin chung; `NotificationRead` của mọi người bị xoá theo cascade.
+
+Nguồn tạo tin: `approve()`, `reject()`, `removeByAdmin()`, `warn()` (cảnh báo tài khoản), `broadcast()`.
 
 ## Quy ước
 
-- `readAt IS NULL` = chưa đọc; badge trên `UserLayout` dùng `unreadCount`.
-- `Notification.userId = null` là thông báo chung (broadcast) — hiển thị cho mọi người nhưng **chưa có trạng thái đọc riêng**
-  (vì vậy `markRead` trả 404 cho broadcast, không đánh dấu đọc được).
-- Không thêm migration: model `Notification` + enum `NotificationType` đã có trong `schema.prisma`.
-
-## Còn thiếu
-
-- `POST /api/admin/notifications/broadcast` — gửi thông báo chung (`userId = null`).
-- Thông báo khi admin **xoá** bài.
-- Trang danh sách thông báo đầy đủ (hiện chỉ có dropdown 8 tin gần nhất ở header).
-- Trạng thái đọc cho broadcast (cần bảng `NotificationRead` hoặc nhân bản theo user).
+- Tin cá nhân: 1 row/người, trạng thái đọc nằm ở `Notification.readAt`.
+- Tin chung: 1 row dùng chung (`userId = null`) nên trạng thái đọc tách sang `NotificationRead(userId, notificationId)`;
+  badge trên `UserLayout` và trang `/notifications` dùng chung một signal (`NotificationStateService`).
+- Prune (`npm run db:prune`): tin chung cũ hơn `NOTIFICATION_READ_RETENTION_DAYS` bị xoá cùng read row;
+  tin cá nhân **đã đọc** cũ hơn `PERSONAL_NOTIFICATION_RETENTION_DAYS` bị xoá, tin chưa đọc luôn giữ.

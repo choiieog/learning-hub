@@ -110,6 +110,22 @@ export class AdminService {
       .pipe(map((res) => res.data));
   }
 
+  /** Thông báo chung đã gửi, mới nhất trước — để thu hồi khi cần. */
+  broadcastNotifications(): Observable<Paginated<AppNotification>> {
+    return this.http
+      .get<ApiResponse<Paginated<AppNotification>>>(`${this.baseUrl}/notifications`, {
+        params: toHttpParams({ limit: 20 }),
+      })
+      .pipe(map((res) => res.data));
+  }
+
+  /** Thu hồi thông báo chung khỏi chuông của mọi người. */
+  removeBroadcastNotification(id: string): Observable<{ id: string }> {
+    return this.http
+      .delete<ApiResponse<{ id: string }>>(`${this.baseUrl}/notifications/${id}`)
+      .pipe(map((res) => res.data));
+  }
+
   // --- Cấu hình hệ thống ---
 
   settings(): Observable<SystemSettings> {

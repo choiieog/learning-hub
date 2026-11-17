@@ -1,8 +1,9 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { ListNotificationsQueryDto } from '../notifications/dto/list-notifications-query.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { BroadcastNotificationDto } from './dto/broadcast-notification.dto';
 
@@ -20,5 +21,17 @@ export class AdminNotificationsController {
   @Post('broadcast')
   broadcast(@Body() dto: BroadcastNotificationDto) {
     return this.notificationsService.broadcast(dto);
+  }
+
+  /** GET /api/admin/notifications — thông báo chung đã gửi, mới nhất trước. */
+  @Get()
+  findBroadcasts(@Query() query: ListNotificationsQueryDto) {
+    return this.notificationsService.findBroadcasts(query);
+  }
+
+  /** DELETE /api/admin/notifications/:id — thu hồi thông báo chung khỏi mọi người. */
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.notificationsService.deleteBroadcast(id);
   }
 }

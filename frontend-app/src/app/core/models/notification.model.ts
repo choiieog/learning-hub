@@ -11,6 +11,8 @@ export interface AppNotification {
   title: string;
   message: string;
   link?: string;
+  /** `null` = thông báo chung (mọi người thấy cùng một tin), nên chỉ admin xoá được. */
+  userId: string | null;
   readAt?: string;
   createdAt: string;
 }

@@ -91,7 +91,7 @@ const PAGE_SIZE = 10;
     } @else {
       <ul class="mt-6 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
         @for (item of items(); track item.id) {
-          <li>
+          <li class="flex items-start">
             <button
               type="button"
               class="flex w-full items-start gap-3 px-4 py-4 text-left transition hover:bg-slate-50"
@@ -115,6 +115,18 @@ const PAGE_SIZE = 10;
                 </p>
               </div>
             </button>
+
+            <!-- Tin chung là row dùng chung nên chỉ admin thu hồi được. -->
+            @if (item.userId) {
+              <button
+                type="button"
+                class="mr-3 shrink-0 self-center rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 transition hover:border-rose-300 hover:text-rose-600"
+                [attr.aria-label]="'Xoá thông báo: ' + item.title"
+                (click)="remove(item)"
+              >
+                Xoá
+              </button>
+            }
           </li>
         }
       </ul>
@@ -266,6 +278,23 @@ export class NotificationList implements OnInit {
           this.markingAll.set(false);
           this.errors.set(getApiErrorMessages(error));
         },
+      });
+  }
+
+  /** Xoá thông báo cá nhân của mình; tải lại danh sách để số chưa đọc khớp server. */
+  protected remove(item: AppNotification): void {
+    if (!confirm('Xoá thông báo này? Thao tác không hoàn tác được.')) {
+      return;
+    }
+
+    this.errors.set([]);
+
+    this.notificationsApi
+      .remove(item.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.fetch(this.route.snapshot.queryParamMap),
+        error: (error: unknown) => this.errors.set(getApiErrorMessages(error)),
       });
   }
 
