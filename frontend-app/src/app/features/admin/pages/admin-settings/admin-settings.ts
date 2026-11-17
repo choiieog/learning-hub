@@ -1,18 +1,16 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminService } from '../../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
 
-const MAX_DAILY_LIMIT = 50;
-
 /**
  * Cấu hình hệ thống (admin).
  *
- * Hiện có giới hạn số bài đăng mỗi ngày: backend đọc `SystemSetting` ngay trong
- * `DocumentsService.create`, nên lưu ở đây là áp dụng tức thì cho mọi sinh viên.
- * `0` nghĩa là không giới hạn (mặc định).
+ * Hiện có một công tắc: cho phép hay tạm khoá việc đăng tài liệu. Backend đọc
+ * `SystemSetting.document.uploadsEnabled` ngay trong `DocumentsService.create`, nên lưu
+ * ở đây là áp dụng tức thì cho mọi sinh viên; tắt thì bài mới bị chặn với 403.
  */
 @Component({
   selector: 'app-admin-settings',
@@ -46,7 +44,7 @@ const MAX_DAILY_LIMIT = 50;
     @if (loading()) {
       <div class="mt-6 max-w-2xl animate-pulse rounded-xl border border-slate-200 bg-white p-6">
         <div class="h-4 w-1/3 rounded bg-slate-200"></div>
-        <div class="mt-4 h-10 w-40 rounded bg-slate-100"></div>
+        <div class="mt-4 h-5 w-2/3 rounded bg-slate-100"></div>
         <div class="mt-4 h-9 w-32 rounded bg-slate-100"></div>
       </div>
     } @else {
@@ -54,34 +52,35 @@ const MAX_DAILY_LIMIT = 50;
         class="mt-6 max-w-2xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
         [formGroup]="form"
         (ngSubmit)="save()"
-        novalidate
       >
-        <h2 class="text-base font-semibold">Giới hạn đăng bài</h2>
+        <h2 class="text-base font-semibold">Đăng tài liệu</h2>
         <p class="mt-1 text-sm text-slate-500">
-          Số tài liệu tối đa mỗi sinh viên được đăng trong một ngày (theo giờ Việt Nam). Đặt
-          <strong>0</strong> để không giới hạn. Bài đã xoá vẫn được tính vì giới hạn chống spam.
+          Tắt để tạm khoá: sinh viên không tạo được bài mới. Bài đã đăng vẫn hiển thị bình
+          thường và bật lại là đăng được ngay.
         </p>
 
-        <div class="field mt-4">
-          <label class="field-label" for="documentDailyLimit">Số bài tối đa / ngày</label>
+        <label
+          class="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 px-4 py-3"
+          for="uploadsEnabled"
+        >
           <input
-            id="documentDailyLimit"
-            class="field-input max-w-40"
-            type="number"
-            min="0"
-            [attr.max]="maxDailyLimit"
-            step="1"
-            formControlName="documentDailyLimit"
-            [attr.aria-invalid]="showError()"
+            id="uploadsEnabled"
+            type="checkbox"
+            class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            formControlName="uploadsEnabled"
           />
-          @if (showError()) {
-            <p class="field-error">Giá trị từ 0 đến {{ maxDailyLimit }}.</p>
-          }
-        </div>
+          <span>
+            <span class="block text-sm font-medium text-slate-900">
+              Cho phép sinh viên đăng tài liệu
+            </span>
+            <span class="block text-sm text-slate-500">
+              Bỏ chọn = tạm khoá đăng bài trên toàn hệ thống.
+            </span>
+          </span>
+        </label>
 
         <p class="mt-3 text-sm text-slate-600">
-          Đang áp dụng:
-          <strong>{{ currentLabel() }}</strong>
+          Đang áp dụng: <strong>{{ currentLabel() }}</strong>
         </p>
 
         <button class="btn-primary mt-5 w-auto" type="submit" [disabled]="saving()">
@@ -96,19 +95,13 @@ export class AdminSettings implements OnInit {
   private readonly adminApi = inject(AdminService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly maxDailyLimit = MAX_DAILY_LIMIT;
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly success = signal<string | null>(null);
   protected readonly errors = signal<string[]>([]);
-  protected readonly currentLimit = signal<number | null>(null);
+  protected readonly currentEnabled = signal<boolean | null>(null);
 
-  protected readonly form = this.fb.nonNullable.group({
-    documentDailyLimit: [
-      0,
-      [Validators.required, Validators.min(0), Validators.max(MAX_DAILY_LIMIT)],
-    ],
-  });
+  protected readonly form = this.fb.nonNullable.group({ uploadsEnabled: [true] });
 
   ngOnInit(): void {
     this.adminApi
@@ -116,8 +109,8 @@ export class AdminSettings implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (settings) => {
-          this.currentLimit.set(settings.documentDailyLimit);
-          this.form.setValue({ documentDailyLimit: settings.documentDailyLimit });
+          this.currentEnabled.set(settings.uploadsEnabled);
+          this.form.setValue({ uploadsEnabled: settings.uploadsEnabled });
           this.loading.set(false);
         },
         error: (error: unknown) => {
@@ -127,45 +120,34 @@ export class AdminSettings implements OnInit {
       });
   }
 
-  protected showError(): boolean {
-    const field = this.form.controls.documentDailyLimit;
-
-    return field.touched && field.invalid;
-  }
-
   protected currentLabel(): string {
-    const limit = this.currentLimit();
+    const enabled = this.currentEnabled();
 
-    if (limit === null) {
+    if (enabled === null) {
       return '—';
     }
 
-    return limit === 0 ? 'Không giới hạn' : `${limit} bài/ngày`;
+    return enabled ? 'Đang cho phép đăng bài' : 'Đang tạm khoá đăng bài';
   }
 
   protected save(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
     this.saving.set(true);
     this.errors.set([]);
     this.success.set(null);
 
-    const { documentDailyLimit } = this.form.getRawValue();
+    const { uploadsEnabled } = this.form.getRawValue();
 
     this.adminApi
-      .updateSettings({ documentDailyLimit })
+      .updateSettings({ uploadsEnabled })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (settings) => {
           this.saving.set(false);
-          this.currentLimit.set(settings.documentDailyLimit);
+          this.currentEnabled.set(settings.uploadsEnabled);
           this.success.set(
-            settings.documentDailyLimit === 0
-              ? 'Đã tắt giới hạn đăng bài.'
-              : `Đã đặt giới hạn ${settings.documentDailyLimit} bài/ngày.`,
+            settings.uploadsEnabled
+              ? 'Đã bật đăng tài liệu.'
+              : 'Đã tắt đăng tài liệu — sinh viên không tạo được bài mới.',
           );
         },
         error: (error: unknown) => {

@@ -1,10 +1,7 @@
 /** Khoá cấu hình trong bảng `SystemSetting` (key/value JSON). */
 export const SETTING_KEYS = {
-  DOCUMENT_DAILY_LIMIT: 'document.dailyLimit',
+  DOCUMENT_UPLOADS_ENABLED: 'document.uploadsEnabled',
 } as const;
 
-/** 0 = không giới hạn (mặc định, giữ hành vi cũ). */
-export const DEFAULT_DOCUMENT_DAILY_LIMIT = 0;
-
-/** Chặn cấu hình vô lý; đủ rộng cho nhu cầu thực tế. */
-export const MAX_DOCUMENT_DAILY_LIMIT = 50;
+/** Chưa có cấu hình trong DB = vẫn cho đăng bài (giữ hành vi mặc định). */
+export const DEFAULT_DOCUMENT_UPLOADS_ENABLED = true;

@@ -1,8 +1,6 @@
 import {
   BadRequestException,
   ForbiddenException,
-  HttpException,
-  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -279,7 +277,7 @@ export class DocumentsService {
 
     const files = await this.resolveFileInputs(dto.files, authorId);
 
-    await this.assertWithinDailyLimit(authorId);
+    await this.assertUploadsEnabled();
 
     // Tạo bài + đánh dấu file đã dùng trong cùng transaction: một file không thể
     // bị hai tài liệu cùng tham chiếu, và không có bài nào trỏ tới file "ma".
@@ -566,23 +564,11 @@ export class DocumentsService {
     return { id: documentId };
   }
 
-  /** Chặn khi sinh viên vượt giới hạn đăng bài/ngày do admin cấu hình (0 = không giới hạn). */
-  private async assertWithinDailyLimit(authorId: string): Promise<void> {
-    const limit = await this.settings.getDocumentDailyLimit();
-
-    if (limit <= 0) {
-      return;
-    }
-
-    const startOfToday = new Date(`${vietnamDayKey()}T00:00:00+07:00`);
-    const createdToday = await this.prisma.document.count({
-      where: { authorId, createdAt: { gte: startOfToday } },
-    });
-
-    if (createdToday >= limit) {
-      throw new HttpException(
-        `Bạn đã đăng ${createdToday}/${limit} tài liệu hôm nay. Vui lòng quay lại vào ngày mai.`,
-        HttpStatus.TOO_MANY_REQUESTS,
+  /** Admin tắt "cho phép đăng tài liệu" trong cấu hình hệ thống → chặn tạo bài mới. */
+  private async assertUploadsEnabled(): Promise<void> {
+    if (!(await this.settings.isUploadEnabled())) {
+      throw new ForbiddenException(
+        'Hiện tại hệ thống đang tạm khoá đăng tài liệu. Vui lòng quay lại sau.',
       );
     }
   }

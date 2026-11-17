@@ -19,7 +19,7 @@ export class AdminSettingsController {
     return this.settingsService.getSettings();
   }
 
-  /** PATCH /api/admin/settings — cập nhật giới hạn đăng bài (0 = không giới hạn). */
+  /** PATCH /api/admin/settings — bật/tắt việc đăng tài liệu cho sinh viên. */
   @Patch()
   updateSettings(@Body() dto: UpdateSettingsDto) {
     return this.settingsService.updateSettings(dto);

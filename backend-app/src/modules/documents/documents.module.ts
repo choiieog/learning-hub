@@ -8,7 +8,7 @@ import { DocumentsService } from './documents.service';
 
 @Module({
   // SubjectsModule: kiểm tra subjectId tồn tại; NotificationsModule: báo cho tác giả khi duyệt / từ chối;
-  // GamificationModule: cộng EXP cho lượt xem và bài được duyệt; SettingsModule: giới hạn bài/ngày.
+  // GamificationModule: cộng EXP cho lượt xem và bài được duyệt; SettingsModule: công tắc đăng bài.
   imports: [SubjectsModule, NotificationsModule, GamificationModule, SettingsModule],
   controllers: [DocumentsController],
   providers: [DocumentsService],

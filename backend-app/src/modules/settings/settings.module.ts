@@ -5,6 +5,6 @@ import { SettingsService } from './settings.service';
 @Module({
   controllers: [AdminSettingsController],
   providers: [SettingsService],
-  exports: [SettingsService], // DocumentsModule đọc giới hạn đăng bài/ngày
+  exports: [SettingsService], // DocumentsModule đọc công tắc đăng bài
 })
 export class SettingsModule {}

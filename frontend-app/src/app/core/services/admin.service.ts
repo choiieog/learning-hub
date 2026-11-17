@@ -135,7 +135,7 @@ export class AdminService {
   }
 
   /** `documentDailyLimit = 0` nghĩa là không giới hạn. */
-  updateSettings(payload: { documentDailyLimit: number }): Observable<SystemSettings> {
+  updateSettings(payload: { uploadsEnabled: boolean }): Observable<SystemSettings> {
     return this.http
       .patch<ApiResponse<SystemSettings>>(`${this.baseUrl}/settings`, payload)
       .pipe(map((res) => res.data));

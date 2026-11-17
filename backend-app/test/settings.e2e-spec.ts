@@ -14,16 +14,17 @@ interface Envelope<T> {
 }
 
 interface SettingsPayload {
-  documentDailyLimit: number;
+  uploadsEnabled: boolean;
   updatedAt: string | null;
 }
 
 const password = 'MatKhau123';
+const SETTING_KEY = 'document.uploadsEnabled';
 
 /**
  * E2E thật với Postgres cho cấu hình hệ thống:
- * admin đọc/ghi giới hạn đăng bài, sinh viên không đọc/ghi được, giới hạn được áp dụng
- * theo ngày (bài của hôm trước không tính) và 0 nghĩa là tắt giới hạn.
+ * admin đọc/ghi công tắc đăng bài, sinh viên không đọc/ghi được, tắt là chặn tạo bài
+ * mới ngay lập tức và bật lại thì đăng được.
  */
 describe('Cấu hình hệ thống (e2e)', () => {
   const suffix = Date.now();
@@ -33,8 +34,6 @@ describe('Cấu hình hệ thống (e2e)', () => {
   let subjectId: string;
   let adminToken: string;
   let userToken: string;
-  let secondUserToken: string;
-  let secondUserId: string;
 
   const userIds: string[] = [];
 
@@ -50,11 +49,11 @@ describe('Cấu hình hệ thống (e2e)', () => {
     return (response.body as Envelope<{ accessToken: string }>).data.accessToken;
   }
 
-  async function setLimit(token: string, documentDailyLimit: number): Promise<SettingsPayload> {
+  async function setEnabled(token: string, uploadsEnabled: boolean): Promise<SettingsPayload> {
     const response = await server()
       .patch('/api/admin/settings')
       .set(bearer(token))
-      .send({ documentDailyLimit })
+      .send({ uploadsEnabled })
       .expect(200);
 
     return (response.body as Envelope<SettingsPayload>).data;
@@ -71,7 +70,7 @@ describe('Cấu hình hệ thống (e2e)', () => {
         data: {
           publicId,
           url: `/api/files/${publicId}`,
-          name: 'e2e-limit.pdf',
+          name: 'e2e-enabled.pdf',
           size: 1024,
           mimeType: 'application/pdf',
           folder: 'documents',
@@ -85,13 +84,13 @@ describe('Cấu hình hệ thống (e2e)', () => {
       .set(bearer(token))
       .send({
         title,
-        description: 'Bài kiểm thử giới hạn đăng bài',
+        description: 'Bài kiểm thử công tắc đăng bài',
         subjectId,
         files: [
           {
             publicId,
             url: `/api/files/${publicId}`,
-            name: 'e2e-limit.pdf',
+            name: 'e2e-enabled.pdf',
             size: 1024,
             mimeType: 'application/pdf',
           },
@@ -128,13 +127,8 @@ describe('Cấu hình hệ thống (e2e)', () => {
       data: userData('E2E Sinh viên cấu hình', `e2e-settings-user-${suffix}@example.com`),
       select: { id: true, email: true },
     });
-    const secondUser = await prisma.user.create({
-      data: userData('E2E Sinh viên thứ hai', `e2e-settings-user2-${suffix}@example.com`),
-      select: { id: true, email: true },
-    });
 
-    secondUserId = secondUser.id;
-    userIds.push(admin.id, user.id, secondUser.id);
+    userIds.push(admin.id, user.id);
 
     const subject = await prisma.subject.create({
       data: { code: `SET${suffix}`.slice(0, 20), name: 'Môn E2E cấu hình' },
@@ -144,88 +138,71 @@ describe('Cấu hình hệ thống (e2e)', () => {
 
     adminToken = await login(admin.email);
     userToken = await login(user.email);
-    secondUserToken = await login(secondUser.email);
     userIdByToken.set(adminToken, admin.id);
     userIdByToken.set(userToken, user.id);
-    userIdByToken.set(secondUserToken, secondUser.id);
 
-    // Trạng thái đầu của suite: không giới hạn.
+    // Trạng thái đầu của suite: cho phép đăng bài.
     await prisma.systemSetting.upsert({
-      where: { key: 'document.dailyLimit' },
-      update: { value: 0 },
-      create: { key: 'document.dailyLimit', value: 0 },
+      where: { key: SETTING_KEY },
+      update: { value: true },
+      create: { key: SETTING_KEY, value: true },
     });
   });
 
   afterAll(async () => {
     await prisma.systemSetting.upsert({
-      where: { key: 'document.dailyLimit' },
-      update: { value: 0 },
-      create: { key: 'document.dailyLimit', value: 0 },
+      where: { key: SETTING_KEY },
+      update: { value: true },
+      create: { key: SETTING_KEY, value: true },
     });
     await prisma.expLog.deleteMany({ where: { userId: { in: userIds } } });
-    await prisma.notification.deleteMany({ where: { userId: { in: userIds } } });
     await prisma.document.deleteMany({ where: { authorId: { in: userIds } } });
+    await prisma.uploadedFile.deleteMany({ where: { ownerId: { in: userIds } } });
     await prisma.subject.deleteMany({ where: { id: subjectId } });
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
     await app.close();
   });
 
-  it('admin đọc và cập nhật giới hạn; sinh viên bị chặn và giá trị sai bị từ chối', async () => {
+  it('admin đọc và bật/tắt; sinh viên bị chặn và giá trị sai bị từ chối', async () => {
     const current = await server()
       .get('/api/admin/settings')
       .set(bearer(adminToken))
       .expect(200);
-    expect(typeof (current.body as Envelope<SettingsPayload>).data.documentDailyLimit).toBe(
-      'number',
-    );
+    expect(typeof (current.body as Envelope<SettingsPayload>).data.uploadsEnabled).toBe('boolean');
 
-    expect(await setLimit(adminToken, 1)).toEqual(
-      expect.objectContaining({ documentDailyLimit: 1 }),
+    expect(await setEnabled(adminToken, false)).toEqual(
+      expect.objectContaining({ uploadsEnabled: false }),
     );
 
     await server().get('/api/admin/settings').set(bearer(userToken)).expect(403);
     await server()
       .patch('/api/admin/settings')
       .set(bearer(userToken))
-      .send({ documentDailyLimit: 5 })
+      .send({ uploadsEnabled: false })
       .expect(403);
 
+    // DTO chỉ nhận boolean thật.
     await server()
       .patch('/api/admin/settings')
       .set(bearer(adminToken))
-      .send({ documentDailyLimit: 51 })
+      .send({ uploadsEnabled: 'false' })
       .expect(400);
+    await server().patch('/api/admin/settings').set(bearer(adminToken)).send({}).expect(400);
   });
 
-  it('giới hạn 1 bài/ngày: bài thứ hai bị chặn với 429', async () => {
-    await setLimit(adminToken, 1);
+  it('tắt đăng bài → sinh viên bị chặn 403; bật lại thì đăng được', async () => {
+    await setEnabled(adminToken, false);
 
-    expect(await createDocument(userToken, `Bài E2E giới hạn 1 ${suffix}`)).toBe(201);
-    expect(await createDocument(userToken, `Bài E2E giới hạn 2 ${suffix}`)).toBe(429);
-  });
+    const settings = await server()
+      .get('/api/admin/settings')
+      .set(bearer(adminToken))
+      .expect(200);
+    expect((settings.body as Envelope<SettingsPayload>).data.uploadsEnabled).toBe(false);
 
-  it('bài của ngày hôm trước không tính vào giới hạn hôm nay', async () => {
-    await setLimit(adminToken, 1);
+    expect(await createDocument(userToken, `Bài E2E khi bị khoá ${suffix}`)).toBe(403);
 
-    await prisma.document.create({
-      data: {
-        title: `Bài E2E hôm qua ${suffix}`,
-        subjectId,
-        authorId: secondUserId,
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      },
-    });
+    await setEnabled(adminToken, true);
 
-    expect(await createDocument(secondUserToken, `Bài E2E hôm nay ${suffix}`)).toBe(201);
-    expect(await createDocument(secondUserToken, `Bài E2E quá giới hạn ${suffix}`)).toBe(429);
-  });
-
-  it('đặt 0 để tắt giới hạn', async () => {
-    expect(await setLimit(adminToken, 0)).toEqual(
-      expect.objectContaining({ documentDailyLimit: 0 }),
-    );
-
-    expect(await createDocument(userToken, `Bài E2E không giới hạn ${suffix}`)).toBe(201);
+    expect(await createDocument(userToken, `Bài E2E sau khi mở lại ${suffix}`)).toBe(201);
   });
 });
