@@ -215,7 +215,10 @@ export class UserLayout {
     }
   }
 
-  /** Mở thông báo: đánh dấu đã đọc rồi đi tới tài liệu liên quan. */
+  /**
+   * Mở thông báo: đánh dấu đã đọc rồi mở trang tất cả thông báo.
+   * Không nhảy thẳng vào chi tiết tài liệu để người dùng còn thấy các tin khác.
+   */
   protected openNotification(item: AppNotification): void {
     if (!item.readAt) {
       this.notificationState
@@ -232,10 +235,7 @@ export class UserLayout {
     }
 
     this.panelOpen.set(false);
-
-    if (item.link) {
-      void this.router.navigateByUrl(item.link);
-    }
+    void this.router.navigate(['/notifications']);
   }
 
   protected markAllRead(): void {

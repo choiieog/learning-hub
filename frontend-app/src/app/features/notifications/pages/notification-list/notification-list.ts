@@ -109,9 +109,6 @@ const PAGE_SIZE = 10;
                 <p class="mt-1 text-sm leading-relaxed text-slate-600">{{ item.message }}</p>
                 <p class="mt-2 text-xs text-slate-400">
                   {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}
-                  @if (item.link) {
-                    <span class="text-indigo-600"> · Xem chi tiết</span>
-                  }
                 </p>
               </div>
             </button>
@@ -233,7 +230,10 @@ export class NotificationList implements OnInit {
     });
   }
 
-  /** Mở thông báo: đánh dấu đã đọc rồi đi tới tài liệu liên quan (nếu có). */
+  /**
+   * Nhấn thông báo chỉ đánh dấu đã đọc: danh sách này đã là trang xem tất cả thông báo
+   * nên không mở trang chi tiết của tài liệu được nhắc tới.
+   */
   protected open(item: AppNotification): void {
     if (!item.readAt) {
       this.notificationState
@@ -251,10 +251,6 @@ export class NotificationList implements OnInit {
           },
           error: () => undefined,
         });
-    }
-
-    if (item.link) {
-      void this.router.navigateByUrl(item.link);
     }
   }
 
