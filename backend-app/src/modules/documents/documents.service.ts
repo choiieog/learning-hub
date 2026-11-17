@@ -385,8 +385,11 @@ export class DocumentsService {
   }
 
   /**
-   * DELETE /api/documents/:id — chủ bài xoá mềm tài liệu của mình.
-   * Xoá mềm để bài biến mất khỏi mọi danh sách nhưng vẫn còn dữ liệu đối soát.
+   * DELETE /api/documents/:id — chủ bài xoá hẳn tài liệu của mình.
+   *
+   * Xoá cứng để `DocumentFile`, `DocumentView` và `Rating` bị dọn theo cascade khai báo
+   * trong schema — không còn rating/bình luận mồ côi của bài đã xoá. Admin gỡ bài vi phạm
+   * cũng xoá hẳn, kèm thông báo cho tác giả (`removeByAdmin`).
    * Người khác nhận 403 (bài đã duyệt vốn công khai nên không cần giấu sự tồn tại).
    */
   async removeOwn(documentId: string, userId: string): Promise<{ id: string }> {
@@ -407,10 +410,8 @@ export class DocumentsService {
       throw new ForbiddenException('Bạn chỉ có thể xoá tài liệu của mình.');
     }
 
-    await this.prisma.document.update({
-      where: { id: documentId },
-      data: { deletedAt: new Date() },
-    });
+    // Xoá cứng: cascade dọn DocumentFile, DocumentView và Rating của bài.
+    await this.prisma.document.delete({ where: { id: documentId } });
 
     await this.deleteStoredFiles(document.files.map((file) => file.publicId));
 
@@ -527,7 +528,11 @@ export class DocumentsService {
     return this.toDetail(updated, { viewCountedToday: false });
   }
 
-  /** Xoá mềm tài liệu vi phạm — biến mất khỏi mọi danh sách nhưng giữ dữ liệu để đối soát. */
+  /**
+   * Admin gỡ bài vi phạm: xoá hẳn tài liệu (cascade dọn file, lượt xem, rating) và báo
+   * cho tác giả. Thông báo nằm cùng transaction nên bài không thể biến mất mà tác giả
+   * không biết; thông báo không kèm link vì bài đã không còn để mở.
+   */
   async removeByAdmin(
     documentId: string,
     _adminId: string,
@@ -547,10 +552,7 @@ export class DocumentsService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.document.update({
-        where: { id: documentId },
-        data: { deletedAt: new Date() },
-      });
+      await tx.document.delete({ where: { id: documentId } });
 
       // Tác giả cần biết bài của mình bị xoá, không chỉ biết là nó tự nhiên mất.
       await this.notifications.notifyDeleted(

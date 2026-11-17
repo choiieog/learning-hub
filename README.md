@@ -20,7 +20,7 @@ Mỗi lượt xem được ghi nhận (tăng `viewCount`), làm nền tảng cho
 
 - Xác thực: đăng ký → xác thực email → đăng nhập/refresh → đổi mật khẩu → quên mật khẩu qua email (token 1 giờ, dùng một lần),
   kèm UI đăng nhập/đăng ký/xác thực email/quên mật khẩu/đặt lại mật khẩu.
-- Tài liệu: danh sách + tìm kiếm/lọc/sắp xếp, chi tiết có đếm lượt xem, **xem trước PDF/DOCX ngay trên web**, đăng tài liệu (1–3 file), **đã chia sẻ** (trạng thái, lý do từ chối, sửa & gửi duyệt lại, xoá mềm).
+- Tài liệu: danh sách + tìm kiếm/lọc/sắp xếp, chi tiết có đếm lượt xem, **xem trước PDF/DOCX ngay trên web**, đăng tài liệu (1–3 file), **đã chia sẻ** (trạng thái, lý do từ chối, sửa & gửi duyệt lại, xoá hẳn kèm đánh giá).
 - Admin: duyệt/từ chối (kèm lý do)/xoá bài, xem trước file của bài chờ duyệt ngay trên web; tác giả nhận thông báo trong chuông ở header.
 
 `StorageService` đã có driver `local` và mail đã hỗ trợ `MAIL_DRIVER=smtp` (nodemailer). Còn lại: driver cloud

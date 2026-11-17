@@ -36,7 +36,7 @@ const PDF_BYTES = Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%
 /**
  * E2E thật với Postgres cho tài liệu:
  * upload + kiểm chữ ký file, đăng bài vào PENDING, ẩn với người khác, đếm lượt xem
- * 1 lần/người/ngày, từ chối → gửi duyệt lại, xoá mềm.
+ * 1 lần/người/ngày, từ chối → gửi duyệt lại, xoá cứng (cascade dọn rating).
  */
 describe('Tài liệu (e2e)', () => {
   const suffix = Date.now();
@@ -47,6 +47,7 @@ describe('Tài liệu (e2e)', () => {
   let subjectId: string;
   let authorToken: string;
   let otherToken: string;
+  let otherId: string;
   let adminToken: string;
   let uploadedPdf: UploadPayload;
   let pendingDocId: string;
@@ -135,6 +136,7 @@ describe('Tài liệu (e2e)', () => {
       select: { id: true, email: true },
     });
 
+    otherId = other.id;
     userIds.push(author.id, other.id, admin.id);
 
     const subject = await prisma.subject.create({
@@ -251,8 +253,18 @@ describe('Tài liệu (e2e)', () => {
     // Người khác không xoá được bài của tác giả.
     await server().delete(`/api/documents/${document.id}`).set(bearer(otherToken)).expect(403);
 
+    // Có rating trước khi xoá để kiểm cascade dọn luôn đánh giá/bình luận.
+    await prisma.rating.create({
+      data: { documentId: document.id, userId: otherId, stars: 4, comment: 'Kiểm tra xoá' },
+    });
+
     await server().delete(`/api/documents/${document.id}`).set(bearer(authorToken)).expect(200);
     await server().get(`/api/documents/${document.id}`).set(bearer(authorToken)).expect(404);
+
+    // Xoá cứng: không còn row Document, DocumentFile hay Rating nào của bài.
+    expect(await prisma.document.findUnique({ where: { id: document.id } })).toBeNull();
+    expect(await prisma.documentFile.count({ where: { documentId: document.id } })).toBe(0);
+    expect(await prisma.rating.count({ where: { documentId: document.id } })).toBe(0);
   });
 
   it('chặn file giả: nội dung sai chữ ký hoặc MIME không khớp đuôi', async () => {
