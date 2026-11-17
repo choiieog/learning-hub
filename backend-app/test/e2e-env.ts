@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseEnv } from 'node:util';
@@ -20,5 +20,10 @@ try {
   // No .env file: variables come from the environment.
 }
 
-// E2E không ghi file tải lên vào thư mục uploads của dev.
-process.env.UPLOAD_DIR = mkdtempSync(join(tmpdir(), 'lh-e2e-uploads-'));
+// E2E ghi file tải lên vào thư mục tạm, không vào `backend-app/uploads` của dev.
+// Tên cố định để `e2e-teardown.cjs` (chạy ở tiến trình chính của jest) xoá được sau khi
+// xong: worker của jest bị kill nên handler `exit` trong tiến trình con không đáng tin.
+const uploadDir = join(tmpdir(), 'lh-e2e-uploads');
+
+mkdirSync(uploadDir, { recursive: true });
+process.env.UPLOAD_DIR = uploadDir;

@@ -5,6 +5,7 @@
   "testRegex": ".e2e-spec.ts$",
   "maxWorkers": 1,
   "setupFiles": ["<rootDir>/e2e-env.ts"],
+  "globalTeardown": "<rootDir>/e2e-teardown.cjs",
   "extensionsToTreatAsEsm": [".ts"],
   "transform": {
     "^.+\\.ts$": ["ts-jest", { "useESM": true, "tsconfig": "tsconfig.spec.json" }]
