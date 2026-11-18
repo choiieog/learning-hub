@@ -99,6 +99,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'viewer',
+        title: 'Xem tệp · Learning Hub',
+        loadComponent: () =>
+          import('./features/documents/pages/document-viewer/document-viewer').then(
+            (m) => m.DocumentViewerPage,
+          ),
+      },
+      {
         path: 'upload',
         title: 'Đăng tài liệu · Learning Hub',
         loadComponent: () =>

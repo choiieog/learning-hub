@@ -4,7 +4,6 @@ import {
   Component,
   DestroyRef,
   OnInit,
-  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -18,7 +17,6 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
 import { DOCUMENT_STATUS_LABEL } from '../../../../core/utils/document-status.util';
 import { fileExtension, formatFileSize, initials } from '../../../../core/utils/format.util';
 import { RatingSection } from '../../../ratings/components/rating-section/rating-section';
-import { DocumentPreview } from '../../components/document-preview/document-preview';
 
 /**
  * Chi tiết tài liệu.
@@ -30,7 +28,7 @@ import { DocumentPreview } from '../../components/document-preview/document-prev
 @Component({
   selector: 'app-document-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe, RatingSection, DocumentPreview],
+  imports: [RouterLink, DatePipe, RatingSection],
   template: `
     <a
       routerLink="/documents"
@@ -175,29 +173,6 @@ import { DocumentPreview } from '../../components/document-preview/document-prev
               @if (doc.files.length === 0) {
                 <p class="mt-4 text-sm text-slate-500">Tài liệu này chưa có tệp đính kèm.</p>
               } @else {
-                @if (doc.files.length > 1) {
-                  <div class="mt-4 flex flex-wrap gap-2">
-                    @for (file of doc.files; track file.url; let index = $index) {
-                      <button
-                        type="button"
-                        [attr.aria-pressed]="previewIndex() === index"
-                        [class]="
-                          previewIndex() === index
-                            ? 'rounded-lg border border-indigo-600 bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white'
-                            : 'rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-indigo-300'
-                        "
-                        (click)="previewIndex.set(index)"
-                      >
-                        {{ file.name }}
-                      </button>
-                    }
-                  </div>
-                }
-
-                <div class="mt-3">
-                  <app-document-preview [file]="previewFile()" />
-                </div>
-
                 <ul class="mt-4 divide-y divide-slate-100">
                   @for (file of doc.files; track file.url) {
                     <li class="flex flex-wrap items-center justify-between gap-3 py-3">
@@ -208,9 +183,9 @@ import { DocumentPreview } from '../../components/document-preview/document-prev
                           {{ fileType(file) }}
                         </span>
                         <div class="min-w-0">
-                          <!-- Tên file mở thẳng nội dung file ở tab mới (PDF xem trực tiếp, DOCX/PPTX tải về). -->
+                          <!-- Tên tệp mở trang đọc nội dung ở tab mới: PDF nhúng sẵn, DOCX dựng bằng docx-preview. -->
                           <a
-                            [href]="file.url"
+                            [href]="viewerHref(file)"
                             target="_blank"
                             rel="noopener noreferrer"
                             class="block truncate text-sm font-medium text-slate-800 hover:text-indigo-600 hover:underline"
@@ -245,8 +220,8 @@ import { DocumentPreview } from '../../components/document-preview/document-prev
                   }
                 </ul>
                 <p class="mt-3 text-xs text-slate-400">
-                  Tệp mở ở thẻ mới. Nếu trình duyệt chặn tải, bấm chuột phải vào nút và chọn “Lưu liên kết
-                  thành…”.
+                  Bấm tên tệp để mở trang đọc nội dung ở thẻ mới (PDF xem trực tiếp, DOCX dựng bản xem
+                  trước). Bấm chuột phải vào nút “Tải xuống” nếu trình duyệt chặn tải.
                 </p>
               }
             </section>
@@ -340,11 +315,6 @@ export class DocumentDetailPage implements OnInit {
   protected readonly item = signal<DocumentDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly errors = signal<string[]>([]);
-  /** File đang xem trước trong khối "Tệp đính kèm". */
-  protected readonly previewIndex = signal(0);
-  protected readonly previewFile = computed<DocumentFile | null>(
-    () => this.item()?.files[this.previewIndex()] ?? null,
-  );
   private readonly documentId = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -371,6 +341,11 @@ export class DocumentDetailPage implements OnInit {
     return formatFileSize(bytes);
   }
 
+  /** Trang đọc nội dung tệp ở tab mới — xem `DocumentViewerPage`. */
+  protected viewerHref(file: DocumentFile): string {
+    return `/viewer?src=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}`;
+  }
+
   protected authorInitials(fullName: string): string {
     return initials(fullName);
   }
@@ -393,7 +368,6 @@ export class DocumentDetailPage implements OnInit {
 
     this.loading.set(true);
     this.errors.set([]);
-    this.previewIndex.set(0);
 
     this.documentsApi
       .findById(id)

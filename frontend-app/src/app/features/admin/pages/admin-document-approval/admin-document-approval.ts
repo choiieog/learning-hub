@@ -4,7 +4,6 @@ import {
   Component,
   DestroyRef,
   OnInit,
-  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -20,7 +19,6 @@ import { AdminService } from '../../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
 import { DOCUMENT_STATUS_LABEL } from '../../../../core/utils/document-status.util';
 import { fileExtension, formatFileSize, initials } from '../../../../core/utils/format.util';
-import { DocumentPreview } from '../../../documents/components/document-preview/document-preview';
 
 const PAGE_SIZE = 10;
 const MIN_REJECT_REASON = 10;
@@ -37,7 +35,7 @@ type StatusTab = { value: DocumentStatus; label: string };
 @Component({
   selector: 'app-admin-document-approval',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe, DocumentPreview],
+  imports: [RouterLink, DatePipe],
   template: `
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
@@ -212,27 +210,42 @@ type StatusTab = { value: DocumentStatus; label: string };
                 <p class="mt-3 text-sm leading-relaxed text-slate-600">{{ item.description }}</p>
               }
 
-              <div class="mt-4 flex flex-wrap gap-2">
-                @for (file of item.files; track file.url; let index = $index) {
-                  <button
-                    type="button"
-                    [attr.aria-pressed]="selectedFileIndex() === index"
-                    [class]="
-                      selectedFileIndex() === index
-                        ? 'rounded-lg border border-indigo-600 bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white'
-                        : 'rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:border-indigo-300'
-                    "
-                    (click)="selectedFileIndex.set(index)"
-                  >
-                    {{ file.name }} · {{ size(file) }}
-                  </button>
-                }
-              </div>
+              @if (item.files.length > 0) {
+                <ul class="mt-4 divide-y divide-slate-100 rounded-lg border border-slate-200">
+                  @for (file of item.files; track file.url) {
+                    <li class="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5">
+                      <div class="flex min-w-0 items-center gap-3">
+                        <span
+                          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slate-100 text-[10px] font-bold text-slate-500"
+                        >
+                          {{ fileTypeName(file) }}
+                        </span>
+                        <div class="min-w-0">
+                          <!-- Mở trang đọc nội dung ở tab mới, cùng trang với phía người dùng. -->
+                          <a
+                            [href]="viewerHref(file)"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="block truncate text-sm font-medium text-slate-800 hover:text-indigo-600 hover:underline"
+                            [attr.aria-label]="'Xem ' + file.name + ' ở thẻ mới'"
+                          >
+                            {{ file.name }}
+                          </a>
+                          <p class="text-xs text-slate-500">{{ size(file) }}</p>
+                        </div>
+                      </div>
 
-              @if (selectedFile(); as file) {
-                <div class="mt-4">
-                  <app-document-preview [file]="file" />
-                </div>
+                      <a
+                        [href]="viewerHref(file)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn-secondary shrink-0"
+                      >
+                        Xem tệp
+                      </a>
+                    </li>
+                  }
+                </ul>
               } @else {
                 <p class="mt-4 text-sm text-slate-500">Tài liệu không có file đính kèm.</p>
               }
@@ -342,16 +355,10 @@ export class AdminDocumentApproval implements OnInit {
   protected readonly errors = signal<string[]>([]);
   protected readonly success = signal('');
   protected readonly selected = signal<DocumentSummary | null>(null);
-  protected readonly selectedFileIndex = signal(0);
   protected readonly busyId = signal<string | null>(null);
   protected readonly rejectTarget = signal<DocumentSummary | null>(null);
   protected readonly rejectReason = signal('');
   protected readonly rejectError = signal('');
-
-  protected readonly selectedFile = computed<DocumentFile | null>(() => {
-    const item = this.selected();
-    return item?.files[this.selectedFileIndex()] ?? null;
-  });
 
   ngOnInit(): void {
     this.fetch(1);
@@ -370,7 +377,6 @@ export class AdminDocumentApproval implements OnInit {
 
   protected select(item: DocumentSummary): void {
     this.selected.set(item);
-    this.selectedFileIndex.set(0);
   }
 
   protected statusLabel(status: DocumentStatus): string {
@@ -383,6 +389,11 @@ export class AdminDocumentApproval implements OnInit {
 
   protected size(file: DocumentFile): string {
     return formatFileSize(file.size);
+  }
+
+  /** Trang đọc nội dung tệp ở tab mới — xem `DocumentViewerPage`. */
+  protected viewerHref(file: DocumentFile): string {
+    return `/viewer?src=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}`;
   }
 
   protected authorInitials(fullName: string): string {
