@@ -220,7 +220,16 @@ const STATUS_LABEL: Record<DocumentStatus, string> = {
                           {{ fileType(file) }}
                         </span>
                         <div class="min-w-0">
-                          <p class="truncate text-sm font-medium text-slate-800">{{ file.name }}</p>
+                          <!-- Tên file mở thẳng nội dung file ở tab mới (PDF xem trực tiếp, DOCX/PPTX tải về). -->
+                          <a
+                            [href]="file.url"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="block truncate text-sm font-medium text-slate-800 hover:text-indigo-600 hover:underline"
+                            [attr.aria-label]="'Mở ' + file.name + ' ở thẻ mới'"
+                          >
+                            {{ file.name }}
+                          </a>
                           <p class="text-xs text-slate-500">{{ fileSize(file.size) }}</p>
                         </div>
                       </div>

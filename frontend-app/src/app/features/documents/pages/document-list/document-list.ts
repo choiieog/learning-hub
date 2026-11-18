@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import {
   DocumentSummary,
@@ -38,7 +38,7 @@ function toggleValue(list: string[], value: string): string[] {
 @Component({
   selector: 'app-document-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe],
+  imports: [DatePipe],
   template: `
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -214,8 +214,15 @@ function toggleValue(list: string[], value: string): string[] {
     } @else {
       <div class="mt-6 grid gap-4 grid-cols-3">
         @for (item of items(); track item.id) {
+          <!--
+            Mở trang chi tiết ở tab mới để danh sách và bộ lọc còn nguyên trong tab hiện tại.
+            Dùng href (không phải routerLink) vì RouterLink chặn click và điều hướng trong SPA,
+            bỏ qua target="_blank".
+          -->
           <a
-            [routerLink]="['/documents', item.id]"
+            [href]="'/documents/' + item.id"
+            target="_blank"
+            rel="noopener"
             class="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
           >
             <div class="flex items-center justify-between gap-2">
