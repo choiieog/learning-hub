@@ -19,7 +19,7 @@ interface DocumentPayload {
   status: string;
   viewCount: number;
   viewCountedToday: boolean;
-  rejectReason: string | null;
+  files?: { publicId: string | null }[];
 }
 
 interface UploadPayload {
@@ -36,7 +36,7 @@ const PDF_BYTES = Buffer.from('%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%
 /**
  * E2E thật với Postgres cho tài liệu:
  * upload + kiểm chữ ký file, đăng bài vào PENDING, ẩn với người khác, đếm lượt xem
- * 1 lần/người/ngày, từ chối → gửi duyệt lại, xoá cứng (cascade dọn rating).
+ * 1 lần/người/ngày, từ chối → xoá hẳn, xoá cứng (cascade dọn rating).
  */
 describe('Tài liệu (e2e)', () => {
   const suffix = Date.now();
@@ -223,8 +223,9 @@ describe('Tài liệu (e2e)', () => {
     expect(second.viewCountedToday).toBe(false);
   });
 
-  it('từ chối kèm lý do → chủ bài thấy lý do và gửi duyệt lại được', async () => {
+  it('từ chối → xoá hẳn tài liệu kèm file, tác giả nhận lý do', async () => {
     const document = await createDocument(`Bài E2E bị từ chối ${suffix}`);
+    const publicId = document.files?.[0]?.publicId ?? '';
 
     await server()
       .patch(`/api/admin/documents/${document.id}/reject`)
@@ -232,23 +233,37 @@ describe('Tài liệu (e2e)', () => {
       .send({ reason: 'Cần bổ sung nguồn tham khảo' })
       .expect(200);
 
-    const detail = await server()
+    // Xoá cứng: bài không còn để mở, file đính kèm và row UploadedFile cũng bị dọn.
+    await server()
       .get(`/api/documents/${document.id}`)
       .set(bearer(authorToken))
-      .expect(200);
-    expect((detail.body as Envelope<DocumentPayload>).data.rejectReason).toBe(
-      'Cần bổ sung nguồn tham khảo',
-    );
+      .expect(404);
+    expect(await prisma.document.findUnique({ where: { id: document.id } })).toBeNull();
+    expect(await prisma.documentFile.count({ where: { documentId: document.id } })).toBe(0);
+    expect(await prisma.uploadedFile.findUnique({ where: { publicId } })).toBeNull();
 
-    const resubmit = await server()
+    // Lý do từ chối vẫn được gửi cho tác giả, nhưng không kèm link vì bài đã bị xoá.
+    const rejected = await prisma.notification.findFirst({
+      where: { type: 'DOCUMENT_REJECTED', message: { contains: document.title } },
+      select: { message: true, link: true },
+    });
+    expect(rejected?.message).toContain('Cần bổ sung nguồn tham khảo');
+    expect(rejected?.link).toBeNull();
+  });
+
+  it('không còn endpoint sửa & gửi duyệt lại', async () => {
+    const document = await createDocument(`Bài E2E không còn resubmit ${suffix}`);
+
+    // Luồng "Sửa & gửi lại" đã bị bỏ cùng trạng thái REJECTED: PATCH /documents/:id không còn route.
+    await server()
       .patch(`/api/documents/${document.id}`)
       .set(bearer(authorToken))
       .send({ title: `Bài E2E đã sửa ${suffix}`, subjectId })
-      .expect(200);
-    const resubmitted = (resubmit.body as Envelope<DocumentPayload>).data;
+      .expect(404);
+  });
 
-    expect(resubmitted.status).toBe('PENDING');
-    expect(resubmitted.rejectReason).toBeNull();
+  it('chủ bài tự xoá → xoá hẳn bài, file và rating', async () => {
+    const document = await createDocument(`Bài E2E tự xoá ${suffix}`);
 
     // Người khác không xoá được bài của tác giả.
     await server().delete(`/api/documents/${document.id}`).set(bearer(otherToken)).expect(403);

@@ -18,20 +18,21 @@ import {
 } from '../../../../core/models';
 import { AdminService } from '../../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
+import { DOCUMENT_STATUS_LABEL } from '../../../../core/utils/document-status.util';
 import { fileExtension, formatFileSize, initials } from '../../../../core/utils/format.util';
 import { DocumentPreview } from '../../../documents/components/document-preview/document-preview';
 
 const PAGE_SIZE = 10;
 const MIN_REJECT_REASON = 10;
 
-type StatusTab = { value: DocumentStatus; label: string; hint: string };
+type StatusTab = { value: DocumentStatus; label: string };
 
 /**
  * Phê duyệt bài viết (admin).
  *
  * Danh sách theo trạng thái + panel xem trước: PDF hiển thị ngay trong iframe
- * (file phục vụ từ /api/files), DOCX/PPTX mở ở tab mới. Duyệt hoặc từ chối kèm
- * lý do; lý do được lưu vào tài liệu để tác giả thấy ở trang chi tiết.
+ * (file phục vụ từ /api/files), DOCX/PPTX mở ở tab mới. Duyệt, hoặc từ chối kèm
+ * lý do — từ chối xoá hẳn tài liệu và gửi lý do cho tác giả qua thông báo.
  */
 @Component({
   selector: 'app-admin-document-approval',
@@ -250,18 +251,14 @@ type StatusTab = { value: DocumentStatus; label: string; hint: string };
                   <p class="text-sm font-medium text-emerald-700">Tài liệu đã được duyệt.</p>
                 }
 
-                @if (item.status !== 'REJECTED') {
-                  <button
-                    type="button"
-                    class="btn-secondary text-rose-600"
-                    [disabled]="busyId() !== null"
-                    (click)="openReject(item)"
-                  >
-                    Từ chối…
-                  </button>
-                } @else {
-                  <p class="text-sm font-medium text-rose-700">Tài liệu đã bị từ chối.</p>
-                }
+                <button
+                  type="button"
+                  class="btn-secondary text-rose-600"
+                  [disabled]="busyId() !== null"
+                  (click)="openReject(item)"
+                >
+                  Từ chối…
+                </button>
               </div>
             </section>
           } @else {
@@ -282,6 +279,9 @@ type StatusTab = { value: DocumentStatus; label: string; hint: string };
         <div class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true">
           <h2 class="text-lg font-semibold text-slate-900">Từ chối tài liệu</h2>
           <p class="mt-1 line-clamp-2 text-sm text-slate-500">{{ target.title }}</p>
+          <p class="mt-2 text-sm text-rose-700">
+            Tài liệu sẽ bị xoá hẳn khỏi hệ thống; tác giả nhận thông báo kèm lý do bên dưới.
+          </p>
 
           <label class="mt-4 block text-sm font-medium text-slate-700" for="reject-reason">
             Lý do gửi cho tác giả <span class="text-rose-500">*</span>
@@ -311,7 +311,7 @@ type StatusTab = { value: DocumentStatus; label: string; hint: string };
               [disabled]="busyId() !== null || rejectReason().trim().length < minRejectReason"
               (click)="confirmReject()"
             >
-              {{ busyId() === target.id ? 'Đang gửi…' : 'Xác nhận từ chối' }}
+              {{ busyId() === target.id ? 'Đang gửi…' : 'Từ chối và xoá' }}
             </button>
           </div>
         </div>
@@ -326,9 +326,8 @@ export class AdminDocumentApproval implements OnInit {
   protected readonly minRejectReason = MIN_REJECT_REASON;
 
   protected readonly tabs: StatusTab[] = [
-    { value: 'PENDING', label: 'Chờ duyệt', hint: 'Cần xử lý' },
-    { value: 'APPROVED', label: 'Đã duyệt', hint: 'Đang công khai' },
-    { value: 'REJECTED', label: 'Bị từ chối', hint: 'Đã trả về tác giả' },
+    { value: 'PENDING', label: DOCUMENT_STATUS_LABEL.PENDING },
+    { value: 'APPROVED', label: DOCUMENT_STATUS_LABEL.APPROVED },
   ];
 
   protected readonly status = signal<DocumentStatus>('PENDING');
@@ -375,7 +374,7 @@ export class AdminDocumentApproval implements OnInit {
   }
 
   protected statusLabel(status: DocumentStatus): string {
-    return this.tabs.find((tab) => tab.value === status)?.label ?? status;
+    return DOCUMENT_STATUS_LABEL[status];
   }
 
   protected fileTypeName(file: DocumentFile): string {
@@ -470,7 +469,7 @@ export class AdminDocumentApproval implements OnInit {
           this.busyId.set(null);
           this.rejectTarget.set(null);
           this.rejectReason.set('');
-          this.success.set(`Đã từ chối "${target.title}" và gửi lý do cho tác giả.`);
+          this.success.set(`Đã từ chối, xoá "${target.title}" và gửi lý do cho tác giả.`);
           this.selected.set(null);
           this.fetch(this.meta().page);
         },

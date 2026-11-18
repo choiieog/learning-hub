@@ -34,7 +34,7 @@ npm run test:e2e        # e2e thật: cần DATABASE_URL + `npx prisma migrate d
 | Module | Trạng thái |
 | --- | --- |
 | `auth` | ✅ đăng ký, xác thực email, đăng nhập, refresh, đổi mật khẩu, quên/đặt lại mật khẩu |
-| `documents` | ✅ danh sách, chi tiết + đếm view, đăng, `GET /mine`, sửa & gửi duyệt lại, xoá hẳn (cascade rating) |
+| `documents` | ✅ danh sách, chi tiết + đếm view, đăng, `GET /mine`, duyệt / từ chối (từ chối = xoá hẳn), xoá hẳn (cascade rating) |
 | `uploads` | ✅ `POST /api/uploads` — validate rồi ghi qua `StorageService`, PDF/DOCX/PPTX, ≤ 20MB |
 | `infra/storage` | 🟡 `StorageService` + driver `local`; driver cloud (Cloudinary/S3) chưa viết |
 | `subjects` | ✅ đọc công khai + thêm/xoá mềm (chặn khi còn tài liệu) |

@@ -96,7 +96,7 @@ import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
             {{ data.documents.total }}
           </p>
           <p class="mt-2 text-xs text-slate-400">
-            {{ data.documents.approved }} đã duyệt · {{ data.documents.rejected }} bị từ chối
+            {{ data.documents.approved }} đã duyệt
           </p>
         </div>
 

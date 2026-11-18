@@ -97,7 +97,7 @@ export class SubjectsService {
   /**
    * Xoá **thật** khỏi cơ sở dữ liệu (trước đây chỉ set `deletedAt` nên bảng vẫn còn row).
    *
-   * - Chặn khi môn còn tài liệu chưa xoá (kể cả PENDING/REJECTED).
+   * - Chặn khi môn còn tài liệu chưa xoá (kể cả bài đang PENDING).
    * - Tài liệu đã xoá mềm vẫn giữ khoá ngoại tới môn, nên dọn chúng trước khi
    *   `delete`, nếu không Postgres chặn bằng FK. File của chúng đã bị xoá lúc xoá bài;
    *   lượt xoá ở đây chỉ dọn nốt file còn sót từ dữ liệu cũ.

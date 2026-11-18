@@ -79,7 +79,7 @@ export class NotificationsService {
     });
   }
 
-  /** Tác giả nhận tin bài bị từ chối kèm lý do để biết cần sửa gì. */
+  /** Tác giả biết bài bị từ chối kèm lý do; bài đã bị xoá nên thông báo không kèm link. */
   async notifyRejected(
     document: ReviewedDocument,
     reason: string | null,
@@ -92,8 +92,8 @@ export class NotificationsService {
       data: {
         type: NotificationType.DOCUMENT_REJECTED,
         title: 'Tài liệu bị từ chối',
-        message: `“${document.title}” chưa được duyệt.${suffix}`,
-        link: `/documents/${document.id}`,
+        message: `“${document.title}” đã bị từ chối và xoá khỏi hệ thống.${suffix}`,
+        link: null,
         userId: document.authorId,
       },
     });

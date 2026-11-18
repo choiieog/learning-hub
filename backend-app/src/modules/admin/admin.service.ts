@@ -11,12 +11,11 @@ const ACTIVITY_WARNINGS = 4;
 const STATUS_LABEL: Record<DocumentStatus, string> = {
   PENDING: 'chờ duyệt',
   APPROVED: 'đã duyệt',
-  REJECTED: 'bị từ chối',
 };
 
 export interface AdminOverview {
   users: { total: number; newIn7Days: number; warned: number; banned: number };
-  documents: { total: number; pending: number; approved: number; rejected: number };
+  documents: { total: number; pending: number; approved: number };
   views: { total: number; in7Days: number };
   topDocuments: {
     id: string;
@@ -56,7 +55,6 @@ export class AdminService {
       documentsTotal,
       documentsPending,
       documentsApproved,
-      documentsRejected,
       viewsAggregate,
       viewsIn7Days,
       topDocuments,
@@ -73,9 +71,6 @@ export class AdminService {
       }),
       this.prisma.document.count({
         where: { ...activeDocuments, status: DocumentStatus.APPROVED },
-      }),
-      this.prisma.document.count({
-        where: { ...activeDocuments, status: DocumentStatus.REJECTED },
       }),
       this.prisma.document.aggregate({ where: activeDocuments, _sum: { viewCount: true } }),
       this.prisma.documentView.count({ where: { createdAt: { gte: since7Days } } }),
@@ -144,7 +139,6 @@ export class AdminService {
         total: documentsTotal,
         pending: documentsPending,
         approved: documentsApproved,
-        rejected: documentsRejected,
       },
       views: {
         total: viewsAggregate._sum.viewCount ?? 0,

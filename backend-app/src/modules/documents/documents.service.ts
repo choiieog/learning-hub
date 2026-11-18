@@ -25,7 +25,6 @@ import {
   DocumentFileInputDto,
 } from './dto/create-document.dto';
 import { ListDocumentsQueryDto } from './dto/list-documents-query.dto';
-import { ResubmitDocumentDto } from './dto/resubmit-document.dto';
 
 const SORTABLE_FIELDS = ['createdAt', 'viewCount', 'ratingAvg'] as const;
 const DOCUMENT_FILE_EXTENSIONS = ['pdf', 'docx', 'pptx'] as const;
@@ -40,7 +39,7 @@ type ResolvedDocumentFile = {
 };
 type SortableField = (typeof SORTABLE_FIELDS)[number];
 
-/** Chỉ các cột cần cho danh sách — không trả deletedAt/rejectReason ra ngoài. */
+/** Chỉ các cột cần cho danh sách — không trả deletedAt ra ngoài. */
 const DOCUMENT_SUMMARY_SELECT = {
   id: true,
   title: true,
@@ -94,44 +93,30 @@ export interface DocumentSummary {
 
 export interface DocumentDetail extends DocumentSummary {
   content: string | null;
-  /** Chỉ trả cho chủ bài hoặc admin, người khác nhận null. */
-  rejectReason: string | null;
   /** true khi lượt xem lần này được tính; false khi hôm nay đã tính rồi. */
   viewCountedToday: boolean;
 }
 
-/** Tài liệu của chính người dùng — kèm lý do từ chối để hiển thị ngay trên thẻ. */
-export interface MyDocumentSummary extends DocumentSummary {
-  rejectReason: string | null;
-}
-
-export interface PaginatedDocuments<T = DocumentSummary> {
-  items: T[];
+export interface PaginatedDocuments {
+  items: DocumentSummary[];
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
-/** Như danh sách nhưng thêm nội dung + lý do từ chối (chỉ cho chủ bài/admin). */
+/** Như danh sách nhưng thêm nội dung (chỉ trả ở trang chi tiết). */
 const DOCUMENT_DETAIL_SELECT = {
   ...DOCUMENT_SUMMARY_SELECT,
   content: true,
-  rejectReason: true,
-} satisfies Prisma.DocumentSelect;
-
-/** Danh sách "Đã chia sẻ": chủ bài cần thấy lý do từ chối nên select thêm cột này. */
-const MY_DOCUMENT_SELECT = {
-  ...DOCUMENT_SUMMARY_SELECT,
-  rejectReason: true,
 } satisfies Prisma.DocumentSelect;
 
 /**
  * Nghiệp vụ tài liệu.
  *
  * Đã làm: findAll (danh sách công khai + tìm kiếm/lọc/phân trang),
- *   findMine (tài liệu của tôi, mọi trạng thái + lý do từ chối),
+ *   findMine (tài liệu của tôi, mọi trạng thái),
  *   findOneAndRegisterView (chi tiết + đếm lượt xem, mỗi người 1 lượt/ngày),
  *   create (đăng tài liệu → PENDING chờ duyệt),
- *   resubmit (sửa bài bị từ chối rồi đưa lại hàng chờ duyệt),
- *   removeOwn (sinh viên tự xoá mềm tài liệu của mình).
+ *   reject (admin từ chối → xoá hẳn bài kèm thông báo lý do),
+ *   removeOwn (sinh viên tự xoá hẳn tài liệu của mình).
  */
 @Injectable()
 export class DocumentsService {
@@ -148,14 +133,11 @@ export class DocumentsService {
     return this.listDocuments({ ...query, status: DocumentStatus.APPROVED });
   }
 
-  /**
-   * GET /api/documents/mine — mọi tài liệu của chính người dùng, không lọc theo trạng thái.
-   * Khác danh sách công khai ở chỗ trả thêm rejectReason để hiển thị lý do bị từ chối.
-   */
+  /** GET /api/documents/mine — mọi tài liệu của chính người dùng, không lọc theo trạng thái. */
   async findMine(
     authorId: string,
     query: ListDocumentsQueryDto,
-  ): Promise<PaginatedDocuments<MyDocumentSummary>> {
+  ): Promise<PaginatedDocuments> {
     const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
     const limit = Math.min(
       MAX_PAGE_SIZE,
@@ -174,12 +156,12 @@ export class DocumentsService {
         orderBy: parseSort(query.sort),
         skip: (page - 1) * limit,
         take: limit,
-        select: MY_DOCUMENT_SELECT,
+        select: DOCUMENT_SUMMARY_SELECT,
       }),
     ]);
 
     return {
-      items: items as MyDocumentSummary[],
+      items: items as DocumentSummary[],
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -251,11 +233,7 @@ export class DocumentsService {
       });
     }
 
-    return this.toDetail(document, {
-      viewCountedToday,
-      viewCount,
-      hideRejectReason: !(isOwner || isAdmin),
-    });
+    return this.toDetail(document, { viewCountedToday, viewCount });
   }
 
   /**
@@ -304,85 +282,6 @@ export class DocumentsService {
   }
 
   /**
-   * PATCH /api/documents/:id — chủ bài sửa nội dung bài bị từ chối rồi gửi duyệt lại.
-   * Bài quay về PENDING, xoá lý do từ chối cũ và publishedAt để admin xét lại từ đầu.
-   * `files` bỏ trống thì giữ file cũ; gửi lên thì thay toàn bộ file đính kèm.
-   */
-  async resubmit(
-    documentId: string,
-    userId: string,
-    dto: ResubmitDocumentDto,
-  ): Promise<DocumentDetail> {
-    const document = await this.prisma.document.findFirst({
-      where: { id: documentId, deletedAt: null },
-      select: { id: true, authorId: true, status: true },
-    });
-
-    if (!document) {
-      throw new NotFoundException('Không tìm thấy tài liệu');
-    }
-
-    if (document.authorId !== userId) {
-      throw new ForbiddenException('Bạn chỉ có thể sửa tài liệu của mình.');
-    }
-
-    if (document.status !== DocumentStatus.REJECTED) {
-      throw new BadRequestException(
-        'Chỉ gửi duyệt lại được tài liệu đã bị từ chối.',
-      );
-    }
-
-    const subject = await this.prisma.subject.findFirst({
-      where: { id: dto.subjectId, deletedAt: null },
-      select: { id: true },
-    });
-
-    if (!subject) {
-      throw new BadRequestException('Môn học không tồn tại hoặc đã bị xoá.');
-    }
-
-    const files = dto.files?.length
-      ? await this.resolveFileInputs(dto.files, userId)
-      : null;
-    const previousFiles = files
-      ? await this.prisma.documentFile.findMany({
-          where: { documentId },
-          select: { publicId: true },
-        })
-      : [];
-
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const document = await tx.document.update({
-        where: { id: documentId },
-        data: {
-          title: dto.title.trim(),
-          description: dto.description?.trim() || null,
-          content: dto.content?.trim() || null,
-          subjectId: subject.id,
-          status: DocumentStatus.PENDING,
-          rejectReason: null,
-          publishedAt: null,
-          ...(files ? { files: { deleteMany: {}, create: files } } : {}),
-        },
-        select: DOCUMENT_DETAIL_SELECT,
-      });
-
-      if (files) {
-        await this.markFilesUsed(tx, files, documentId, userId);
-      }
-
-      return document;
-    });
-
-    // File cũ bị thay thế: xoá khỏi storage để không còn tải được bằng URL cũ.
-    if (files) {
-      await this.deleteStoredFiles(previousFiles.map((file) => file.publicId));
-    }
-
-    return this.toDetail(updated, { viewCountedToday: false });
-  }
-
-  /**
    * DELETE /api/documents/:id — chủ bài xoá hẳn tài liệu của mình.
    *
    * Xoá cứng để `DocumentFile`, `DocumentView` và `Rating` bị dọn theo cascade khai báo
@@ -425,7 +324,7 @@ export class DocumentsService {
    * Duyệt tài liệu: PENDING → APPROVED, gán publishedAt để xuất hiện trong danh sách công khai.
    * Duyệt lại bài đã duyệt trả 400 để tránh đổi publishedAt ngoài ý muốn.
    */
-  async approve(documentId: string, _adminId: string): Promise<DocumentDetail> {
+  async approve(documentId: string): Promise<DocumentDetail> {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, deletedAt: null },
       select: { id: true, status: true },
@@ -447,7 +346,6 @@ export class DocumentsService {
         data: {
           status: DocumentStatus.APPROVED,
           publishedAt: new Date(),
-          rejectReason: null,
         },
         select: DOCUMENT_DETAIL_SELECT,
       });
@@ -478,52 +376,42 @@ export class DocumentsService {
   }
 
   /**
-   * Từ chối tài liệu kèm lý do. Lý do được lưu và chỉ chủ bài / admin thấy
-   * ở trang chi tiết, để tác giả biết cần sửa gì.
+   * Từ chối tài liệu: xoá cứng (cascade dọn file, lượt xem, rating) và báo cho tác giả
+   * kèm lý do. Thông báo nằm cùng transaction nên bài không thể biến mất mà tác giả
+   * không biết vì sao; thông báo không kèm link vì bài đã không còn để mở.
    */
-  async reject(
-    documentId: string,
-    _adminId: string,
-    reason: string,
-  ): Promise<DocumentDetail> {
+  async reject(documentId: string, reason: string): Promise<{ id: string }> {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, deletedAt: null },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        title: true,
+        authorId: true,
+        files: { select: { publicId: true } },
+      },
     });
 
     if (!document) {
       throw new NotFoundException('Không tìm thấy tài liệu');
     }
 
-    if (document.status === DocumentStatus.REJECTED) {
-      throw new BadRequestException('Tài liệu này đã bị từ chối.');
-    }
-
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const document = await tx.document.update({
-        where: { id: documentId },
-        data: {
-          status: DocumentStatus.REJECTED,
-          rejectReason: reason.trim(),
-          publishedAt: null,
-        },
-        select: DOCUMENT_DETAIL_SELECT,
-      });
-
+    await this.prisma.$transaction(async (tx) => {
       await this.notifications.notifyRejected(
         {
           id: document.id,
           title: document.title,
-          authorId: document.author.id,
+          authorId: document.authorId,
         },
         reason,
         tx,
       );
 
-      return document;
+      await tx.document.delete({ where: { id: documentId } });
     });
 
-    return this.toDetail(updated, { viewCountedToday: false });
+    await this.deleteStoredFiles(document.files.map((file) => file.publicId));
+
+    return { id: documentId };
   }
 
   /**
@@ -531,10 +419,7 @@ export class DocumentsService {
    * cho tác giả. Thông báo nằm cùng transaction nên bài không thể biến mất mà tác giả
    * không biết; thông báo không kèm link vì bài đã không còn để mở.
    */
-  async removeByAdmin(
-    documentId: string,
-    _adminId: string,
-  ): Promise<{ id: string }> {
+  async removeByAdmin(documentId: string): Promise<{ id: string }> {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, deletedAt: null },
       select: {
@@ -656,18 +541,14 @@ export class DocumentsService {
     }
   }
 
-  /** Gom document đã select thành payload chi tiết; ẩn rejectReason với người không liên quan. */
+  /** Gom document đã select thành payload chi tiết. */
   private toDetail(
     document: Prisma.DocumentGetPayload<{
       select: typeof DOCUMENT_DETAIL_SELECT;
     }>,
-    options: {
-      viewCountedToday: boolean;
-      viewCount?: number;
-      hideRejectReason?: boolean;
-    },
+    options: { viewCountedToday: boolean; viewCount?: number },
   ): DocumentDetail {
-    const { content, rejectReason, ...summary } = document;
+    const { content, ...summary } = document;
 
     return {
       ...summary,
@@ -675,7 +556,6 @@ export class DocumentsService {
       status: document.status as DocumentStatus,
       content,
       viewCount: options.viewCount ?? document.viewCount,
-      rejectReason: options.hideRejectReason ? null : rejectReason,
       viewCountedToday: options.viewCountedToday,
     };
   }

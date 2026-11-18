@@ -10,26 +10,15 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
-import {
-  DocumentStatus,
-  MyDocumentSummary,
-  PaginationMeta,
-  StoredFile,
-  Subject,
-} from '../../../../core/models';
+import { DocumentStatus, DocumentSummary, PaginationMeta } from '../../../../core/models';
 import { DocumentService } from '../../../../core/services/document.service';
-import { SubjectService } from '../../../../core/services/subject.service';
-import { UploadService } from '../../../../core/services/upload.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
-import { fileExtension, formatFileSize, initials } from '../../../../core/utils/format.util';
+import { DOCUMENT_STATUS_LABEL } from '../../../../core/utils/document-status.util';
+import { fileExtension } from '../../../../core/utils/format.util';
 
 const PAGE_SIZE = 9;
-const MIN_TITLE_LENGTH = 5;
-const MAX_FILE_MB = 20;
-const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
-const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'pptx'];
 
-type StatusFilter = 'ALL' | DocumentStatus;
+type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED';
 
 interface StatusTab {
   value: StatusFilter;
@@ -40,14 +29,7 @@ const STATUS_TABS: StatusTab[] = [
   { value: 'ALL', label: 'Tất cả' },
   { value: 'PENDING', label: 'Chờ duyệt' },
   { value: 'APPROVED', label: 'Đã duyệt' },
-  { value: 'REJECTED', label: 'Bị từ chối' },
 ];
-
-const STATUS_LABEL: Record<DocumentStatus, string> = {
-  PENDING: 'Chờ duyệt',
-  APPROVED: 'Đã duyệt',
-  REJECTED: 'Bị từ chối',
-};
 
 const EMPTY_STATE: Record<StatusFilter, { title: string; hint: string }> = {
   ALL: {
@@ -61,10 +43,6 @@ const EMPTY_STATE: Record<StatusFilter, { title: string; hint: string }> = {
   APPROVED: {
     title: 'Chưa có tài liệu nào được duyệt',
     hint: 'Tài liệu được duyệt sẽ hiển thị công khai với mọi sinh viên.',
-  },
-  REJECTED: {
-    title: 'Không có tài liệu nào bị từ chối',
-    hint: 'Nếu bài bị từ chối, lý do sẽ hiện ngay trên thẻ tài liệu.',
   },
 };
 
@@ -182,17 +160,6 @@ const EMPTY_STATE: Record<StatusFilter, { title: string; hint: string }> = {
                 {{ item.subject.code }} · {{ item.subject.name }}
               </p>
 
-              @if (item.status === 'REJECTED' && item.rejectReason) {
-                <div class="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
-                  <p class="text-[11px] font-semibold uppercase tracking-wide text-rose-700">
-                    Lý do từ chối
-                  </p>
-                  <p class="mt-1 line-clamp-3 text-sm leading-relaxed text-rose-700">
-                    {{ item.rejectReason }}
-                  </p>
-                </div>
-              }
-
               @if (item.status === 'PENDING') {
                 <p class="mt-3 text-xs text-amber-700">
                   Đang chờ admin duyệt — bạn sẽ thấy cập nhật ngay tại đây.
@@ -235,17 +202,6 @@ const EMPTY_STATE: Record<StatusFilter, { title: string; hint: string }> = {
                 >
                   Chi tiết →
                 </a>
-
-                @if (item.status === 'REJECTED') {
-                  <button
-                    type="button"
-                    class="font-semibold text-indigo-600 transition hover:text-indigo-700"
-                    [attr.aria-label]="'Sửa và gửi duyệt lại ' + item.title"
-                    (click)="openEdit(item)"
-                  >
-                    Sửa &amp; gửi lại
-                  </button>
-                }
 
                 <button
                   type="button"
@@ -301,153 +257,6 @@ const EMPTY_STATE: Record<StatusFilter, { title: string; hint: string }> = {
       </nav>
     }
 
-    @if (editTarget(); as target) {
-      <div class="fixed inset-0 z-50 flex justify-center overflow-y-auto bg-slate-900/40 p-4 items-center">
-        <form
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-document-title"
-          class="my-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
-          (submit)="submitEdit($event)"
-        >
-          <h2 id="edit-document-title" class="text-lg font-semibold text-slate-900">
-            Sửa và gửi duyệt lại
-          </h2>
-          <p class="mt-1 text-sm text-slate-500">
-            Chỉnh nội dung hoặc thay file, sau đó gửi lại hàng chờ duyệt. Bài sẽ quay về trạng thái
-            “Chờ duyệt”.
-          </p>
-
-          @if (target.rejectReason) {
-            <div class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
-              <p class="text-[11px] font-semibold uppercase tracking-wide text-rose-700">
-                Lý do từ chối trước đó
-              </p>
-              <p class="mt-1 text-sm leading-relaxed text-rose-700">{{ target.rejectReason }}</p>
-            </div>
-          }
-
-          @if (editErrors().length > 0) {
-            <div class="alert alert-error mt-4" role="alert">
-              @for (error of editErrors(); track error) {
-                <p>{{ error }}</p>
-              }
-            </div>
-          }
-
-          <div class="mt-4">
-            <label class="mb-1.5 block text-sm font-medium text-slate-700" for="edit-title">
-              Tiêu đề <span class="text-rose-500">*</span>
-            </label>
-            <input
-              id="edit-title"
-              type="text"
-              class="field-input"
-              maxlength="200"
-              [value]="editTitle()"
-              (input)="editTitle.set(readValue($event))"
-            />
-            <p class="mt-1 text-xs text-slate-400">
-              {{ editTitle().trim().length }}/200 ký tự — cần ít nhất {{ minTitleLength }} ký tự.
-            </p>
-          </div>
-
-          <div class="mt-4">
-            <label class="mb-1.5 block text-sm font-medium text-slate-700" for="edit-subject">
-              Môn học <span class="text-rose-500">*</span>
-            </label>
-            <select
-              id="edit-subject"
-              class="field-input"
-              (change)="editSubjectId.set(readValue($event))"
-            >
-              <option value="" [selected]="editSubjectId() === ''">— Chọn môn học —</option>
-              @for (subject of subjects(); track subject.id) {
-                <option [value]="subject.id" [selected]="subject.id === editSubjectId()">
-                  {{ subject.code }} · {{ subject.name }}
-                </option>
-              }
-            </select>
-          </div>
-
-          <div class="mt-4">
-            <label class="mb-1.5 block text-sm font-medium text-slate-700" for="edit-description">
-              Mô tả
-            </label>
-            <textarea
-              id="edit-description"
-              rows="3"
-              class="field-input resize-y"
-              maxlength="1000"
-              [value]="editDescription()"
-              (input)="editDescription.set(readValue($event))"
-            ></textarea>
-          </div>
-
-          <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p class="text-sm font-medium text-slate-700">File đính kèm</p>
-            <ul class="mt-2 space-y-1">
-              @for (file of target.files; track file.url) {
-                <li class="flex items-center justify-between gap-2 text-xs text-slate-600">
-                  <span class="truncate">{{ file.name }}</span>
-                  <span class="shrink-0 text-slate-400">{{ size(file.size) }}</span>
-                </li>
-              }
-            </ul>
-
-            <label class="mt-3 inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-indigo-600 hover:text-indigo-700">
-              <input
-                type="file"
-                class="sr-only"
-                accept=".pdf,.docx,.pptx"
-                (change)="onEditFileSelected($event)"
-              />
-              Thay bằng file mới (tuỳ chọn)
-            </label>
-
-            @if (editFile(); as file) {
-              <p class="mt-2 flex items-center gap-2 text-xs text-emerald-700">
-                <span class="truncate">{{ file.name }} · {{ size(file.size) }}</span>
-                <button
-                  type="button"
-                  class="shrink-0 font-semibold text-slate-500 underline-offset-2 hover:underline"
-                  (click)="clearEditFile()"
-                >
-                  Bỏ chọn
-                </button>
-              </p>
-            }
-
-            @if (editFileError()) {
-              <p class="mt-2 text-xs text-rose-600">{{ editFileError() }}</p>
-            }
-
-            @if (editProgress()) {
-              <p class="mt-2 text-xs text-slate-500">{{ editProgress() }}</p>
-            }
-          </div>
-
-          <div class="mt-6 flex justify-end gap-2">
-            <button
-              type="button"
-              class="btn-secondary"
-              [disabled]="editSubmitting()"
-              (click)="closeEdit()"
-            >
-              Huỷ
-            </button>
-            <button
-              type="submit"
-              class="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
-              [disabled]="!canSubmitEdit()"
-            >
-              {{ editSubmitting() ? 'Đang gửi…' : 'Gửi duyệt lại' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    }
-
     @if (deleteTarget(); as target) {
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
         <div
@@ -491,16 +300,13 @@ const EMPTY_STATE: Record<StatusFilter, { title: string; hint: string }> = {
 })
 export class MyDocuments implements OnInit {
   private readonly documentsApi = inject(DocumentService);
-  private readonly subjectsApi = inject(SubjectService);
-  private readonly uploadsApi = inject(UploadService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly minTitleLength = MIN_TITLE_LENGTH;
   protected readonly tabs = STATUS_TABS;
   protected readonly status = signal<StatusFilter>('ALL');
-  protected readonly items = signal<MyDocumentSummary[]>([]);
+  protected readonly items = signal<DocumentSummary[]>([]);
   protected readonly meta = signal<PaginationMeta>({
     page: 1,
     limit: PAGE_SIZE,
@@ -510,30 +316,12 @@ export class MyDocuments implements OnInit {
   protected readonly loading = signal(true);
   protected readonly errors = signal<string[]>([]);
   protected readonly success = signal('');
-  protected readonly subjects = signal<Subject[]>([]);
 
-  protected readonly deleteTarget = signal<MyDocumentSummary | null>(null);
+  protected readonly deleteTarget = signal<DocumentSummary | null>(null);
   protected readonly deleting = signal(false);
   protected readonly deleteError = signal('');
 
-  protected readonly editTarget = signal<MyDocumentSummary | null>(null);
-  protected readonly editTitle = signal('');
-  protected readonly editDescription = signal('');
-  protected readonly editSubjectId = signal('');
-  protected readonly editFile = signal<File | null>(null);
-  protected readonly editFileError = signal('');
-  protected readonly editErrors = signal<string[]>([]);
-  protected readonly editSubmitting = signal(false);
-  protected readonly editProgress = signal('');
-
   protected readonly emptyState = computed(() => EMPTY_STATE[this.status()]);
-
-  protected readonly canSubmitEdit = computed(
-    () =>
-      !this.editSubmitting() &&
-      this.editTitle().trim().length >= MIN_TITLE_LENGTH &&
-      this.editSubjectId() !== '',
-  );
 
   protected readonly rangeLabel = computed(() => {
     const meta = this.meta();
@@ -555,14 +343,6 @@ export class MyDocuments implements OnInit {
   });
 
   ngOnInit(): void {
-    this.subjectsApi
-      .list()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (subjects) => this.subjects.set(subjects),
-        error: () => this.subjects.set([]),
-      });
-
     // URL là nguồn dữ liệu duy nhất cho tab và số trang.
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -600,120 +380,7 @@ export class MyDocuments implements OnInit {
     });
   }
 
-  protected readValue(event: Event): string {
-    return (event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).value;
-  }
-
-  protected openEdit(item: MyDocumentSummary): void {
-    this.success.set('');
-    this.editErrors.set([]);
-    this.editFileError.set('');
-    this.editProgress.set('');
-    this.editFile.set(null);
-    this.editTarget.set(item);
-    this.editTitle.set(item.title);
-    this.editDescription.set(item.description ?? '');
-    this.editSubjectId.set(item.subject.id);
-  }
-
-  protected closeEdit(): void {
-    if (this.editSubmitting()) {
-      return;
-    }
-
-    this.editTarget.set(null);
-    this.editErrors.set([]);
-    this.editFileError.set('');
-    this.editProgress.set('');
-  }
-
-  protected onEditFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
-    input.value = '';
-    this.editFileError.set('');
-
-    if (!file) {
-      return;
-    }
-
-    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
-    if (!ALLOWED_EXTENSIONS.includes(extension)) {
-      this.editFileError.set(`"${file.name}": chỉ nhận file PDF, DOCX, PPTX.`);
-      this.editFile.set(null);
-      return;
-    }
-
-    if (file.size === 0) {
-      this.editFileError.set(`"${file.name}" là file rỗng.`);
-      this.editFile.set(null);
-      return;
-    }
-
-    if (file.size > MAX_FILE_BYTES) {
-      this.editFileError.set(
-        `"${file.name}" nặng ${formatFileSize(file.size)} — vượt quá ${MAX_FILE_MB}MB.`,
-      );
-      this.editFile.set(null);
-      return;
-    }
-
-    this.editFile.set(file);
-  }
-
-  protected clearEditFile(): void {
-    this.editFile.set(null);
-    this.editFileError.set('');
-  }
-
-  protected submitEdit(event: Event): void {
-    event.preventDefault();
-
-    const target = this.editTarget();
-    if (!target || this.editSubmitting()) {
-      return;
-    }
-
-    this.editErrors.set([]);
-
-    const title = this.editTitle().trim();
-    const subjectId = this.editSubjectId();
-
-    if (title.length < MIN_TITLE_LENGTH) {
-      this.editErrors.set([`Tiêu đề cần ít nhất ${MIN_TITLE_LENGTH} ký tự.`]);
-      return;
-    }
-
-    if (!subjectId) {
-      this.editErrors.set(['Chọn môn học cho tài liệu.']);
-      return;
-    }
-
-    this.editSubmitting.set(true);
-    const file = this.editFile();
-
-    if (!file) {
-      this.sendResubmit(target, title, subjectId, null);
-      return;
-    }
-
-    this.editProgress.set(`Đang tải ${file.name}…`);
-    this.uploadsApi
-      .upload(file, 'documents')
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (stored) => {
-          this.editProgress.set('Đang gửi duyệt lại…');
-          this.sendResubmit(target, title, subjectId, stored);
-        },
-        error: (error: unknown) => {
-          this.editErrors.set(getApiErrorMessages(error));
-          this.finishEdit();
-        },
-      });
-  }
-
-  protected askDelete(item: MyDocumentSummary): void {
+  protected askDelete(item: DocumentSummary): void {
     this.success.set('');
     this.deleteError.set('');
     this.deleteTarget.set(item);
@@ -755,16 +422,12 @@ export class MyDocuments implements OnInit {
   }
 
   protected statusLabel(status: DocumentStatus): string {
-    return STATUS_LABEL[status];
+    return DOCUMENT_STATUS_LABEL[status];
   }
 
   protected badgeClass(status: DocumentStatus): string {
     if (status === 'APPROVED') {
       return 'rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700';
-    }
-
-    if (status === 'REJECTED') {
-      return 'rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700';
     }
 
     return 'rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700';
@@ -774,55 +437,9 @@ export class MyDocuments implements OnInit {
     return fileExtension(name);
   }
 
-  protected size(bytes: number): string {
-    return formatFileSize(bytes);
-  }
-
-  protected authorInitials(fullName: string): string {
-    return initials(fullName);
-  }
-
-  private sendResubmit(
-    target: MyDocumentSummary,
-    title: string,
-    subjectId: string,
-    stored: StoredFile | null,
-  ): void {
-    const description = this.editDescription().trim();
-
-    this.documentsApi
-      .resubmit(target.id, {
-        title,
-        description: description || undefined,
-        subjectId,
-        files: stored ? [stored] : undefined,
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.finishEdit();
-          this.editTarget.set(null);
-          this.editFile.set(null);
-          this.success.set(`Đã gửi duyệt lại “${title}”. Tài liệu đang chờ admin xem xét.`);
-          this.fetch(this.meta().page);
-        },
-        error: (error: unknown) => {
-          this.editErrors.set(getApiErrorMessages(error));
-          this.finishEdit();
-        },
-      });
-  }
-
-  private finishEdit(): void {
-    this.editSubmitting.set(false);
-    this.editProgress.set('');
-  }
-
   private readFilters(params: ParamMap): void {
     const status = params.get('status');
-    this.status.set(
-      status === 'PENDING' || status === 'APPROVED' || status === 'REJECTED' ? status : 'ALL',
-    );
+    this.status.set(status === 'PENDING' || status === 'APPROVED' ? status : 'ALL');
   }
 
   private fetch(page: number): void {

@@ -10,7 +10,7 @@
 
 Quy tắc:
 
-- Chỉ tài liệu `APPROVED` và chưa xoá mới xem / nhận đánh giá (PENDING, REJECTED → 404).
+- Chỉ tài liệu `APPROVED` và chưa xoá mới xem / nhận đánh giá (PENDING → 404).
 - Tác giả không tự đánh giá bài của mình (404 kèm message giải thích).
 - Sau mỗi lần ghi, cache `Document.ratingAvg` / `ratingCount` được tính lại **trong cùng transaction**,
   nên danh sách và sắp xếp `ratingAvg:desc` luôn khớp. Trung bình làm tròn 2 chữ số.

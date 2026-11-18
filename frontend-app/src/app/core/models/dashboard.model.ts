@@ -9,8 +9,6 @@ export interface DashboardDocumentCard {
   viewCount: number;
   createdAt: string;
   publishedAt?: string | null;
-  /** chỉ có ở tài liệu của tôi */
-  rejectReason?: string | null;
   subject: Pick<Subject, 'id' | 'code' | 'name'>;
   files: { name: string; mimeType: string; size: number }[];
   /** chỉ có ở top tài liệu toàn hệ thống */
@@ -21,7 +19,6 @@ export interface DashboardStats {
   totalDocuments: number;
   approved: number;
   pending: number;
-  rejected: number;
   totalViews: number;
   viewsLast7Days: number;
 }

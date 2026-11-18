@@ -8,7 +8,6 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -32,23 +31,19 @@ export class AdminDocumentsController {
 
   /** PATCH /api/admin/documents/:id/approve */
   @Patch(':id/approve')
-  approve(@Param('id') id: string, @CurrentUser('id') adminId: string) {
-    return this.documentsService.approve(id, adminId);
+  approve(@Param('id') id: string) {
+    return this.documentsService.approve(id);
   }
 
-  /** PATCH /api/admin/documents/:id/reject — kèm lý do để báo cho tác giả (phase 2) */
+  /** PATCH /api/admin/documents/:id/reject — từ chối = xoá hẳn, lý do gửi cho tác giả */
   @Patch(':id/reject')
-  reject(
-    @Param('id') id: string,
-    @CurrentUser('id') adminId: string,
-    @Body() dto: RejectDocumentDto,
-  ) {
-    return this.documentsService.reject(id, adminId, dto.reason);
+  reject(@Param('id') id: string, @Body() dto: RejectDocumentDto) {
+    return this.documentsService.reject(id, dto.reason);
   }
 
   /** DELETE /api/admin/documents/:id — xóa tài liệu vi phạm */
   @Delete(':id')
-  remove(@Param('id') id: string, @CurrentUser('id') adminId: string) {
-    return this.documentsService.removeByAdmin(id, adminId);
+  remove(@Param('id') id: string) {
+    return this.documentsService.removeByAdmin(id);
   }
 }

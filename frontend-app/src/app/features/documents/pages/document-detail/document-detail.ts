@@ -15,15 +15,10 @@ import { DocumentDetail, DocumentFile, DocumentStatus } from '../../../../core/m
 import { AuthService } from '../../../../core/services/auth.service';
 import { DocumentService } from '../../../../core/services/document.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
+import { DOCUMENT_STATUS_LABEL } from '../../../../core/utils/document-status.util';
 import { fileExtension, formatFileSize, initials } from '../../../../core/utils/format.util';
 import { RatingSection } from '../../../ratings/components/rating-section/rating-section';
 import { DocumentPreview } from '../../components/document-preview/document-preview';
-
-const STATUS_LABEL: Record<DocumentStatus, string> = {
-  PENDING: 'Chờ duyệt',
-  APPROVED: 'Đã duyệt',
-  REJECTED: 'Bị từ chối',
-};
 
 /**
  * Chi tiết tài liệu.
@@ -162,13 +157,6 @@ const STATUS_LABEL: Record<DocumentStatus, string> = {
               </span>
             }
           </div>
-
-          @if (doc.rejectReason) {
-            <div class="alert mt-5 border border-rose-200 bg-rose-50 text-rose-700" role="status">
-              <p class="font-semibold">Tài liệu bị từ chối</p>
-              <p class="mt-1">{{ doc.rejectReason }}</p>
-            </div>
-          }
 
           @if (doc.status === 'APPROVED' && doc.viewCountedToday === false) {
             <p class="mt-4 text-xs text-slate-400">
@@ -388,7 +376,7 @@ export class DocumentDetailPage implements OnInit {
   }
 
   protected statusLabel(status: DocumentStatus): string {
-    return STATUS_LABEL[status];
+    return DOCUMENT_STATUS_LABEL[status];
   }
 
   protected ratingLabel(value: number): string {

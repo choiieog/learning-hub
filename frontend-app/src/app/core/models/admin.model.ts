@@ -3,7 +3,7 @@ import { UserRole, UserStatus } from './user.model';
 /** Số liệu trang tổng quan admin — GET /api/admin/dashboard/overview */
 export interface AdminOverview {
   users: { total: number; newIn7Days: number; warned: number; banned: number };
-  documents: { total: number; pending: number; approved: number; rejected: number };
+  documents: { total: number; pending: number; approved: number };
   views: { total: number; in7Days: number };
   topDocuments: {
     id: string;

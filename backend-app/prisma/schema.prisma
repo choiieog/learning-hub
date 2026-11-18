@@ -28,7 +28,6 @@ enum UserStatus {
 enum DocumentStatus {
   PENDING
   APPROVED
-  REJECTED
 }
 
 enum NotificationType {
@@ -133,7 +132,6 @@ model Document {
   description  String?        @db.Text
   content      String?        @db.Text // markdown tùy chọn (bài viết hướng dẫn)
   status       DocumentStatus @default(PENDING)
-  rejectReason String?
   viewCount    Int            @default(0)
   ratingAvg    Float          @default(0)
   ratingCount  Int            @default(0)

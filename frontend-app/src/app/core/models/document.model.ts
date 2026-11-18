@@ -1,6 +1,6 @@
 import { Subject } from './subject.model';
 
-export type DocumentStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type DocumentStatus = 'PENDING' | 'APPROVED';
 
 export interface DocumentAuthor {
   id: string;
@@ -34,16 +34,9 @@ export interface DocumentSummary {
   publishedAt?: string;
 }
 
-/** Tài liệu của chính người dùng — kèm lý do từ chối do admin gửi. */
-export interface MyDocumentSummary extends DocumentSummary {
-  rejectReason?: string | null;
-}
-
 export interface DocumentDetail extends DocumentSummary {
   /** markdown tùy chọn */
   content?: string;
-  /** chỉ hiển thị cho chủ bài / admin */
-  rejectReason?: string;
   /** true khi lượt xem lần này được tính; false khi hôm nay đã tính rồi */
   viewCountedToday?: boolean;
 }
@@ -67,16 +60,6 @@ export interface CreateDocumentPayload {
   content?: string;
   subjectId: string;
   files: DocumentFile[];
-}
-
-/** Body của PATCH /api/documents/:id — sửa bài bị từ chối rồi gửi duyệt lại */
-export interface ResubmitDocumentPayload {
-  title: string;
-  description?: string;
-  content?: string;
-  subjectId: string;
-  /** Bỏ trống để giữ file cũ; gửi lên để thay toàn bộ file đính kèm */
-  files?: DocumentFile[];
 }
 
 /** Query cho danh sách "Đã chia sẻ" của người dùng */

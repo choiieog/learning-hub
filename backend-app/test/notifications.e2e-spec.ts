@@ -249,7 +249,7 @@ describe('Thông báo (e2e)', () => {
     expect(otherRead.items[0].readAt).not.toBeNull();
   });
 
-  it('từ chối bài → thông báo kèm lý do để tác giả sửa', async () => {
+  it('từ chối bài → xoá hẳn bài và báo lý do cho tác giả', async () => {
     const documentId = await createDocument(`Bài E2E từ chối ${suffix}`);
 
     await server()
@@ -263,7 +263,9 @@ describe('Thông báo (e2e)', () => {
 
     expect(rejected).toBeDefined();
     expect(rejected?.message).toContain('Thiếu nguồn tham khảo');
-    expect(rejected?.link).toBe(`/documents/${documentId}`);
+    // Bài đã bị xoá hẳn nên thông báo không kèm link.
+    expect(rejected?.link).toBeNull();
+    expect(await prisma.document.findUnique({ where: { id: documentId } })).toBeNull();
   });
 
   it('admin xoá bài → tác giả nhận thông báo DOCUMENT_DELETED', async () => {

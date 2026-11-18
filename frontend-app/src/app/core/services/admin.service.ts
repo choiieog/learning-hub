@@ -17,7 +17,6 @@ import {
   Paginated,
   Subject,
   SystemSettings,
-  User,
 } from '../models';
 import { toHttpParams } from '../utils/http-params.util';
 
@@ -49,9 +48,10 @@ export class AdminService {
       .pipe(map((res) => res.data));
   }
 
-  rejectDocument(id: string, reason: string): Observable<DocumentDetail> {
+  /** Từ chối = xoá hẳn tài liệu; backend chỉ trả về id của bài đã xoá. */
+  rejectDocument(id: string, reason: string): Observable<{ id: string }> {
     return this.http
-      .patch<ApiResponse<DocumentDetail>>(`${this.baseUrl}/documents/${id}/reject`, { reason })
+      .patch<ApiResponse<{ id: string }>>(`${this.baseUrl}/documents/${id}/reject`, { reason })
       .pipe(map((res) => res.data));
   }
 

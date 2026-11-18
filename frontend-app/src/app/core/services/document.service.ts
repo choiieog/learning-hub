@@ -8,10 +8,8 @@ import {
   DocumentDetail,
   DocumentListQuery,
   DocumentSummary,
-  MyDocumentSummary,
   MyDocumentsQuery,
   Paginated,
-  ResubmitDocumentPayload,
 } from '../models';
 import { toHttpParams } from '../utils/http-params.util';
 
@@ -37,9 +35,9 @@ export class DocumentService {
   }
 
   /** Tài liệu tôi đã chia sẻ (mọi trạng thái duyệt). */
-  findMine(query: MyDocumentsQuery = {}): Observable<Paginated<MyDocumentSummary>> {
+  findMine(query: MyDocumentsQuery = {}): Observable<Paginated<DocumentSummary>> {
     return this.http
-      .get<ApiResponse<Paginated<MyDocumentSummary>>>(`${this.baseUrl}/mine`, {
+      .get<ApiResponse<Paginated<DocumentSummary>>>(`${this.baseUrl}/mine`, {
         params: toHttpParams(query),
       })
       .pipe(map((res) => res.data));
@@ -48,13 +46,6 @@ export class DocumentService {
   create(payload: CreateDocumentPayload): Observable<DocumentDetail> {
     return this.http
       .post<ApiResponse<DocumentDetail>>(this.baseUrl, payload)
-      .pipe(map((res) => res.data));
-  }
-
-  /** Sửa tài liệu bị từ chối rồi gửi duyệt lại (backend đưa về PENDING). */
-  resubmit(id: string, payload: ResubmitDocumentPayload): Observable<DocumentDetail> {
-    return this.http
-      .patch<ApiResponse<DocumentDetail>>(`${this.baseUrl}/${id}`, payload)
       .pipe(map((res) => res.data));
   }
 

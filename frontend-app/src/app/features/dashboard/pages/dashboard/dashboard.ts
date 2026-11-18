@@ -14,19 +14,14 @@ import { DocumentStatus, DashboardOverview } from '../../../../core/models';
 import { AuthService } from '../../../../core/services/auth.service';
 import { DashboardService } from '../../../../core/services/dashboard.service';
 import { getApiErrorMessages } from '../../../../core/utils/api-error.util';
+import { DOCUMENT_STATUS_LABEL } from '../../../../core/utils/document-status.util';
 import { fileExtension } from '../../../../core/utils/format.util';
-
-const STATUS_LABEL: Record<DocumentStatus, string> = {
-  PENDING: 'Chờ duyệt',
-  APPROVED: 'Đã duyệt',
-  REJECTED: 'Bị từ chối',
-};
 
 interface StatCard {
   label: string;
   value: number;
   hint: string;
-  tone: 'slate' | 'emerald' | 'amber' | 'rose';
+  tone: 'slate' | 'emerald' | 'amber';
   link?: string;
   queryParams?: Record<string, string>;
 }
@@ -183,11 +178,6 @@ interface StatCard {
                       <p class="mt-0.5 text-xs text-indigo-600">
                         {{ item.subject.code }} · {{ item.subject.name }}
                       </p>
-                      @if (item.status === 'REJECTED' && item.rejectReason) {
-                        <p class="mt-1 line-clamp-1 text-xs text-rose-600">
-                          Lý do: {{ item.rejectReason }}
-                        </p>
-                      }
                       <p class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                         <span>{{ item.createdAt | date: 'dd/MM/yyyy' }}</span>
                         <span aria-hidden="true">·</span>
@@ -303,14 +293,6 @@ export class Dashboard implements OnInit {
         link: '/my-documents',
         queryParams: { status: 'PENDING' },
       },
-      {
-        label: 'Bị từ chối',
-        value: stats?.rejected ?? 0,
-        hint: 'Có thể sửa và gửi lại',
-        tone: 'rose',
-        link: '/my-documents',
-        queryParams: { status: 'REJECTED' },
-      },
     ];
   });
 
@@ -319,16 +301,12 @@ export class Dashboard implements OnInit {
   }
 
   protected statusLabel(status: DocumentStatus): string {
-    return STATUS_LABEL[status];
+    return DOCUMENT_STATUS_LABEL[status];
   }
 
   protected badgeClass(status: DocumentStatus): string {
     if (status === 'APPROVED') {
       return 'shrink-0 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700';
-    }
-
-    if (status === 'REJECTED') {
-      return 'shrink-0 rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700';
     }
 
     return 'shrink-0 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700';
@@ -339,7 +317,6 @@ export class Dashboard implements OnInit {
       slate: 'text-slate-900',
       emerald: 'text-emerald-600',
       amber: 'text-amber-600',
-      rose: 'text-rose-600',
     };
 
     return tones[tone];

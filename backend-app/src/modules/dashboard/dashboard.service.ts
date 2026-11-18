@@ -21,12 +21,6 @@ const DASHBOARD_DOCUMENT_SELECT = {
   files: { select: { name: true, mimeType: true, size: true } },
 } satisfies Prisma.DocumentSelect;
 
-/** Tài liệu của tôi: thêm lý do từ chối để hiện ngay trên thẻ. */
-const MY_DOCUMENT_CARD_SELECT = {
-  ...DASHBOARD_DOCUMENT_SELECT,
-  rejectReason: true,
-} satisfies Prisma.DocumentSelect;
-
 /** Top tài liệu: thêm tác giả vì đây là bài của người khác. */
 const TOP_DOCUMENT_CARD_SELECT = {
   ...DASHBOARD_DOCUMENT_SELECT,
@@ -40,7 +34,6 @@ export interface DashboardDocumentCard {
   viewCount: number;
   createdAt: Date;
   publishedAt: Date | null;
-  rejectReason?: string | null;
   subject: { id: string; code: string; name: string };
   files: { name: string; mimeType: string; size: number }[];
   author?: { id: string; fullName: string; avatarUrl: string | null };
@@ -51,7 +44,6 @@ export interface DashboardOverview {
     totalDocuments: number;
     approved: number;
     pending: number;
-    rejected: number;
     totalViews: number;
     viewsLast7Days: number;
   };
@@ -78,18 +70,17 @@ export class DashboardService {
     const trendStart = new Date(Date.now() - (TREND_DAYS - 1) * DAY_MS);
     trendStart.setHours(0, 0, 0, 0);
 
-    const [totalDocuments, approved, pending, rejected, viewsAgg, recentDocuments, topDocuments, trendRows] =
+    const [totalDocuments, approved, pending, viewsAgg, recentDocuments, topDocuments, trendRows] =
       await Promise.all([
         this.prisma.document.count({ where: mine }),
         this.prisma.document.count({ where: { ...mine, status: DocumentStatus.APPROVED } }),
         this.prisma.document.count({ where: { ...mine, status: DocumentStatus.PENDING } }),
-        this.prisma.document.count({ where: { ...mine, status: DocumentStatus.REJECTED } }),
         this.prisma.document.aggregate({ where: mine, _sum: { viewCount: true } }),
         this.prisma.document.findMany({
           where: mine,
           orderBy: { createdAt: 'desc' },
           take: RECENT_LIMIT,
-          select: MY_DOCUMENT_CARD_SELECT,
+          select: DASHBOARD_DOCUMENT_SELECT,
         }),
         this.prisma.document.findMany({
           where: { status: DocumentStatus.APPROVED, deletedAt: null },
@@ -116,7 +107,6 @@ export class DashboardService {
         totalDocuments,
         approved,
         pending,
-        rejected,
         totalViews: viewsAgg._sum.viewCount ?? 0,
         viewsLast7Days: viewTrend.reduce((sum, point) => sum + point.count, 0),
       },
