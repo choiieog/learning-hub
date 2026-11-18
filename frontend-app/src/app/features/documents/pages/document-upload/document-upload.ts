@@ -7,8 +7,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
+import { Observable, TimeoutError, catchError, throwError, timeout } from 'rxjs';
 import { Subject, StoredFile } from '../../../../core/models';
 import { DocumentService } from '../../../../core/services/document.service';
 import { SubjectService } from '../../../../core/services/subject.service';
@@ -21,6 +23,10 @@ const MAX_FILE_MB = 20;
 const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'pptx'];
 const MIN_TITLE_LENGTH = 5;
+/** Mỗi file tối đa 20MB nên 2 phút là quá đủ; treo lâu hơn coi như mất kết nối. */
+const UPLOAD_TIMEOUT_MS = 120_000;
+const CREATE_TIMEOUT_MS = 30_000;
+const UPLOAD_ATTEMPTS = 2;
 
 /**
  * Đăng tài liệu: chọn môn, tải file thật lên (qua POST /api/uploads) rồi tạo
@@ -410,8 +416,7 @@ export class DocumentUpload implements OnInit {
       `Đang tải ${next.name} (${this.uploaded().length + 1}/${this.files().length})…`,
     );
 
-    this.uploadsApi
-      .upload(next, 'documents')
+    this.uploadFile(next)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (stored) => {
@@ -421,14 +426,44 @@ export class DocumentUpload implements OnInit {
         error: (error: unknown) => {
           const done = this.uploaded().length;
           this.errors.set([
-            ...getApiErrorMessages(error),
+            ...(error instanceof TimeoutError
+              ? [
+                  `Tải "${next.name}" quá lâu (${UPLOAD_TIMEOUT_MS / 1000}s) — máy chủ không phản hồi. File này chưa được tải lên.`,
+                ]
+              : getApiErrorMessages(error)),
             done > 0
-              ? `Đã tải xong ${done}/${this.files().length} file. Bấm "Đăng tài liệu" để chỉ tải tiếp các file còn lại.`
+              ? `Đã tải xong ${done}/${this.files().length} file. Bấm "Gửi để duyệt" để chỉ tải tiếp các file còn lại.`
               : 'Chưa file nào được tải lên. Kiểm tra kết nối rồi thử lại.',
           ]);
           this.finish();
         },
       });
+  }
+
+  /**
+   * Một file: timeout + tự thử lại 1 lần khi mất kết nối (status 0) hoặc server không trả lời.
+   * Trước đây request treo làm form kẹt ở "Đang gửi…" cho tới khi F5, hoặc mất kết nối một
+   * nhịp là phải bấm lại từ đầu.
+   */
+  private uploadFile(file: File, attempt = 1): Observable<StoredFile> {
+    return this.uploadsApi.upload(file, 'documents').pipe(
+      timeout({ first: UPLOAD_TIMEOUT_MS }),
+      catchError((error: unknown) => {
+        const retryable =
+          error instanceof TimeoutError ||
+          (error instanceof HttpErrorResponse && error.status === 0);
+
+        if (retryable && attempt < UPLOAD_ATTEMPTS) {
+          this.progress.set(
+            `Mất kết nối khi tải ${file.name} — đang thử lại (${attempt + 1}/${UPLOAD_ATTEMPTS})…`,
+          );
+
+          return this.uploadFile(file, attempt + 1);
+        }
+
+        return throwError(() => error);
+      }),
+    );
   }
 
   /** Kết quả upload của một file đã có trong `uploaded` (khớp theo tên + dung lượng). */
@@ -448,7 +483,7 @@ export class DocumentUpload implements OnInit {
 
     this.documentsApi
       .create({ title, description: description || undefined, subjectId, files })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(timeout({ first: CREATE_TIMEOUT_MS }), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (document) => {
           // Dọn form trước khi rời trang: bấm lại "Đăng tài liệu" không tạo bài trùng.
@@ -462,7 +497,13 @@ export class DocumentUpload implements OnInit {
           void this.router.navigate(['/documents', document.id]);
         },
         error: (error: unknown) => {
-          this.errors.set(getApiErrorMessages(error));
+          this.errors.set(
+            error instanceof TimeoutError
+              ? [
+                  'Máy chủ không phản hồi khi tạo tài liệu. Các file đã tải lên vẫn được giữ — bấm "Gửi để duyệt" để thử lại.',
+                ]
+              : getApiErrorMessages(error),
+          );
           this.finish();
         },
       });
