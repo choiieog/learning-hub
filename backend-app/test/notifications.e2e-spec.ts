@@ -18,7 +18,6 @@ interface NotificationItem {
   type: string;
   title: string;
   message: string;
-  link: string | null;
   readAt: string | null;
   createdAt: string;
 }
@@ -154,7 +153,6 @@ describe('Thông báo (e2e)', () => {
     const page = await notifications(authorToken);
     expect(page.meta.total).toBe(1);
     expect(page.items[0].type).toBe('DOCUMENT_APPROVED');
-    expect(page.items[0].link).toBe(`/documents/${documentId}`);
     expect(page.unreadCount).toBe(1);
     approveNotificationId = page.items[0].id;
 
@@ -263,8 +261,6 @@ describe('Thông báo (e2e)', () => {
 
     expect(rejected).toBeDefined();
     expect(rejected?.message).toContain('Thiếu nguồn tham khảo');
-    // Bài đã bị xoá hẳn nên thông báo không kèm link.
-    expect(rejected?.link).toBeNull();
     expect(await prisma.document.findUnique({ where: { id: documentId } })).toBeNull();
   });
 
@@ -282,8 +278,6 @@ describe('Thông báo (e2e)', () => {
 
     expect(deleted).toBeDefined();
     expect(deleted?.message).toContain(title);
-    // Bài đã biến mất nên thông báo không kèm link.
-    expect(deleted?.link).toBeNull();
     // Admin gỡ là xoá cứng: không còn row Document nào của bài.
     expect(await prisma.document.findUnique({ where: { id: documentId } })).toBeNull();
   });
@@ -306,7 +300,7 @@ describe('Thông báo (e2e)', () => {
       .send(payload)
       .expect(201);
     const created = (
-      response.body as Envelope<{ id: string; type: string; title: string; link: string | null }>
+      response.body as Envelope<{ id: string; type: string; title: string }>
     ).data;
 
     notificationIds.push(created.id);
@@ -327,7 +321,7 @@ describe('Thông báo (e2e)', () => {
       .expect(400);
   });
 
-  it('sinh viên xoá được thông báo cá nhân, không xoá được thông báo chung', async () => {
+  it('xoá tin cá nhân là xoá hẳn; ẩn tin chung chỉ tác động riêng người bấm', async () => {
     const personal = await prisma.notification.create({
       data: {
         type: NotificationType.DOCUMENT_APPROVED,
@@ -347,13 +341,7 @@ describe('Thông báo (e2e)', () => {
     });
     notificationIds.push(personal.id, broadcast.id);
 
-    // Tin chung là row dùng chung: sinh viên không xoá được.
-    await server()
-      .delete(`/api/notifications/${broadcast.id}`)
-      .set(bearer(authorToken))
-      .expect(403);
-
-    // Người khác cũng không xoá được tin cá nhân của tác giả.
+    // Người khác không xoá được tin cá nhân của tác giả.
     await server()
       .delete(`/api/notifications/${personal.id}`)
       .set(bearer(otherToken))
@@ -367,7 +355,29 @@ describe('Thông báo (e2e)', () => {
     const page = await notifications(authorToken, '?limit=50');
     expect(page.items.some((item) => item.id === personal.id)).toBe(false);
     expect(await prisma.notification.findUnique({ where: { id: personal.id } })).toBeNull();
+
+    // Tin chung: tác giả ẩn khỏi danh sách của mình, row vẫn còn cho người khác.
+    await server()
+      .delete(`/api/notifications/${broadcast.id}`)
+      .set(bearer(authorToken))
+      .expect(200);
+
+    const authorAfter = await notifications(authorToken, '?limit=50');
+    expect(authorAfter.items.some((item) => item.id === broadcast.id)).toBe(false);
+
+    const otherAfter = await notifications(otherToken, '?limit=50');
+    expect(otherAfter.items.some((item) => item.id === broadcast.id)).toBe(true);
+
+    // Row thông báo còn nguyên; chỉ trạng thái riêng của tác giả bị đánh dấu ẩn.
     expect(await prisma.notification.findUnique({ where: { id: broadcast.id } })).not.toBeNull();
+    expect(
+      await prisma.notificationRead.findUnique({
+        where: {
+          userId_notificationId: { userId: authorId, notificationId: broadcast.id },
+        },
+        select: { deletedAt: true },
+      }),
+    ).toMatchObject({ deletedAt: expect.any(Date) });
   });
 
   it('admin xem lại và thu hồi thông báo chung → biến mất với mọi người', async () => {

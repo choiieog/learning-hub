@@ -25,7 +25,6 @@ export interface AdminUserSummary {
   id: string;
   email: string;
   fullName: string;
-  studentCode?: string | null;
   avatarUrl?: string | null;
   role: UserRole;
   status: UserStatus;

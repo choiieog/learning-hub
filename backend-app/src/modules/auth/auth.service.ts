@@ -60,7 +60,6 @@ export class AuthService {
         email: dto.email,
         passwordHash: await bcrypt.hash(dto.password, BCRYPT_ROUNDS),
         fullName: dto.fullName,
-        studentCode: dto.studentCode,
       },
     });
 
@@ -368,7 +367,6 @@ export class AuthService {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
-        studentCode: user.studentCode,
         bio: user.bio,
         avatarUrl: user.avatarUrl,
         avatarFrameId: user.avatarFrameId,

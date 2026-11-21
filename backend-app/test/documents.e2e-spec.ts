@@ -242,13 +242,12 @@ describe('Tài liệu (e2e)', () => {
     expect(await prisma.documentFile.count({ where: { documentId: document.id } })).toBe(0);
     expect(await prisma.uploadedFile.findUnique({ where: { publicId } })).toBeNull();
 
-    // Lý do từ chối vẫn được gửi cho tác giả, nhưng không kèm link vì bài đã bị xoá.
+    // Lý do từ chối vẫn được gửi cho tác giả dù bài đã bị xoá.
     const rejected = await prisma.notification.findFirst({
       where: { type: 'DOCUMENT_REJECTED', message: { contains: document.title } },
-      select: { message: true, link: true },
+      select: { message: true },
     });
     expect(rejected?.message).toContain('Cần bổ sung nguồn tham khảo');
-    expect(rejected?.link).toBeNull();
   });
 
   it('không còn endpoint sửa & gửi duyệt lại', async () => {

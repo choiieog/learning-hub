@@ -35,8 +35,6 @@ export interface DocumentSummary {
 }
 
 export interface DocumentDetail extends DocumentSummary {
-  /** markdown tùy chọn */
-  content?: string;
   /** true khi lượt xem lần này được tính; false khi hôm nay đã tính rồi */
   viewCountedToday?: boolean;
 }
@@ -57,7 +55,6 @@ export interface DocumentListQuery {
 export interface CreateDocumentPayload {
   title: string;
   description?: string;
-  content?: string;
   subjectId: string;
   files: DocumentFile[];
 }

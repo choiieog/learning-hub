@@ -39,7 +39,7 @@ type ResolvedDocumentFile = {
 };
 type SortableField = (typeof SORTABLE_FIELDS)[number];
 
-/** Chỉ các cột cần cho danh sách — không trả deletedAt ra ngoài. */
+/** Chỉ các cột cần cho danh sách và trang chi tiết. */
 const DOCUMENT_SUMMARY_SELECT = {
   id: true,
   title: true,
@@ -92,7 +92,6 @@ export interface DocumentSummary {
 }
 
 export interface DocumentDetail extends DocumentSummary {
-  content: string | null;
   /** true khi lượt xem lần này được tính; false khi hôm nay đã tính rồi. */
   viewCountedToday: boolean;
 }
@@ -101,12 +100,6 @@ export interface PaginatedDocuments {
   items: DocumentSummary[];
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
-
-/** Như danh sách nhưng thêm nội dung (chỉ trả ở trang chi tiết). */
-const DOCUMENT_DETAIL_SELECT = {
-  ...DOCUMENT_SUMMARY_SELECT,
-  content: true,
-} satisfies Prisma.DocumentSelect;
 
 /**
  * Nghiệp vụ tài liệu.
@@ -128,7 +121,7 @@ export class DocumentsService {
     private readonly storage: StorageService,
   ) {}
 
-  /** GET /api/documents — chỉ tài liệu APPROVED, chưa xóa. */
+  /** GET /api/documents — chỉ tài liệu APPROVED. */
   findAll(query: ListDocumentsQueryDto): Promise<PaginatedDocuments> {
     return this.listDocuments({ ...query, status: DocumentStatus.APPROVED });
   }
@@ -144,7 +137,7 @@ export class DocumentsService {
       Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE),
     );
 
-    const where: Prisma.DocumentWhereInput = { authorId, deletedAt: null };
+    const where: Prisma.DocumentWhereInput = { authorId };
     if (query.status) {
       where.status = query.status;
     }
@@ -179,8 +172,8 @@ export class DocumentsService {
     viewer: AuthenticatedUser,
   ): Promise<DocumentDetail> {
     const document = await this.prisma.document.findFirst({
-      where: { id: documentId, deletedAt: null },
-      select: DOCUMENT_DETAIL_SELECT,
+      where: { id: documentId },
+      select: DOCUMENT_SUMMARY_SELECT,
     });
 
     if (!document) {
@@ -245,7 +238,7 @@ export class DocumentsService {
     dto: CreateDocumentDto,
   ): Promise<DocumentSummary> {
     const subject = await this.prisma.subject.findFirst({
-      where: { id: dto.subjectId, deletedAt: null },
+      where: { id: dto.subjectId },
       select: { id: true },
     });
 
@@ -264,7 +257,6 @@ export class DocumentsService {
         data: {
           title: dto.title.trim(),
           description: dto.description?.trim() || null,
-          content: dto.content?.trim() || null,
           status: DocumentStatus.PENDING,
           subjectId: subject.id,
           authorId,
@@ -288,10 +280,11 @@ export class DocumentsService {
    * trong schema — không còn rating/bình luận mồ côi của bài đã xoá. Admin gỡ bài vi phạm
    * cũng xoá hẳn, kèm thông báo cho tác giả (`removeByAdmin`).
    * Người khác nhận 403 (bài đã duyệt vốn công khai nên không cần giấu sự tồn tại).
+   * `deletedAt` đã bị bỏ khỏi schema: mọi đường xoá đều xoá cứng nên không còn bản ghi mềm.
    */
   async removeOwn(documentId: string, userId: string): Promise<{ id: string }> {
     const document = await this.prisma.document.findFirst({
-      where: { id: documentId, deletedAt: null },
+      where: { id: documentId },
       select: {
         id: true,
         authorId: true,
@@ -326,7 +319,7 @@ export class DocumentsService {
    */
   async approve(documentId: string): Promise<DocumentDetail> {
     const document = await this.prisma.document.findFirst({
-      where: { id: documentId, deletedAt: null },
+      where: { id: documentId },
       select: { id: true, status: true },
     });
 
@@ -347,7 +340,7 @@ export class DocumentsService {
           status: DocumentStatus.APPROVED,
           publishedAt: new Date(),
         },
-        select: DOCUMENT_DETAIL_SELECT,
+        select: DOCUMENT_SUMMARY_SELECT,
       });
 
       await this.notifications.notifyApproved(
@@ -382,7 +375,7 @@ export class DocumentsService {
    */
   async reject(documentId: string, reason: string): Promise<{ id: string }> {
     const document = await this.prisma.document.findFirst({
-      where: { id: documentId, deletedAt: null },
+      where: { id: documentId },
       select: {
         id: true,
         title: true,
@@ -421,7 +414,7 @@ export class DocumentsService {
    */
   async removeByAdmin(documentId: string): Promise<{ id: string }> {
     const document = await this.prisma.document.findFirst({
-      where: { id: documentId, deletedAt: null },
+      where: { id: documentId },
       select: {
         id: true,
         title: true,
@@ -544,17 +537,14 @@ export class DocumentsService {
   /** Gom document đã select thành payload chi tiết. */
   private toDetail(
     document: Prisma.DocumentGetPayload<{
-      select: typeof DOCUMENT_DETAIL_SELECT;
+      select: typeof DOCUMENT_SUMMARY_SELECT;
     }>,
     options: { viewCountedToday: boolean; viewCount?: number },
   ): DocumentDetail {
-    const { content, ...summary } = document;
-
     return {
-      ...summary,
+      ...document,
       // Prisma trả enum sinh tự động, ép về enum dùng chung của API.
       status: document.status as DocumentStatus,
-      content,
       viewCount: options.viewCount ?? document.viewCount,
       viewCountedToday: options.viewCountedToday,
     };
@@ -570,7 +560,7 @@ export class DocumentsService {
       Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE),
     );
 
-    const where: Prisma.DocumentWhereInput = { deletedAt: null };
+    const where: Prisma.DocumentWhereInput = {};
     if (query.status) {
       where.status = query.status;
     }

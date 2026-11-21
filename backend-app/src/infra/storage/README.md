@@ -40,7 +40,7 @@ export interface StoredFile {
 
 ## Driver `local`
 
-- Ghi `<UPLOAD_DIR>/<folder>/<uuid>.<ext>`; `main.ts` phục vụ thư mục này qua `useStaticAssets` với prefix `/api/files`.
+- Ghi `<UPLOAD_DIR>/<folder>/<uuid>.<ext>`; `FilesController` phục vụ với prefix `/api/files` (kiểm tra quyền: tài liệu phải đăng nhập mới tải được; tài liệu chờ duyệt chỉ tác giả/admin).
 - Tên file do server sinh nên không phụ thuộc tên người dùng (không ghi đè, không path traversal).
 - `remove(publicId)` chặn `../` (publicId có thể đến từ client khi xoá) và idempotent (`force: true`).
 - Mất file khi deploy lại / ổ đĩa ephemeral — đây là lý do cần driver cloud trước khi lên production.

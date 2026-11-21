@@ -13,8 +13,7 @@ const NOTIFICATION_SELECT = {
   type: true,
   title: true,
   message: true,
-  link: true,
-  // `null` = thông báo chung; client cần biết để chỉ hiện nút xoá với tin cá nhân.
+  // `null` = thông báo chung; client cần biết để đổi nhãn xoá thành "ẩn".
   userId: true,
   readAt: true,
   createdAt: true,
@@ -25,7 +24,6 @@ export interface NotificationSummary {
   type: NotificationType;
   title: string;
   message: string;
-  link: string | null;
   /** `null` = thông báo chung (mọi người thấy cùng một row). */
   userId: string | null;
   readAt: Date | null;
@@ -73,7 +71,6 @@ export class NotificationsService {
         type: NotificationType.DOCUMENT_APPROVED,
         title: 'Tài liệu đã được duyệt',
         message: `“${document.title}” đã được duyệt và hiển thị công khai với mọi sinh viên.`,
-        link: `/documents/${document.id}`,
         userId: document.authorId,
       },
     });
@@ -93,7 +90,6 @@ export class NotificationsService {
         type: NotificationType.DOCUMENT_REJECTED,
         title: 'Tài liệu bị từ chối',
         message: `“${document.title}” đã bị từ chối và xoá khỏi hệ thống.${suffix}`,
-        link: null,
         userId: document.authorId,
       },
     });
@@ -109,7 +105,6 @@ export class NotificationsService {
         type: NotificationType.DOCUMENT_DELETED,
         title: 'Tài liệu đã bị xoá',
         message: `“${document.title}” đã bị quản trị viên xoá vì vi phạm quy định chia sẻ tài liệu.`,
-        link: null,
         userId: document.authorId,
       },
     });
@@ -125,7 +120,6 @@ export class NotificationsService {
         type: NotificationType.SYSTEM,
         title: input.title.trim(),
         message: input.message.trim(),
-        link: null,
         userId: null,
       },
       select: NOTIFICATION_SELECT,
@@ -142,7 +136,13 @@ export class NotificationsService {
     const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
     const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE));
 
-    const visible: Prisma.NotificationWhereInput = { OR: [{ userId }, { userId: null }] };
+    const visible: Prisma.NotificationWhereInput = {
+      OR: [
+        { userId },
+        // Tin chung mà chính người gọi đã ẩn thì không trả về nữa; người khác vẫn thấy.
+        { userId: null, reads: { none: { userId, deletedAt: { not: null } } } },
+      ],
+    };
     // Tin cá nhân chưa đọc dùng readAt; tin chung chưa đọc = chưa có NotificationRead của user.
     const unread: Prisma.NotificationWhereInput = {
       OR: [
@@ -244,8 +244,10 @@ export class NotificationsService {
   }
 
   /**
-   * Người dùng xoá một thông báo cá nhân của mình. Thông báo chung là row dùng chung
-   * nên chỉ admin mới thu hồi được (`deleteBroadcast`).
+   * Người dùng xoá thông báo khỏi danh sách của mình:
+   * - tin cá nhân: xoá cứng row (chỉ chủ tin mới được xoá);
+   * - tin chung: chỉ ẩn với riêng người gọi (`NotificationRead.deletedAt`), người khác
+   *   vẫn thấy. Chỉ khi admin thu hồi (`deleteBroadcast`) thì tin mới mất với tất cả.
    */
   async deleteOwn(id: string, userId: string): Promise<{ id: string }> {
     const notification = await this.prisma.notification.findUnique({
@@ -257,12 +259,18 @@ export class NotificationsService {
       throw new NotFoundException('Không tìm thấy thông báo');
     }
 
+    if (notification.userId === null) {
+      await this.prisma.notificationRead.upsert({
+        where: { userId_notificationId: { userId, notificationId: id } },
+        update: { deletedAt: new Date() },
+        create: { userId, notificationId: id, deletedAt: new Date() },
+      });
+
+      return { id };
+    }
+
     if (notification.userId !== userId) {
-      throw new ForbiddenException(
-        notification.userId === null
-          ? 'Thông báo chung chỉ quản trị viên mới thu hồi được.'
-          : 'Bạn chỉ có thể xoá thông báo của mình.',
-      );
+      throw new ForbiddenException('Bạn chỉ có thể xoá thông báo của mình.');
     }
 
     await this.prisma.notification.delete({ where: { id } });

@@ -10,8 +10,7 @@ export interface AppNotification {
   type: NotificationType;
   title: string;
   message: string;
-  link?: string;
-  /** `null` = thông báo chung (mọi người thấy cùng một tin), nên chỉ admin xoá được. */
+  /** `null` = thông báo chung: người dùng chỉ ẩn được với riêng mình, admin xoá hẳn cho mọi người. */
   userId: string | null;
   readAt?: string;
   createdAt: string;

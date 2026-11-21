@@ -45,7 +45,7 @@ export class AdminService {
 
   async getOverview(): Promise<AdminOverview> {
     const since7Days = new Date(Date.now() - 7 * DAY_MS);
-    const activeDocuments = { deletedAt: null } as const;
+    const activeDocuments = {} as const;
 
     const [
       usersTotal,

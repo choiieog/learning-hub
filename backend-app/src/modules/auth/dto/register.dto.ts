@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MESSAGES,
@@ -26,10 +26,4 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Họ tên không được để trống' })
   @MaxLength(120)
   fullName: string;
-
-  /** Student code is optional. */
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  studentCode?: string;
 }

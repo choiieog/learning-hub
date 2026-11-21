@@ -6,7 +6,7 @@ import { UPLOAD_URL_PREFIX, type UploadFolder } from '../../../common/constants/
 import type { StorageDriver, StorageUploadInput, StoredFile } from '../storage.types';
 
 /**
- * Lưu file vào `UPLOAD_DIR` và phục vụ qua `useStaticAssets` ở main.ts (prefix `/api/files`).
+ * Lưu file vào `UPLOAD_DIR`; phục vụ qua `FilesController` (prefix `/api/files`) để kiểm tra quyền.
  *
  * Tên file do server sinh (uuid + phần mở rộng) để không phụ thuộc tên người dùng gửi lên:
  * tránh ghi đè, path traversal và ký tự lạ trên URL.

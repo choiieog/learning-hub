@@ -23,7 +23,6 @@ const SELF_PROFILE_SELECT = {
   id: true,
   email: true,
   fullName: true,
-  studentCode: true,
   bio: true,
   avatarUrl: true,
   avatarFrameId: true,
@@ -42,7 +41,6 @@ const ADMIN_USER_SELECT = {
   id: true,
   email: true,
   fullName: true,
-  studentCode: true,
   avatarUrl: true,
   role: true,
   status: true,
@@ -50,14 +48,13 @@ const ADMIN_USER_SELECT = {
   level: true,
   emailVerifiedAt: true,
   createdAt: true,
-  _count: { select: { documents: { where: { deletedAt: null } } } },
+  _count: { select: { documents: true } },
 } satisfies Prisma.UserSelect;
 
 export interface SelfProfile {
   id: string;
   email: string;
   fullName: string;
-  studentCode: string | null;
   bio: string | null;
   avatarUrl: string | null;
   avatarFrameId: string | null;
@@ -86,7 +83,6 @@ export interface AdminUserSummary {
   id: string;
   email: string;
   fullName: string;
-  studentCode: string | null;
   avatarUrl: string | null;
   role: string;
   status: string;
@@ -163,7 +159,6 @@ export class UsersService {
         where: {
           authorId: userId,
           status: DocumentStatus.APPROVED,
-          deletedAt: null,
         },
         _count: { _all: true },
         _sum: { viewCount: true },
@@ -191,7 +186,7 @@ export class UsersService {
   ): Promise<SelfProfile> {
     const current = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
-      select: { id: true, studentCode: true },
+      select: { id: true },
     });
 
     if (!current) {
@@ -204,28 +199,6 @@ export class UsersService {
       data.fullName = dto.fullName;
     }
 
-    if (dto.studentCode !== undefined) {
-      const studentCode = dto.studentCode.trim();
-      data.studentCode = studentCode === '' ? null : studentCode;
-
-      if (
-        data.studentCode !== null &&
-        data.studentCode !== current.studentCode
-      ) {
-        // Mã sinh viên là unique toàn bảng (kể cả tài khoản đã xoá mềm).
-        const taken = await this.prisma.user.findFirst({
-          where: { studentCode: data.studentCode, NOT: { id: userId } },
-          select: { id: true },
-        });
-
-        if (taken) {
-          throw new ConflictException(
-            'Mã sinh viên đã được dùng bởi tài khoản khác',
-          );
-        }
-      }
-    }
-
     if (dto.bio !== undefined) {
       data.bio = dto.bio.trim() === '' ? null : dto.bio;
     }
@@ -234,24 +207,13 @@ export class UsersService {
       return this.findById(userId);
     }
 
-    try {
-      const user = await this.prisma.user.update({
-        where: { id: userId },
-        data,
-        select: SELF_PROFILE_SELECT,
-      });
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: SELF_PROFILE_SELECT,
+    });
 
-      return toSelfProfile(user);
-    } catch (error) {
-      // Chống race condition: hai request cùng set một mã sinh viên.
-      if (isUniqueConstraintError(error)) {
-        throw new ConflictException(
-          'Mã sinh viên đã được dùng bởi tài khoản khác',
-        );
-      }
-
-      throw error;
-    }
+    return toSelfProfile(user);
   }
 
   async updateAvatar(userId: string, avatarUrl: string): Promise<SelfProfile> {
@@ -265,7 +227,7 @@ export class UsersService {
     return this.update(userId, { avatarUrl });
   }
 
-  /** Danh sách tài khoản cho admin: tìm theo email/tên/mã SV, lọc role, status, đã bị cảnh báo. */
+  /** Danh sách tài khoản cho admin: tìm theo email/tên, lọc role, status, đã bị cảnh báo. */
   async findAllForAdmin(query: AdminUsersQuery): Promise<PaginatedUsers> {
     const page = Math.max(1, Number(query.page) || DEFAULT_PAGE);
     const limit = Math.min(
@@ -292,7 +254,6 @@ export class UsersService {
       where.OR = [
         { email: { contains: keyword, mode: 'insensitive' } },
         { fullName: { contains: keyword, mode: 'insensitive' } },
-        { studentCode: { contains: keyword, mode: 'insensitive' } },
       ];
     }
 
@@ -405,7 +366,6 @@ export class UsersService {
           message: banned
             ? `Lý do: ${trimmedReason} — đây là cảnh báo thứ 3 nên tài khoản đã bị khoá. Liên hệ quản trị viên nếu cần giải thích.`
             : `Lý do: ${trimmedReason} — bạn đang có ${nextCount}/3 cảnh báo; đủ 3 cảnh báo tài khoản sẽ bị khoá.`,
-          link: '/profile',
           userId,
         },
       }),
@@ -528,7 +488,6 @@ function toAdminUserSummary(user: {
   id: string;
   email: string;
   fullName: string;
-  studentCode: string | null;
   avatarUrl: string | null;
   role: string;
   status: string;
@@ -540,14 +499,4 @@ function toAdminUserSummary(user: {
 }): AdminUserSummary {
   const { _count, ...rest } = user;
   return { ...rest, documentCount: _count.documents };
-}
-
-/** Prisma ném P2002 khi vi phạm unique; nhận diện mà không phụ thuộc class cụ thể. */
-function isUniqueConstraintError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === 'P2002'
-  );
 }

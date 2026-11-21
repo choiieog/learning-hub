@@ -11,6 +11,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { FilesModule } from './modules/files/files.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { RatingsModule } from './modules/ratings/ratings.module';
@@ -38,6 +39,7 @@ import { UsersModule } from './modules/users/users.module';
     NotificationsModule,
     RatingsModule,
     UploadsModule,
+    FilesModule,
     AdminModule,
   ],
   controllers: [AppController],

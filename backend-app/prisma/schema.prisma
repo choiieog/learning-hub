@@ -51,7 +51,6 @@ model User {
   email         String     @unique
   passwordHash  String
   fullName      String
-  studentCode   String?    @unique
   bio           String?
   avatarUrl     String?
   avatarFrameId String?
@@ -116,8 +115,6 @@ model Subject {
   id            String     @id @default(uuid())
   code          String     @unique // vd: INT2204
   name          String
-  description   String?
-  deletedAt     DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -130,13 +127,11 @@ model Document {
   id           String         @id @default(uuid())
   title        String
   description  String?        @db.Text
-  content      String?        @db.Text // markdown tùy chọn (bài viết hướng dẫn)
   status       DocumentStatus @default(PENDING)
   viewCount    Int            @default(0)
   ratingAvg    Float          @default(0)
   ratingCount  Int            @default(0)
   publishedAt  DateTime?
-  deletedAt    DateTime?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -247,7 +242,6 @@ model Notification {
   type      NotificationType
   title     String
   message   String           @db.Text
-  link      String?
   userId    String?
   readAt    DateTime?
   createdAt DateTime         @default(now())
@@ -260,14 +254,16 @@ model Notification {
 }
 
 ///
-/// Trạng thái "đã đọc" của **thông báo chung** (userId = null), tách theo từng người.
-/// Tin chung chỉ có một row nhưng mỗi user đọc riêng, nên không thể dùng
-/// `Notification.readAt` (sẽ đánh dấu đọc cho tất cả mọi người).
+/// Trạng thái riêng của từng người với **thông báo chung** (userId = null).
+/// Tin chung chỉ có một row nhưng mỗi người đọc/ẩn riêng, nên không thể dùng
+/// `Notification.readAt` hay xoá row (sẽ ảnh hưởng tất cả mọi người).
+/// `deletedAt` = người này đã ẩn tin; admin xoá row thông báo thì mọi người mất theo cascade.
 ///
 model NotificationRead {
   userId         String
   notificationId String
-  readAt         DateTime @default(now())
+  readAt         DateTime  @default(now())
+  deletedAt      DateTime?
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)

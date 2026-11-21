@@ -174,7 +174,7 @@ export class RatingsService {
     documentId: string,
   ): Promise<{ id: string; authorId: string }> {
     const document = await this.prisma.document.findFirst({
-      where: { id: documentId, status: DocumentStatus.APPROVED, deletedAt: null },
+      where: { id: documentId, status: DocumentStatus.APPROVED },
       select: { id: true, authorId: true },
     });
 

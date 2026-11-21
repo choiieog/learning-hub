@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
@@ -24,9 +24,4 @@ export class CreateSubjectDto {
   @MaxLength(120, { message: 'Tên môn học tối đa 120 ký tự' })
   name: string;
 
-  @IsOptional()
-  @Transform(trim)
-  @IsString()
-  @MaxLength(500, { message: 'Mô tả tối đa 500 ký tự' })
-  description?: string;
 }

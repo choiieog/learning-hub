@@ -65,7 +65,7 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getOverview(userId: string): Promise<DashboardOverview> {
-    const mine: Prisma.DocumentWhereInput = { authorId: userId, deletedAt: null };
+    const mine: Prisma.DocumentWhereInput = { authorId: userId };
     const trendDays = buildTrendDays();
     const trendStart = new Date(Date.now() - (TREND_DAYS - 1) * DAY_MS);
     trendStart.setHours(0, 0, 0, 0);
@@ -83,7 +83,7 @@ export class DashboardService {
           select: DASHBOARD_DOCUMENT_SELECT,
         }),
         this.prisma.document.findMany({
-          where: { status: DocumentStatus.APPROVED, deletedAt: null },
+          where: { status: DocumentStatus.APPROVED },
           orderBy: [{ viewCount: 'desc' }, { publishedAt: 'desc' }],
           take: TOP_LIMIT,
           select: TOP_DOCUMENT_CARD_SELECT,

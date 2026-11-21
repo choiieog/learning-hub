@@ -5,7 +5,6 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
-  studentCode?: string;
   bio?: string;
   avatarUrl?: string;
   /** id khung avatar đang dùng (null/undefined = không dùng khung) */
@@ -43,7 +42,6 @@ export interface RegisterPayload {
   email: string;
   password: string;
   fullName: string;
-  studentCode?: string;
 }
 
 /** Neutral message returned by register / verify / resend endpoints. */
@@ -77,7 +75,6 @@ export interface ResetPasswordPayload {
 
 export interface UpdateProfilePayload {
   fullName?: string;
-  studentCode?: string;
   bio?: string;
 }
 

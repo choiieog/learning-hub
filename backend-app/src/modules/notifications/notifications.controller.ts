@@ -28,7 +28,7 @@ export class NotificationsController {
     return this.notificationsService.markRead(id, userId);
   }
 
-  /** DELETE /api/notifications/:id — xoá thông báo cá nhân của chính mình. */
+  /** DELETE /api/notifications/:id — xoá tin cá nhân, hoặc ẩn tin chung với riêng mình. */
   @Delete(':id')
   removeOwn(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.notificationsService.deleteOwn(id, userId);

@@ -35,12 +35,6 @@ export class CreateDocumentDto {
   @MaxLength(1000)
   description?: string;
 
-  /** Nội dung markdown tùy chọn (bài viết hướng dẫn) */
-  @IsOptional()
-  @IsString()
-  @MaxLength(20000)
-  content?: string;
-
   @IsUUID()
   subjectId: string;
 

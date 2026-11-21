@@ -11,6 +11,12 @@ const RETRY_HEADER = 'x-retried-after-refresh';
 const AUTH_ENDPOINTS = ['/auth/login', '/auth/refresh', '/auth/logout', '/auth/register'];
 
 /**
+ * Upload hiển thị lỗi ngay cạnh form (kèm tên tệp và hướng dẫn thử lại), nên toast
+ * "mất kết nối" chung ở đây chỉ gây nhiễu và dễ hiểu sai là lỗi mạng.
+ */
+const INLINE_ERROR_ENDPOINTS = ['/api/uploads'];
+
+/**
  * Xử lý lỗi tập trung.
  *
  * - 401: thử `POST /auth/refresh` **một lần** rồi chạy lại request gốc với token mới;
@@ -43,7 +49,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         );
       }
 
-      if (error.status === 0) {
+      const showsInlineError = INLINE_ERROR_ENDPOINTS.some((path) => req.url.includes(path));
+
+      if (error.status === 0 && !showsInlineError) {
         toasts.error('Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.');
       } else if (error.status >= 500) {
         toasts.error(firstMessage(error) ?? 'Máy chủ gặp lỗi, vui lòng thử lại sau ít phút.');
