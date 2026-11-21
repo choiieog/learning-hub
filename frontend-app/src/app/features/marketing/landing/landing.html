@@ -1,0 +1,737 @@
+<div class="lh-shell">
+  <header class="lh-header fixed inset-x-0 top-0 z-50" [class.is-solid]="scrolled()">
+    <div class="mx-auto flex h-[76px] max-w-[1240px] items-center gap-4 px-5 md:gap-10 md:px-6">
+      <a routerLink="/" class="flex shrink-0 items-center gap-2.5" aria-label="Learning Hub — trang chủ">
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0E2A32]">
+          <svg viewBox="0 0 24 24" fill="none" class="h-[18px] w-[18px] text-[#C8DCDE]" aria-hidden="true">
+            <path
+              d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 15.5v-10Z"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a1.5 1.5 0 0 0 1.5-1.5v-10Z"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+        <span class="hidden whitespace-nowrap text-[15px] font-semibold tracking-[-0.02em] text-[#0E2A32] sm:inline">
+          Learning Hub
+        </span>
+      </a>
+
+      <nav class="hidden items-center gap-7 text-[13px] font-medium text-[#3C5A61] md:flex">
+        <a href="#tinh-nang" class="transition-colors hover:text-[#0E2A32]">Tính năng</a>
+        <a href="#mon-hoc" class="transition-colors hover:text-[#0E2A32]">Môn học</a>
+        <a href="#cau-hoi" class="transition-colors hover:text-[#0E2A32]">Câu hỏi</a>
+      </nav>
+
+      <div class="ml-auto flex items-center gap-1.5">
+        @if (auth.isAuthenticated()) {
+          <a
+            [routerLink]="auth.isAdmin() ? '/admin/dashboard' : '/dashboard'"
+            class="rounded-full bg-[#0E2A32] px-5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#18424C]"
+          >
+            Vào ứng dụng
+          </a>
+        } @else {
+          <a
+            routerLink="/auth/login"
+            class="whitespace-nowrap rounded-full px-2 py-2.5 text-[13px] font-medium text-[#3C5A61] transition-colors hover:bg-[#EAF4F4] hover:text-[#0E2A32] sm:px-4"
+          >
+            Đăng nhập
+          </a>
+          <a
+            routerLink="/auth/register"
+            class="whitespace-nowrap rounded-full bg-[#0E2A32] px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#18424C] sm:px-5"
+          >
+            Tạo tài khoản
+          </a>
+        }
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero: copy + mockup giao diện thư viện -->
+    <section class="relative overflow-hidden bg-white">
+      <div class="hero-field pointer-events-none absolute inset-0" aria-hidden="true"></div>
+      <div class="hero-dots pointer-events-none absolute inset-0" aria-hidden="true"></div>
+
+      <div
+        class="relative mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-14 px-6 pb-24 pt-[128px] lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:gap-12 lg:pb-32 lg:pt-[164px]"
+      >
+        <div class="relative z-10">
+          <h1
+            class="reveal text-[clamp(2.6rem,5vw,4rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-[#0E2A32]"
+            appReveal
+          >
+            Mọi môn học,<br />
+            <span class="mark">một thư viện.</span>
+          </h1>
+
+          <p
+            class="reveal mt-7 max-w-[46ch] text-[17px] leading-[1.75] text-[#3C5A61]"
+            appReveal
+            [style.--reveal-delay.ms]="90"
+          >
+            Bài giảng, đề cương và đề thi của từng môn — do sinh viên chia sẻ, xếp đúng chỗ và
+            mở đọc ngay trên web.
+          </p>
+
+          <div
+            class="reveal mt-9 flex flex-wrap items-center gap-3"
+            appReveal
+            [style.--reveal-delay.ms]="170"
+          >
+            <a
+              routerLink="/auth/register"
+              class="group inline-flex items-center justify-center gap-2 rounded-full bg-[#0E2A32] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_18px_30px_-20px_rgba(14,42,50,0.9)] transition-all hover:-translate-y-0.5 hover:bg-[#18424C]"
+            >
+              Tạo tài khoản
+              <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true">
+                <path
+                  fill-rule="evenodd"
+                  d="M3 10a.75.75 0 0 1 .75-.75h10.6L10.2 5.1a.75.75 0 1 1 1.05-1.06l5.25 5.25a.75.75 0 0 1 0 1.06l-5.25 5.25a.75.75 0 0 1-1.05-1.06l4.15-4.15H3.75A.75.75 0 0 1 3 10Z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </a>
+            <a
+              routerLink="/documents"
+              class="inline-flex items-center justify-center rounded-full border border-[#0E2A32]/15 bg-white/70 px-7 py-3.5 text-sm font-semibold text-[#0E2A32] backdrop-blur transition-colors hover:border-[#0E2A32]/30 hover:bg-white"
+            >
+              Xem tài liệu
+            </a>
+          </div>
+
+          <p
+            class="reveal mt-6 text-[13px] text-[#4A666C]"
+            appReveal
+            [style.--reveal-delay.ms]="230"
+          >
+            Bắt đầu bằng email sinh viên của bạn.
+          </p>
+        </div>
+
+        <!-- Mockup: thư viện tài liệu -->
+        <div
+          class="reveal relative mx-auto w-full max-w-[640px] lg:mx-0"
+          appReveal
+          [style.--reveal-delay.ms]="120"
+        >
+          <div class="mockup-halo pointer-events-none absolute -inset-x-10 -top-14 bottom-0" aria-hidden="true"></div>
+
+          <div
+            class="relative"
+            [style.transform]="'translate3d(0,' + parallax() + 'px,0)'"
+          >
+            <div class="mockup-plate mockup-plate-back" aria-hidden="true"></div>
+            <div class="mockup-plate mockup-plate-side" aria-hidden="true"></div>
+
+            <div
+              class="mockup relative"
+              role="img"
+              aria-label="Minh hoạ giao diện thư viện tài liệu Learning Hub"
+            >
+              <div class="mockup-bar">
+                <span class="mockup-dot"></span>
+                <span class="mockup-dot"></span>
+                <span class="mockup-dot"></span>
+                <span class="mockup-url">learning hub / thư viện</span>
+                <span class="mockup-flag">Minh hoạ</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-[132px_1fr]">
+                <aside class="hidden border-r border-[#0E2A32]/8 bg-[#F7FBFB] p-3 sm:flex sm:flex-col sm:gap-6">
+                  <div class="flex items-center gap-2">
+                    <span class="flex h-6 w-6 items-center justify-center rounded-md bg-[#0E2A32] text-[8px] font-bold text-[#C8DCDE]">LH</span>
+                    <span class="text-[10px] font-semibold tracking-[-0.01em] text-[#0E2A32]">Learning Hub</span>
+                  </div>
+
+                  <div class="space-y-0.5 text-[10px]">
+                    <p class="rounded-md px-2 py-1.5 text-[#5F7A80]">Tổng quan</p>
+                    <p class="flex items-center gap-1.5 rounded-md bg-[#EAF4F4] px-2 py-1.5 font-semibold text-[#0E2A32]">
+                      <span class="h-1 w-1 rounded-full bg-[#2F6F78]"></span>
+                      Tài liệu
+                    </p>
+                    <p class="rounded-md px-2 py-1.5 text-[#5F7A80]">Môn học</p>
+                  </div>
+
+                  <div class="mt-auto">
+                    <p class="text-[8px] font-semibold uppercase tracking-[0.14em] text-[#5F7A80]">Học kỳ 1</p>
+                    <p class="mt-1 text-[10px] font-medium text-[#3C5A61]">2026</p>
+                  </div>
+                </aside>
+
+                <div class="min-w-0 p-4 sm:p-5">
+                  <div class="flex items-center justify-between gap-4">
+                    <div>
+                      <p class="text-[13px] font-semibold tracking-[-0.01em] text-[#0E2A32]">
+                        Thư viện của Minh
+                      </p>
+                      <p class="mt-0.5 text-[10px] text-[#5F7A80]">5 môn · 24 tài liệu</p>
+                    </div>
+                    <span class="flex h-7 w-7 items-center justify-center rounded-full bg-[#C8DCDE] text-[9px] font-semibold text-[#0E2A32]">
+                      M
+                    </span>
+                  </div>
+
+                  <div class="mt-4 flex items-center gap-2 rounded-lg border border-[#0E2A32]/10 bg-[#F7FBFB] px-2.5 py-2">
+                    <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5 text-[#5F7A80]" aria-hidden="true">
+                      <circle cx="9" cy="9" r="5.25" stroke="currentColor" stroke-width="1.5" />
+                      <path d="m13 13 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                    <span class="text-[10px] text-[#5F7A80]">Tìm tài liệu, môn học…</span>
+                    <span class="ml-auto rounded bg-white px-1.5 py-0.5 text-[8px] font-semibold text-[#5F7A80]">⌘ K</span>
+                  </div>
+
+                  <div class="mt-3 flex flex-wrap gap-1.5">
+                    <span class="rounded-full bg-[#0E2A32] px-2.5 py-1 text-[9px] font-medium text-white">Tất cả</span>
+                    <span class="rounded-full border border-[#0E2A32]/10 bg-white px-2.5 py-1 text-[9px] font-medium text-[#3C5A61]">Giải tích 1</span>
+                    <span class="rounded-full border border-[#0E2A32]/10 bg-white px-2.5 py-1 text-[9px] font-medium text-[#3C5A61]">CNPM</span>
+                    <span class="rounded-full border border-[#0E2A32]/10 bg-white px-2.5 py-1 text-[9px] font-medium text-[#3C5A61]">PDF</span>
+                  </div>
+
+                  <div class="mt-3 space-y-1">
+                    @for (doc of sampleDocuments; track doc.title; let i = $index) {
+                      <div
+                        class="flex items-center gap-2.5 rounded-lg px-2 py-2"
+                        [class.bg-[#F1F9F9]]="i === 0"
+                      >
+                        <span
+                          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[8px] font-bold"
+                          [class.bg-[#0E2A32]]="doc.type === 'PPTX'"
+                          [class.text-[#C8DCDE]]="doc.type === 'PPTX'"
+                          [class.bg-[#C8DCDE]]="doc.type !== 'PPTX'"
+                          [class.text-[#0E2A32]]="doc.type !== 'PPTX'"
+                        >
+                          {{ doc.type }}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                          <p class="truncate text-[10.5px] font-medium text-[#0E2A32]">{{ doc.title }}</p>
+                          <p class="truncate text-[9px] text-[#5F7A80]">{{ doc.subject }}</p>
+                        </div>
+                        <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5 shrink-0 text-[#8FC4C8]" aria-hidden="true">
+                          <path
+                            fill-rule="evenodd"
+                            d="M7.2 4.4a.75.75 0 0 1 1.06 0l5 5a.75.75 0 0 1 0 1.06l-5 5a.75.75 0 1 1-1.06-1.06L11.7 10 7.2 5.46a.75.75 0 0 1 0-1.06Z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="mt-3 border-t border-[#0E2A32]/8 pt-3">
+                    <div class="flex items-center justify-between text-[9px] text-[#5F7A80]">
+                      <span>Học kỳ này</span>
+                      <span class="font-medium text-[#3C5A61]">16 / 24</span>
+                    </div>
+                    <div class="mt-2 flex h-1.5 overflow-hidden rounded-full bg-[#EDF4F4]">
+                      <span class="w-[52%] bg-[#0E2A32]"></span>
+                      <span class="w-[31%] bg-[#8FC4C8]"></span>
+                      <span class="w-[17%] bg-[#C8DCDE]"></span>
+                    </div>
+                    <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[8.5px] text-[#5F7A80]">
+                      <span class="flex items-center gap-1"><span class="h-1 w-1 rounded-full bg-[#0E2A32]"></span>Đã đọc</span>
+                      <span class="flex items-center gap-1"><span class="h-1 w-1 rounded-full bg-[#8FC4C8]"></span>Đang học</span>
+                      <span class="flex items-center gap-1"><span class="h-1 w-1 rounded-full bg-[#C8DCDE]"></span>Đã lưu</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="float-chip" aria-hidden="true">
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#EAF4F4] text-[#2F6F78]">
+              <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-3.5-3.5a1 1 0 1 1 1.4-1.4l2.8 2.8 6.8-6.8a1 1 0 0 1 1.4 0Z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </span>
+            <span class="text-[10px] font-semibold text-[#0E2A32]">Đã lưu vào thư viện</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dải định dạng: bố cục stats 3 cột, nội dung là định dạng tệp -->
+    <section class="border-y border-[#0E2A32]/10 bg-white" aria-label="Các định dạng tài liệu">
+      <div
+        class="mx-auto grid max-w-[1240px] grid-cols-1 divide-y divide-[#0E2A32]/10 px-6 md:grid-cols-3 md:divide-x md:divide-y-0"
+      >
+        @for (format of formats; track format.name; let i = $index) {
+          <div
+            class="reveal py-7 md:px-8 md:first:pl-0 md:last:pr-0"
+            appReveal
+            [style.--reveal-delay.ms]="i * 70"
+          >
+            <p class="text-[clamp(1.9rem,3vw,2.5rem)] font-semibold leading-none tracking-[-0.03em] text-[#0E2A32]">
+              {{ format.name }}
+            </p>
+            <p class="mt-2.5 text-[13px] leading-relaxed text-[#4A666C]">{{ format.description }}</p>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Tính năng: stage sticky đổi scene theo panel -->
+    <section id="tinh-nang" class="feature-band relative scroll-mt-24">
+      <div class="feature-glow pointer-events-none absolute inset-0" aria-hidden="true"></div>
+
+      <div class="relative mx-auto max-w-[1240px] px-6 py-24 lg:py-28">
+        <div class="grid gap-7 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+          <h2
+            class="reveal text-[clamp(2rem,3.6vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-[#0E2A32]"
+            appReveal
+          >
+            Một chỗ để tìm, đọc và chia sẻ.
+          </h2>
+          <div
+            class="reveal flex flex-wrap items-end justify-between gap-6"
+            appReveal
+            [style.--reveal-delay.ms]="80"
+          >
+            <p class="max-w-[48ch] text-[15px] leading-[1.75] text-[#2C4A50]">
+              Không mở hàng chục link rời rạc, không lục lại tin nhắn của lớp. Mỗi tài liệu nằm
+              đúng môn, đúng người đăng và mở được ngay khi cần.
+            </p>
+            <a
+              routerLink="/documents"
+              class="group inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-[#0E2A32]"
+            >
+              Xem thư viện
+              <span class="transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="mt-14 lg:grid lg:grid-cols-[1.02fr_0.98fr] lg:gap-16">
+          <!-- Stage: một khung, ba scene; mobile xếp dọc theo spec, desktop sticky -->
+          <div class="lg:sticky lg:top-24 lg:self-start" aria-hidden="true">
+            <div
+              class="feature-stage relative h-[360px] overflow-hidden rounded-2xl bg-white shadow-[0_36px_80px_-50px_rgba(14,42,50,0.55)] sm:h-[440px] lg:h-[520px]"
+              [attr.data-scene]="activeScene()"
+            >
+              <div class="scene" [class.is-active]="activeScene() === 0">
+                <div class="flex h-full flex-col justify-center p-5 sm:p-7">
+                  <div class="flex items-center gap-2 rounded-xl border border-[#0E2A32]/10 bg-[#F7FBFB] px-3 py-2.5">
+                    <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 text-[#5F7A80]">
+                      <circle cx="9" cy="9" r="5.25" stroke="currentColor" stroke-width="1.5" />
+                      <path d="m13 13 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                    <span class="text-[12px] text-[#5F7A80]">Tìm theo tên tài liệu…</span>
+                    <span class="ml-auto rounded bg-white px-2 py-1 text-[9px] font-semibold text-[#5F7A80]">⌘ K</span>
+                  </div>
+
+                  <div class="mt-4 flex flex-wrap gap-1.5">
+                    <span class="rounded-full bg-[#0E2A32] px-3 py-1.5 text-[10px] font-medium text-white">Giải tích 1</span>
+                    <span class="rounded-full border border-[#0E2A32]/15 bg-white px-3 py-1.5 text-[10px] font-medium text-[#3C5A61]">PDF</span>
+                    <span class="rounded-full border border-[#0E2A32]/15 bg-white px-3 py-1.5 text-[10px] font-medium text-[#3C5A61]">Mới nhất</span>
+                    <span class="rounded-full border border-[#0E2A32]/15 bg-white px-3 py-1.5 text-[10px] font-medium text-[#3C5A61]">Của Minh</span>
+                  </div>
+
+                  <div class="mt-5 space-y-1.5">
+                    <div class="flex items-center gap-3 rounded-lg bg-[#EAF4F4] px-3 py-3">
+                      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#C8DCDE] text-[9px] font-bold text-[#0E2A32]">PDF</span>
+                      <div class="min-w-0 flex-1">
+                        <p class="truncate text-[12px] font-medium text-[#0E2A32]">Đề cương ôn tập Giải tích 1</p>
+                        <p class="truncate text-[10px] text-[#5F7A80]">MAT1203 · Giải tích 1</p>
+                      </div>
+                      <span class="text-[9px] font-semibold text-[#2F6F78]">Đang mở</span>
+                    </div>
+                    <div class="flex items-center gap-3 rounded-lg border border-[#0E2A32]/8 bg-white px-3 py-3">
+                      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#EAF4F4] text-[9px] font-bold text-[#0E2A32]">DOCX</span>
+                      <div class="min-w-0 flex-1">
+                        <p class="truncate text-[12px] font-medium text-[#0E2A32]">Kế thừa và đa hình trong OOP</p>
+                        <p class="truncate text-[10px] text-[#5F7A80]">INT2204 · Lập trình hướng đối tượng</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-3 rounded-lg border border-[#0E2A32]/8 bg-white px-3 py-3">
+                      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#EAF4F4] text-[9px] font-bold text-[#0E2A32]">PPTX</span>
+                      <div class="min-w-0 flex-1">
+                        <p class="truncate text-[12px] font-medium text-[#0E2A32]">Đề thi giữa kỳ CNPM 2024</p>
+                        <p class="truncate text-[10px] text-[#5F7A80]">INT2208 · Công nghệ phần mềm</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p class="mt-4 hidden text-[10px] text-[#5F7A80] sm:block">Bộ lọc được giữ trên URL — gửi link là mở đúng kết quả.</p>
+                </div>
+              </div>
+
+              <div class="scene" [class.is-active]="activeScene() === 1">
+                <div class="flex h-full flex-col justify-center p-4 sm:p-6">
+                  <div class="overflow-hidden rounded-xl border border-[#0E2A32]/10 bg-white">
+                    <div class="flex items-center gap-2 border-b border-[#0E2A32]/8 bg-[#F7FBFB] px-3 py-2.5">
+                      <span class="rounded bg-[#C8DCDE] px-1.5 py-0.5 text-[8px] font-bold text-[#0E2A32]">PDF</span>
+                      <span class="truncate text-[11px] font-medium text-[#0E2A32]">Đề cương ôn tập Giải tích 1</span>
+                      <span class="ml-auto text-[9px] text-[#5F7A80]">3 / 12</span>
+                    </div>
+                    <div class="px-5 py-4 sm:px-7 sm:py-5">
+                      <p class="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#5F7A80]">MAT1203 · Giải tích 1</p>
+                      <p class="mt-2 text-[15px] font-semibold leading-tight tracking-[-0.01em] text-[#0E2A32]">Giới hạn và tính liên tục</p>
+                      <div class="mt-3 space-y-1.5">
+                        <span class="block h-1.5 w-full rounded-full bg-[#0E2A32]/10"></span>
+                        <span class="block h-1.5 w-11/12 rounded-full bg-[#0E2A32]/10"></span>
+                        <span class="block h-1.5 w-9/12 rounded-full bg-[#0E2A32]/10"></span>
+                      </div>
+                      <div class="mt-4 rounded-lg bg-[#EAF4F4] px-3 py-2.5 font-mono text-[10px] text-[#21565E]">
+                        lim<sub>x→0</sub> (sin x) / x = 1
+                      </div>
+                      <div class="mt-3 space-y-1.5">
+                        <span class="block h-1.5 w-full rounded-full bg-[#0E2A32]/10"></span>
+                        <span class="block h-1.5 w-10/12 rounded-full bg-[#0E2A32]/10"></span>
+                        <span class="block h-1.5 w-11/12 rounded-full bg-[#0E2A32]/10"></span>
+                        <span class="block h-1.5 w-7/12 rounded-full bg-[#0E2A32]/10"></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-3 flex items-center justify-between rounded-lg border border-[#0E2A32]/10 bg-white px-3 py-2">
+                    <span class="text-[9px] text-[#5F7A80]">Chế độ đọc</span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="h-5 w-5 rounded border border-[#0E2A32]/10 bg-[#F7FBFB]"></span>
+                      <span class="h-5 w-5 rounded border border-[#0E2A32]/10 bg-[#F7FBFB]"></span>
+                      <span class="h-5 w-7 rounded bg-[#0E2A32]"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scene" [class.is-active]="activeScene() === 2">
+                <div class="relative flex h-full flex-col justify-center p-5 sm:p-6">
+                  <div class="flex items-center justify-between">
+                    <p class="text-[13px] font-semibold text-[#0E2A32]">Đăng tài liệu</p>
+                    <span class="rounded-full bg-[#EAF4F4] px-2 py-1 text-[9px] font-medium text-[#2F6F78]">Bước 2 / 2</span>
+                  </div>
+
+                  <div class="mt-4 rounded-xl border border-dashed border-[#0E2A32]/20 bg-[#F7FBFB] px-4 py-5 text-center">
+                    <span class="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#2F6F78]">
+                      <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4">
+                        <path d="M10 13V4m0 0L6.5 7.5M10 4l3.5 3.5M4 13v2.5A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </span>
+                    <p class="mt-2 text-[11px] font-medium text-[#0E2A32]">Kéo tệp vào đây</p>
+                    <p class="mt-0.5 text-[9px] text-[#5F7A80]">PDF · DOCX · PPTX</p>
+                  </div>
+
+                  <div class="mt-2 flex items-center gap-2 rounded-lg border border-[#0E2A32]/10 bg-white px-2.5 py-2">
+                    <span class="rounded bg-[#C8DCDE] px-1.5 py-0.5 text-[8px] font-bold text-[#0E2A32]">PDF</span>
+                    <span class="min-w-0 flex-1 truncate text-[10px] font-medium text-[#0E2A32]">de-cuong-giai-tich-1.pdf</span>
+                    <span class="text-[9px] font-semibold text-[#2F6F78]">Đã tải lên</span>
+                  </div>
+
+                  <div class="mt-2 grid grid-cols-2 gap-2">
+                    <div class="rounded-lg border border-[#0E2A32]/10 bg-white px-2.5 py-2">
+                      <p class="text-[8px] uppercase tracking-[0.12em] text-[#5F7A80]">Môn học</p>
+                      <p class="mt-0.5 truncate text-[10px] font-medium text-[#0E2A32]">Giải tích 1</p>
+                    </div>
+                    <div class="rounded-lg border border-[#0E2A32]/10 bg-white px-2.5 py-2">
+                      <p class="text-[8px] uppercase tracking-[0.12em] text-[#5F7A80]">Mô tả</p>
+                      <p class="mt-0.5 truncate text-[10px] font-medium text-[#0E2A32]">Đề cương ôn tập</p>
+                    </div>
+                  </div>
+
+                  <div class="mt-3 rounded-lg bg-[#0E2A32] py-2 text-center text-[10px] font-semibold text-white">
+                    Đăng tài liệu
+                  </div>
+
+                  <div class="absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-[0_16px_30px_-18px_rgba(14,42,50,0.5)]">
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-[#EAF4F4] text-[#2F6F78]">
+                      <svg viewBox="0 0 20 20" fill="currentColor" class="h-3 w-3">
+                        <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-3.5-3.5a1 1 0 1 1 1.4-1.4l2.8 2.8 6.8-6.8a1 1 0 0 1 1.4 0Z" clip-rule="evenodd" />
+                      </svg>
+                    </span>
+                    <span class="text-[9px] font-semibold text-[#0E2A32]">Đã thêm vào thư viện</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel copy: panel đi qua giữa màn hình thì stage đổi scene -->
+          <div>
+            @for (feature of features; track feature.title; let i = $index) {
+              <article
+                #scenePanel
+                [attr.data-scene-index]="i"
+                class="feature-panel flex min-h-0 flex-col justify-center border-t border-[#0E2A32]/15 py-10 first:border-t-0 lg:min-h-[78vh] lg:py-16"
+              >
+                <h3
+                  class="max-w-[18ch] text-[clamp(1.6rem,2.5vw,2.2rem)] font-semibold leading-[1.14] tracking-[-0.025em] text-[#0E2A32]"
+                >
+                  {{ feature.title }}
+                </h3>
+                <p class="mt-4 max-w-[46ch] text-[15.5px] leading-[1.75] text-[#2C4A50]">
+                  {{ feature.body }}
+                </p>
+                <a
+                  [routerLink]="feature.link"
+                  class="group mt-6 inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#0E2A32] underline decoration-[#0E2A32]/25 underline-offset-[6px] transition-colors hover:decoration-[#0E2A32]"
+                >
+                  {{ feature.cta }}
+                  <span class="transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+                </a>
+              </article>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Môn học -->
+    <section id="mon-hoc" class="scroll-mt-24 bg-white">
+      <div class="mx-auto max-w-[1240px] px-6 py-24 lg:py-28">
+        <div class="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+          <h2
+            class="reveal max-w-[16ch] text-[clamp(2rem,3.6vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-[#0E2A32]"
+            appReveal
+          >
+            Bắt đầu từ môn bạn đang học.
+          </h2>
+          <div
+            class="reveal flex flex-wrap items-end justify-between gap-6"
+            appReveal
+            [style.--reveal-delay.ms]="80"
+          >
+            <p class="max-w-[44ch] text-[15px] leading-[1.75] text-[#3C5A61]">
+              Mỗi tài liệu thuộc đúng một môn, nên không phải đoán xem tệp này dùng cho kỳ nào.
+            </p>
+            <a
+              routerLink="/documents"
+              class="group inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-[#26636C] transition-colors hover:text-[#0E2A32]"
+            >
+              Xem toàn bộ
+              <span class="transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+
+        <ul class="mt-12 border-t border-[#0E2A32]/12">
+          @for (subject of subjects; track subject.code; let i = $index) {
+            <li class="reveal" appReveal [style.--reveal-delay.ms]="i * 55">
+              <a
+                routerLink="/documents"
+                class="group grid grid-cols-[auto_1fr_auto] items-baseline gap-4 border-b border-[#0E2A32]/12 py-5 transition-colors hover:bg-[#F5FAFA] sm:gap-8 sm:py-6"
+              >
+                <span class="font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-[#5F7A80]">
+                  {{ subject.code }}
+                </span>
+                <span
+                  class="truncate text-[17px] font-medium tracking-[-0.01em] text-[#0E2A32] transition-transform duration-300 group-hover:translate-x-1 sm:text-xl"
+                >
+                  {{ subject.name }}
+                </span>
+                <span
+                  class="flex h-8 w-8 items-center justify-center rounded-full border border-[#0E2A32]/12 text-[#26636C] transition-all duration-300 group-hover:border-[#0E2A32] group-hover:bg-[#0E2A32] group-hover:text-[#C8DCDE]"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5">
+                    <path
+                      fill-rule="evenodd"
+                      d="M3 10a.75.75 0 0 1 .75-.75h10.6L10.2 5.1a.75.75 0 1 1 1.05-1.06l5.25 5.25a.75.75 0 0 1 0 1.06l-5.25 5.25a.75.75 0 0 1-1.05-1.06l4.15-4.15H3.75A.75.75 0 0 1 3 10Z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    <!-- Quyền riêng tư: coverage card của spec, nội dung là quyền truy cập tệp -->
+    <section class="bg-[#8FC4C8]">
+      <div class="mx-auto max-w-[1240px] px-6 py-16 lg:py-20">
+        <div
+          class="reveal grid gap-10 rounded-2xl bg-white p-7 shadow-[0_30px_70px_-55px_rgba(14,42,50,0.7)] sm:p-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-16 lg:p-14"
+          appReveal
+        >
+          <div>
+            <h2
+              class="max-w-[15ch] text-[clamp(1.9rem,3.2vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-[#0E2A32]"
+            >
+              Tệp tài liệu không phải link công khai.
+            </h2>
+            <p class="mt-4 max-w-[44ch] text-[15px] leading-[1.75] text-[#3C5A61]">
+              Mỗi lần mở tệp đều đi qua phiên đăng nhập. Người ngoài không thể dùng một đường
+              dẫn trực tiếp để tải tài liệu.
+            </p>
+          </div>
+
+          <div>
+            @for (privacy of privacyPoints; track privacy.title) {
+              <div class="flex gap-4 border-t border-[#0E2A32]/12 py-5 first:border-t-0 first:pt-0 last:pb-0">
+                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EAF4F4] text-[#26636C]">
+                  @switch (privacy.icon) {
+                    @case ('lock') {
+                      <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4" aria-hidden="true">
+                        <path d="M5.5 8.5V6a4.5 4.5 0 0 1 9 0v2.5M4.75 8.5h10.5A1.75 1.75 0 0 1 17 10.25v5A1.75 1.75 0 0 1 15.25 17H4.75A1.75 1.75 0 0 1 3 15.25v-5A1.75 1.75 0 0 1 4.75 8.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    }
+                    @case ('link') {
+                      <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4" aria-hidden="true">
+                        <path d="M8 12l4-4M7.5 6.5 9 5a3.5 3.5 0 0 1 5 5l-1.5 1.5M12.5 13.5 11 15a3.5 3.5 0 0 1-5-5l1.5-1.5M3 3l14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    }
+                    @default {
+                      <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4" aria-hidden="true">
+                        <path d="M3 10s2.5-4.5 7-4.5 7 4.5 7 4.5-2.5 4.5-7 4.5S3 10 3 10Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                        <circle cx="10" cy="10" r="2.2" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M3 3l14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                      </svg>
+                    }
+                  }
+                </span>
+                <div>
+                  <p class="text-[14px] font-semibold text-[#0E2A32]">{{ privacy.title }}</p>
+                  <p class="mt-1 text-[13px] leading-[1.65] text-[#4A666C]">{{ privacy.body }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="cau-hoi" class="scroll-mt-24 bg-white">
+      <div class="mx-auto grid max-w-[1240px] gap-12 px-6 py-24 lg:grid-cols-[0.78fr_1.22fr] lg:gap-20 lg:py-28">
+        <div class="reveal" appReveal>
+          <h2
+            class="max-w-[12ch] text-[clamp(2rem,3.6vw,3.25rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-[#0E2A32]"
+          >
+            Câu hỏi thường gặp.
+          </h2>
+          <p class="mt-4 max-w-[34ch] text-[15px] leading-[1.75] text-[#3C5A61]">
+            Những điều cần biết trước khi tạo tài khoản và đăng tài liệu đầu tiên.
+          </p>
+        </div>
+
+        <div class="reveal border-t border-[#0E2A32]/12" appReveal [style.--reveal-delay.ms]="80">
+          @for (faq of faqs; track faq.question) {
+            <details class="group border-b border-[#0E2A32]/12">
+              <summary
+                class="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[15px] font-medium text-[#0E2A32]"
+              >
+                <span>{{ faq.question }}</span>
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  class="h-4 w-4 shrink-0 text-[#26636C] transition-transform duration-300 group-open:rotate-45"
+                  aria-hidden="true"
+                >
+                  <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                </svg>
+              </summary>
+              <p class="max-w-[60ch] pb-5 pr-8 text-[14px] leading-[1.75] text-[#4A666C]">
+                {{ faq.answer }}
+              </p>
+            </details>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="bg-white px-6 pb-24 lg:pb-28">
+      <div
+        class="reveal cta-panel relative mx-auto max-w-[1240px] overflow-hidden rounded-2xl px-7 py-16 sm:px-12 lg:px-16 lg:py-20"
+        appReveal
+      >
+        <div class="cta-glow pointer-events-none absolute inset-0" aria-hidden="true"></div>
+
+        <div class="relative max-w-2xl">
+          <h2
+            class="max-w-2xl text-[clamp(2rem,4vw,3.25rem)] font-semibold leading-[1.06] tracking-[-0.03em] text-white"
+          >
+            Bạn có gì để <span class="whitespace-nowrap">chia sẻ?</span>
+          </h2>
+          <p class="mt-4 max-w-[46ch] text-[15px] leading-[1.75] text-[#D8EBEB]">
+            Tạo tài khoản bằng email sinh viên, xác thực một lần, rồi đăng tài liệu đầu tiên
+            của bạn.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a
+              routerLink="/auth/register"
+              class="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[#0E2A32] transition-all hover:-translate-y-0.5 hover:bg-[#F1F9F9]"
+            >
+              Tạo tài khoản
+            </a>
+            <a
+              routerLink="/auth/login"
+              class="inline-flex items-center justify-center rounded-full border border-white/25 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:border-white/50 hover:bg-white/10"
+            >
+              Đăng nhập
+            </a>
+          </div>
+        </div>
+
+        <div class="pointer-events-none absolute right-8 top-1/2 hidden -translate-y-1/2 lg:block" aria-hidden="true">
+          <div class="relative h-56 w-52">
+            <div class="absolute inset-x-6 top-2 h-48 rotate-[7deg] rounded-xl border border-[#C8DCDE]/25"></div>
+            <div class="absolute inset-x-3 top-6 h-44 rotate-[3deg] rounded-xl border border-[#C8DCDE]/35 bg-[#0E2A32]"></div>
+            <div class="absolute inset-x-0 top-10 h-44 rounded-xl border border-[#C8DCDE]/50 bg-[#12343D] p-5">
+              <span class="block h-1.5 w-12 rounded-full bg-[#8FC4C8]"></span>
+              <span class="mt-4 block h-2 w-24 rounded-full bg-[#C8DCDE]/80"></span>
+              <span class="mt-2 block h-1.5 w-28 rounded-full bg-[#C8DCDE]/30"></span>
+              <span class="mt-1.5 block h-1.5 w-20 rounded-full bg-[#C8DCDE]/30"></span>
+              <span class="mt-5 flex h-8 w-8 items-center justify-center rounded-lg bg-[#8FC4C8] text-[#0E2A32]">
+                <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+                  <path fill-rule="evenodd" d="M4 4.5A1.5 1.5 0 0 1 5.5 3h5L16 8.5v7A1.5 1.5 0 0 1 14.5 17h-9A1.5 1.5 0 0 1 4 15.5v-11Zm6 1V8h3.5L10 5.5Z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-[#0E2A32]/10 bg-white">
+    <div class="mx-auto max-w-[1240px] px-6 pt-14">
+      <p class="footer-mark" aria-hidden="true">Learning Hub</p>
+
+      <div class="mt-10 grid gap-8 border-t border-[#0E2A32]/10 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr]">
+        <div>
+          <p class="flex items-center gap-2.5 text-[15px] font-semibold text-[#0E2A32]">
+            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#0E2A32] text-[10px] font-bold text-[#C8DCDE]">
+              LH
+            </span>
+            Learning Hub
+          </p>
+          <p class="mt-3 max-w-sm text-[13px] leading-relaxed text-[#4A666C]">
+            Nền tảng chia sẻ tài liệu học tập giữa sinh viên — một môn, một chỗ, mở đọc khi cần.
+          </p>
+        </div>
+
+        <nav class="flex flex-col gap-2.5 text-[13px] text-[#3C5A61]" aria-label="Thư viện">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5F7A80]">Thư viện</p>
+          <a routerLink="/documents" class="w-fit transition-colors hover:text-[#0E2A32]">Tài liệu</a>
+          <a href="#mon-hoc" class="w-fit transition-colors hover:text-[#0E2A32]">Môn học</a>
+          <a routerLink="/auth/register" class="w-fit transition-colors hover:text-[#0E2A32]">Đăng tài liệu</a>
+        </nav>
+
+        <nav class="flex flex-col gap-2.5 text-[13px] text-[#3C5A61]" aria-label="Tài khoản">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5F7A80]">Tài khoản</p>
+          <a routerLink="/auth/login" class="w-fit transition-colors hover:text-[#0E2A32]">Đăng nhập</a>
+          <a routerLink="/auth/register" class="w-fit transition-colors hover:text-[#0E2A32]">Tạo tài khoản</a>
+          <a routerLink="/" class="w-fit transition-colors hover:text-[#0E2A32]">Trang chủ</a>
+        </nav>
+      </div>
+
+      <div class="border-t border-[#0E2A32]/10 py-6">
+        <p class="text-[11px] text-[#5F7A80]">© {{ year }} Learning Hub · Dự án học tập</p>
+      </div>
+    </div>
+  </footer>
+</div>

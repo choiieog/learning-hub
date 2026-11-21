@@ -1,0 +1,61 @@
+<h1 class="auth-title">Xác thực email</h1>
+
+@switch (status()) {
+  @case ('verifying') {
+    <p class="auth-subtitle" role="status">Đang xác thực tài khoản của bạn...</p>
+    <div class="mt-6 flex justify-center" aria-hidden="true">
+      <span
+        class="h-8 w-8 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600"
+      ></span>
+    </div>
+  }
+
+  @case ('success') {
+    <p class="auth-subtitle">Tài khoản của bạn đã được kích hoạt.</p>
+    <div class="alert alert-success mt-6" role="status">
+      <p>{{ message() }}</p>
+    </div>
+    <a class="btn-primary mt-2" routerLink="/auth/login">Đăng nhập ngay</a>
+  }
+
+  @default {
+    <p class="auth-subtitle">Không xác thực được bằng link này.</p>
+
+    @if (errors().length > 0) {
+      <div class="alert alert-error mt-6" role="alert" aria-live="polite">
+        @for (error of errors(); track error) {
+          <p>{{ error }}</p>
+        }
+      </div>
+    }
+
+    <form class="mt-2" [formGroup]="form" (ngSubmit)="resend()" novalidate>
+      <div class="field">
+        <label class="field-label" for="email">Email đã đăng ký</label>
+        <input
+          id="email"
+          class="field-input"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          placeholder="tenban@example.com"
+        />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <p class="field-error">Nhập địa chỉ email hợp lệ.</p>
+        }
+      </div>
+
+      <button class="btn-primary mt-6" type="submit" [disabled]="resending()">
+        {{ resending() ? 'Đang gửi...' : 'Gửi lại link xác thực' }}
+      </button>
+    </form>
+
+    @if (resendMessage()) {
+      <p class="alert alert-info mt-4" role="status">{{ resendMessage() }}</p>
+    }
+
+    <p class="mt-6 text-center text-sm text-slate-500">
+      <a class="auth-link" routerLink="/auth/login">Quay lại đăng nhập</a>
+    </p>
+  }
+}

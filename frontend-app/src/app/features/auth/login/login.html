@@ -1,0 +1,75 @@
+<h1 class="auth-title">Đăng nhập</h1>
+<p class="auth-subtitle">Dùng email đã xác thực để vào Learning Hub.</p>
+
+<form class="mt-6" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  @if (errorMessages().length > 0) {
+    <div class="alert alert-error" role="alert" aria-live="polite">
+      @for (message of errorMessages(); track message) {
+        <p>{{ message }}</p>
+      }
+    </div>
+  }
+
+  @if (requiresVerification()) {
+    <div class="alert alert-info" role="status">
+      <p class="font-medium">Tài khoản chưa xác thực email</p>
+      <p class="mt-1">Mở link trong email đã gửi, hoặc yêu cầu gửi lại.</p>
+      <button
+        type="button"
+        class="btn-secondary mt-2 w-full"
+        [disabled]="resending()"
+        (click)="resend()"
+      >
+        {{ resending() ? 'Đang gửi...' : 'Gửi lại email xác thực' }}
+      </button>
+    </div>
+  }
+
+  @if (resendMessage()) {
+    <p class="alert alert-success" role="status">{{ resendMessage() }}</p>
+  }
+
+  <div class="field">
+    <label class="field-label" for="email">Email</label>
+    <input
+      id="email"
+      class="field-input"
+      type="email"
+      formControlName="email"
+      autocomplete="email"
+      placeholder="tenban@example.com"
+      [attr.aria-invalid]="showError('email')"
+    />
+    @if (showError('email')) {
+      <p class="field-error">Nhập địa chỉ email hợp lệ.</p>
+    }
+  </div>
+
+  <div class="field">
+    <label class="field-label" for="password">Mật khẩu</label>
+    <input
+      id="password"
+      class="field-input"
+      type="password"
+      formControlName="password"
+      autocomplete="current-password"
+      [attr.aria-invalid]="showError('password')"
+    />
+    @if (showError('password')) {
+      <p class="field-error">Nhập mật khẩu.</p>
+    }
+  </div>
+
+  <p class="mt-2 text-right text-sm">
+    <a class="auth-link" routerLink="/auth/forgot-password">Quên mật khẩu?</a>
+  </p>
+
+  <button class="btn-primary mt-6" type="submit" [disabled]="submitting()">
+    {{ submitting() ? 'Đang đăng nhập...' : 'Đăng nhập' }}
+  </button>
+</form>
+
+<p class="mt-6 text-center text-sm text-slate-500">
+  Chưa có tài khoản?
+  <a class="auth-link" routerLink="/auth/register">Đăng ký</a>
+</p>

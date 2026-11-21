@@ -21,7 +21,7 @@ export const routes: Routes = [
     pathMatch: 'full',
     title: 'Learning Hub — Chia sẻ tài liệu học tập',
     loadComponent: () =>
-      import('./features/marketing/pages/landing/landing').then((m) => m.Landing),
+      import('./features/marketing/landing/landing').then((m) => m.Landing),
   },
 
   {
@@ -32,20 +32,20 @@ export const routes: Routes = [
         path: 'login',
         title: 'Đăng nhập · Learning Hub',
         canActivate: [guestGuard],
-        loadComponent: () => import('./features/auth/pages/login/login').then((m) => m.Login),
+        loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
       },
       {
         path: 'register',
         title: 'Đăng ký · Learning Hub',
         canActivate: [guestGuard],
-        loadComponent: () => import('./features/auth/pages/register/register').then((m) => m.Register),
+        loadComponent: () => import('./features/auth/register/register').then((m) => m.Register),
       },
       {
         path: 'verify-email',
         title: 'Xác thực email · Learning Hub',
         canActivate: [guestGuard],
         loadComponent: () =>
-          import('./features/auth/pages/verify-email/verify-email').then(
+          import('./features/auth/verify-email/verify-email').then(
             (m) => m.VerifyEmail,
           ),
       },
@@ -54,7 +54,7 @@ export const routes: Routes = [
         title: 'Quên mật khẩu · Learning Hub',
         canActivate: [guestGuard],
         loadComponent: () =>
-          import('./features/auth/pages/forgot-password/forgot-password').then(
+          import('./features/auth/forgot-password/forgot-password').then(
             (m) => m.ForgotPassword,
           ),
       },
@@ -63,7 +63,7 @@ export const routes: Routes = [
         title: 'Đặt lại mật khẩu · Learning Hub',
         canActivate: [guestGuard],
         loadComponent: () =>
-          import('./features/auth/pages/reset-password/reset-password').then(
+          import('./features/auth/reset-password/reset-password').then(
             (m) => m.ResetPassword,
           ),
       },
@@ -80,13 +80,13 @@ export const routes: Routes = [
         path: 'dashboard',
         title: 'Tổng quan · Learning Hub',
         loadComponent: () =>
-          import('./features/dashboard/pages/dashboard/dashboard').then((m) => m.Dashboard),
+          import('./features/dashboard/dashboard/dashboard').then((m) => m.Dashboard),
       },
       {
         path: 'documents',
         title: 'Tài liệu · Learning Hub',
         loadComponent: () =>
-          import('./features/documents/pages/document-list/document-list').then(
+          import('./features/documents/document-list/document-list').then(
             (m) => m.DocumentList,
           ),
       },
@@ -94,7 +94,7 @@ export const routes: Routes = [
         path: 'documents/:id',
         title: 'Chi tiết tài liệu · Learning Hub',
         loadComponent: () =>
-          import('./features/documents/pages/document-detail/document-detail').then(
+          import('./features/documents/document-detail/document-detail').then(
             (m) => m.DocumentDetailPage,
           ),
       },
@@ -102,7 +102,7 @@ export const routes: Routes = [
         path: 'viewer',
         title: 'Xem tệp · Learning Hub',
         loadComponent: () =>
-          import('./features/documents/pages/document-viewer/document-viewer').then(
+          import('./features/documents/document-viewer/document-viewer').then(
             (m) => m.DocumentViewerPage,
           ),
       },
@@ -110,7 +110,7 @@ export const routes: Routes = [
         path: 'upload',
         title: 'Đăng tài liệu · Learning Hub',
         loadComponent: () =>
-          import('./features/documents/pages/document-upload/document-upload').then(
+          import('./features/documents/document-upload/document-upload').then(
             (m) => m.DocumentUpload,
           ),
       },
@@ -118,7 +118,7 @@ export const routes: Routes = [
         path: 'my-documents',
         title: 'Tài liệu đã chia sẻ · Learning Hub',
         loadComponent: () =>
-          import('./features/documents/pages/my-documents/my-documents').then(
+          import('./features/documents/my-documents/my-documents').then(
             (m) => m.MyDocuments,
           ),
       },
@@ -126,7 +126,7 @@ export const routes: Routes = [
         path: 'leaderboard',
         title: 'Bảng xếp hạng · Learning Hub',
         loadComponent: () =>
-          import('./features/leaderboard/pages/leaderboard/leaderboard').then(
+          import('./features/leaderboard/leaderboard/leaderboard').then(
             (m) => m.Leaderboard,
           ),
       },
@@ -134,7 +134,7 @@ export const routes: Routes = [
         path: 'notifications',
         title: 'Thông báo · Learning Hub',
         loadComponent: () =>
-          import('./features/notifications/pages/notification-list/notification-list').then(
+          import('./features/notifications/notification-list/notification-list').then(
             (m) => m.NotificationList,
           ),
       },
@@ -143,13 +143,13 @@ export const routes: Routes = [
         title: 'Hồ sơ · Learning Hub',
         canDeactivate: [unsavedChangesGuard],
         loadComponent: () =>
-          import('./features/profile/pages/profile/profile').then((m) => m.Profile),
+          import('./features/profile/profile/profile').then((m) => m.Profile),
       },
       {
         path: 'profile/password',
         title: 'Đổi mật khẩu · Learning Hub',
         loadComponent: () =>
-          import('./features/profile/pages/change-password/change-password').then(
+          import('./features/profile/change-password/change-password').then(
             (m) => m.ChangePassword,
           ),
       },
@@ -166,7 +166,7 @@ export const routes: Routes = [
         path: 'dashboard',
         title: 'Quản trị · Learning Hub',
         loadComponent: () =>
-          import('./features/admin/pages/admin-dashboard/admin-dashboard').then(
+          import('./features/admin/admin-dashboard/admin-dashboard').then(
             (m) => m.AdminDashboard,
           ),
       },
@@ -174,7 +174,7 @@ export const routes: Routes = [
         path: 'subjects',
         title: 'Danh mục môn học · Learning Hub',
         loadComponent: () =>
-          import('./features/admin/pages/admin-subjects/admin-subjects').then(
+          import('./features/admin/admin-subjects/admin-subjects').then(
             (m) => m.AdminSubjects,
           ),
       },
@@ -182,7 +182,7 @@ export const routes: Routes = [
         path: 'documents',
         title: 'Phê duyệt bài viết · Learning Hub',
         loadComponent: () =>
-          import('./features/admin/pages/admin-document-approval/admin-document-approval').then(
+          import('./features/admin/admin-document-approval/admin-document-approval').then(
             (m) => m.AdminDocumentApproval,
           ),
       },
@@ -190,13 +190,13 @@ export const routes: Routes = [
         path: 'users',
         title: 'Quản lý tài khoản · Learning Hub',
         loadComponent: () =>
-          import('./features/admin/pages/admin-users/admin-users').then((m) => m.AdminUsers),
+          import('./features/admin/admin-users/admin-users').then((m) => m.AdminUsers),
       },
       {
         path: 'broadcast',
         title: 'Thông báo hàng loạt · Learning Hub',
         loadComponent: () =>
-          import('./features/admin/pages/admin-broadcast/admin-broadcast').then(
+          import('./features/admin/admin-broadcast/admin-broadcast').then(
             (m) => m.AdminBroadcast,
           ),
       },
@@ -204,7 +204,7 @@ export const routes: Routes = [
         path: 'settings',
         title: 'Cấu hình hệ thống · Learning Hub',
         loadComponent: () =>
-          import('./features/admin/pages/admin-settings/admin-settings').then(
+          import('./features/admin/admin-settings/admin-settings').then(
             (m) => m.AdminSettings,
           ),
       },

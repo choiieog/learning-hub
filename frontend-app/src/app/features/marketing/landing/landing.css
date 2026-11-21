@@ -1,0 +1,297 @@
+:host {
+  display: block;
+
+  --lh-paper: #ffffff;
+  --lh-mist: #c8dcde;
+  --lh-marine: #8fc4c8;
+  --lh-ink: #0e2a32;
+  --lh-ink-soft: #3c5a61;
+  --lh-muted: #4a666c;
+  --lh-tide: #26636c;
+}
+
+.lh-shell {
+  background: var(--lh-paper);
+  color: var(--lh-ink);
+  font-family:
+    'Be Vietnam Pro',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--lh-marine);
+  color: var(--lh-ink);
+}
+
+.lh-shell :where(a, button):focus-visible {
+  outline: 2px solid var(--lh-tide);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+.lh-shell summary:focus-visible {
+  outline: 2px solid var(--lh-tide);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+.lh-header {
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    backdrop-filter 0.35s ease;
+  border-bottom: 1px solid transparent;
+}
+
+.lh-header.is-solid {
+  background-color: rgb(255 255 255 / 0.88);
+  border-bottom-color: rgb(14 42 50 / 0.1);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.hero-field {
+  background:
+    radial-gradient(46rem 32rem at 84% 2%, rgb(200 220 222 / 0.85), transparent 68%),
+    radial-gradient(36rem 26rem at 4% 8%, rgb(143 196 200 / 0.25), transparent 72%),
+    radial-gradient(40rem 30rem at 55% 108%, rgb(200 220 222 / 0.45), transparent 75%),
+    linear-gradient(180deg, #ffffff 0%, #fbfefe 60%, #ffffff 100%);
+}
+
+.hero-dots {
+  background-image: radial-gradient(rgb(14 42 50 / 0.16) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.42;
+  mask-image: radial-gradient(55% 52% at 74% 28%, #000 6%, transparent 78%);
+  -webkit-mask-image: radial-gradient(55% 52% at 74% 28%, #000 6%, transparent 78%);
+}
+
+@media (max-width: 359px) {
+  h1 {
+    font-size: 2.25rem;
+    line-height: 1.06;
+  }
+}
+
+.mark {
+  background: linear-gradient(180deg, transparent 64%, var(--lh-marine) 64%, var(--lh-marine) 88%, transparent 88%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.04em;
+  margin: 0 -0.04em;
+}
+
+.mockup-halo {
+  background: radial-gradient(56% 50% at 58% 34%, rgb(143 196 200 / 0.5), transparent 72%);
+  filter: blur(26px);
+  animation: lh-drift 16s ease-in-out infinite alternate;
+}
+
+@keyframes lh-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-10px, 8px, 0) scale(1.04);
+  }
+}
+
+.mockup-plate {
+  position: absolute;
+  border-radius: 18px;
+}
+
+.mockup-plate-back {
+  inset: 12px -10px -14px 12px;
+  background: var(--lh-mist);
+  transform: rotate(-1.4deg);
+}
+
+.mockup-plate-side {
+  top: 28px;
+  right: -9px;
+  bottom: 30px;
+  width: 18px;
+  border-radius: 8px;
+  background: var(--lh-marine);
+  transform: translateX(2px) rotate(0.6deg);
+}
+
+.mockup {
+  border-radius: 16px;
+  background: var(--lh-paper);
+  box-shadow:
+    0 44px 90px -48px rgb(14 42 50 / 0.55),
+    0 2px 0 rgb(14 42 50 / 0.04);
+  overflow: hidden;
+}
+
+.mockup-bar {
+  display: flex;
+  height: 38px;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid rgb(14 42 50 / 0.08);
+  background: #f7fbfb;
+  padding: 0 12px;
+}
+
+.mockup-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--lh-mist);
+}
+
+.mockup-url {
+  margin: 0 auto;
+  border: 1px solid rgb(14 42 50 / 0.08);
+  border-radius: 999px;
+  background: #fff;
+  padding: 4px 12px;
+  color: #5f7a80;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mockup-flag {
+  border-radius: 999px;
+  background: #eaf4f4;
+  padding: 4px 7px;
+  color: #26636c;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.float-chip {
+  position: absolute;
+  bottom: -66px;
+  left: 22px;
+  display: none;
+  align-items: center;
+  gap: 9px;
+  border-radius: 999px;
+  background: #fff;
+  padding: 7px 13px 7px 7px;
+  box-shadow: 0 24px 44px -26px rgb(14 42 50 / 0.55);
+  animation: lh-bob 7s ease-in-out infinite;
+}
+
+@media (min-width: 640px) {
+  .float-chip {
+    display: flex;
+  }
+}
+
+@keyframes lh-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.feature-band {
+  background-color: var(--lh-mist);
+}
+
+.feature-glow {
+  background:
+    radial-gradient(40rem 26rem at 88% 0%, rgb(255 255 255 / 0.55), transparent 70%),
+    radial-gradient(34rem 24rem at 8% 100%, rgb(143 196 200 / 0.45), transparent 72%);
+}
+
+.feature-stage {
+  isolation: isolate;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(14px) scale(0.992);
+  transition:
+    opacity 0.42s ease,
+    transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+
+.scene.is-active {
+  opacity: 1;
+  transform: none;
+}
+
+.feature-panel {
+  border-color: rgb(14 42 50 / 0.16);
+}
+
+.cta-panel {
+  background-color: var(--lh-ink);
+  box-shadow: 0 40px 90px -60px rgb(14 42 50 / 0.85);
+}
+
+.cta-glow {
+  background:
+    radial-gradient(34rem 24rem at 82% 0%, rgb(143 196 200 / 0.35), transparent 68%),
+    radial-gradient(28rem 20rem at 8% 100%, rgb(200 220 222 / 0.18), transparent 70%);
+}
+
+.footer-mark {
+  color: rgb(14 42 50 / 0.06);
+  -webkit-text-stroke: 1.4px rgb(14 42 50 / 0.3);
+  font-size: clamp(2.35rem, 10vw, 6rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  filter: blur(5px);
+  transition:
+    opacity 0.85s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 0.85s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform, filter;
+}
+
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
+  .float-chip,
+  .mockup-halo {
+    animation: none;
+  }
+
+  .scene {
+    transition: none;
+  }
+}

@@ -1,0 +1,62 @@
+<article class="space-y-5">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div class="min-w-0">
+      <a
+        routerLink="/documents"
+        class="text-sm font-medium text-slate-500 transition hover:text-indigo-600"
+      >
+        ← Về danh sách
+      </a>
+      <h1 class="mt-2 truncate text-2xl font-semibold tracking-tight text-slate-900">
+        {{ fileName() || 'Xem tệp' }}
+      </h1>
+    </div>
+
+    @if (downloadUrl(); as href) {
+      <a
+        [href]="href"
+        [attr.download]="fileName()"
+        class="btn-secondary w-auto"
+      >
+        Tải xuống
+      </a>
+    }
+  </div>
+
+  @if (invalid()) {
+    <div class="alert alert-error" role="alert">
+      <p>Đường dẫn tệp không hợp lệ hoặc tệp không còn tồn tại.</p>
+    </div>
+  } @else if (error(); as message) {
+    <div class="alert alert-error" role="alert">
+      <p>{{ message }}</p>
+    </div>
+  } @else if (loading()) {
+    <p
+      class="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500"
+      aria-busy="true"
+    >
+      Đang tải tệp…
+    </p>
+  } @else if (kind() === 'pdf' && pdfUrl(); as url) {
+    <iframe
+      [src]="url"
+      [title]="fileName()"
+      class="h-[80vh] w-full rounded-xl border border-slate-200 bg-slate-50"
+    ></iframe>
+  } @else if (kind() === 'docx') {
+    <div
+      #docxHost
+      class="max-h-[80vh] overflow-auto rounded-xl border border-slate-200 bg-white px-4 py-3"
+    ></div>
+  } @else {
+    <div class="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
+      <p class="text-sm font-medium text-slate-700">
+        Chưa đọc trực tiếp được {{ fileType() }}
+      </p>
+      <p class="mt-1 text-sm text-slate-500">
+        Định dạng này cần Word/PowerPoint nên hãy tải về để xem nội dung.
+      </p>
+    </div>
+  }
+</article>
