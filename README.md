@@ -14,6 +14,13 @@ Mỗi lượt xem được ghi nhận (tăng `viewCount`), làm nền tảng cho
 | Database | PostgreSQL + Prisma 7 (migration đầu tiên đã áp dụng) |
 | Lưu file | `StorageService` + driver `local` (`UPLOAD_DIR`, phục vụ `/api/files/...`) |
 
+## Quy ước giao diện (UI convention)
+
+- **Chỉ làm giao diện desktop/laptop**, kiểm tra ở độ rộng 1280–1920px (mặc định 1440px).
+- **Không thêm breakpoint, layout hay tối ưu riêng cho mobile/tablet** trừ khi được yêu cầu rõ ràng.
+- Phần responsive mobile hiện có được giữ nguyên, không xoá và không tiếp tục chỉnh sửa.
+- Quy ước này áp dụng cho mọi trang UI (landing, auth, tài liệu, admin, hồ sơ…) cho đến khi có yêu cầu thay đổi.
+
 ## Hiện trạng
 
 Đã chạy được đầu-cuối:
