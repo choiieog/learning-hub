@@ -21,8 +21,7 @@ interface StatCard {
   label: string;
   value: number;
   hint: string;
-  tone: 'slate' | 'emerald' | 'amber';
-  link?: string;
+  link: string;
   queryParams?: Record<string, string>;
 }
 
@@ -31,7 +30,7 @@ interface StatCard {
  *
  * Một request `GET /api/dashboard/overview` trả đủ: số tài liệu theo trạng thái,
  * tổng lượt xem + lượt xem 7 ngày (kèm biểu đồ cột nhỏ), 5 tài liệu gần đây của tôi
- * và 5 tài liệu nhiều lượt xem nhất. Bảng xếp hạng level/EXP để giai đoạn 2.
+ * và 5 tài liệu nhiều lượt xem nhất.
  */
 @Component({
   selector: 'app-dashboard',
@@ -74,14 +73,12 @@ export class Dashboard implements OnInit {
         label: 'Tổng tài liệu',
         value: stats?.totalDocuments ?? 0,
         hint: 'Xem tài liệu đã chia sẻ',
-        tone: 'slate',
         link: '/my-documents',
       },
       {
         label: 'Đã duyệt',
         value: stats?.approved ?? 0,
         hint: 'Đang hiển thị công khai',
-        tone: 'emerald',
         link: '/my-documents',
         queryParams: { status: 'APPROVED' },
       },
@@ -89,7 +86,6 @@ export class Dashboard implements OnInit {
         label: 'Chờ duyệt',
         value: stats?.pending ?? 0,
         hint: 'Admin sẽ xử lý sớm',
-        tone: 'amber',
         link: '/my-documents',
         queryParams: { status: 'PENDING' },
       },
@@ -105,21 +101,9 @@ export class Dashboard implements OnInit {
   }
 
   protected badgeClass(status: DocumentStatus): string {
-    if (status === 'APPROVED') {
-      return 'shrink-0 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700';
-    }
-
-    return 'shrink-0 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700';
-  }
-
-  protected toneClass(tone: StatCard['tone']): string {
-    const tones: Record<StatCard['tone'], string> = {
-      slate: 'text-slate-900',
-      emerald: 'text-emerald-600',
-      amber: 'text-amber-600',
-    };
-
-    return tones[tone];
+    return status === 'APPROVED'
+      ? 'status-pill status-approved'
+      : 'status-pill status-pending';
   }
 
   /** Chiều cao cột theo giá trị lớn nhất trong 7 ngày; ngày 0 vẫn có 1% để thấy trục. */
@@ -128,7 +112,6 @@ export class Dashboard implements OnInit {
     const max = Math.max(1, ...trend.map((point) => point.count));
     return Math.max(2, Math.round((count / max) * 100));
   }
-
 
   protected fileType(name: string): string {
     return fileExtension(name);

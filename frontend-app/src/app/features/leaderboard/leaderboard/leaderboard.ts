@@ -52,17 +52,17 @@ export class Leaderboard implements OnInit {
     const base = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold';
 
     if (rank === 1) {
-      return `${base} bg-amber-100 text-amber-700`;
+      return `${base} bg-warning-soft text-warning`;
     }
 
     if (rank === 2) {
-      return `${base} bg-slate-200 text-slate-600`;
+      return `${base} bg-mist text-ink-soft`;
     }
 
     if (rank === 3) {
       return `${base} bg-orange-100 text-orange-700`;
     }
 
-    return `${base} bg-slate-50 text-slate-500`;
+    return `${base} bg-wash text-muted`;
   }
 }

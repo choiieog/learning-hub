@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 
-/** Khung trang đăng nhập / đăng ký: căn giữa màn hình. */
+/** Khung trang đăng nhập / đăng ký: poster thư viện bên trái, form tập trung bên phải. */
 @Component({
   selector: 'app-auth-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, RouterLink],
   templateUrl: './auth-layout.html',
   styleUrl: './auth-layout.css',
 })

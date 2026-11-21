@@ -16,13 +16,13 @@ import { ToastService } from './core/services/toast.service';
     >
       @for (toast of toasts.toasts(); track toast.id) {
         <div
-          class="pointer-events-auto rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow-lg"
+          class="pointer-events-auto rounded-lg border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger shadow-lg"
         >
           <div class="flex items-start gap-2">
             <p class="flex-1">{{ toast.message }}</p>
             <button
               type="button"
-              class="text-slate-400 hover:text-slate-600"
+              class="text-muted hover:text-ink-soft"
               aria-label="Đóng thông báo"
               (click)="toasts.dismiss(toast.id)"
             >

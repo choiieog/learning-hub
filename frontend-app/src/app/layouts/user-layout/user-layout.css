@@ -1,1 +1,14 @@
-/* Tailwind-first component; add component-scoped styles below when needed. */
+.app-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-mist) transparent;
+}
+
+.app-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.app-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--color-mist);
+}

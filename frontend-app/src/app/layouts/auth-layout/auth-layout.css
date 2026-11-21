@@ -1,1 +1,63 @@
-/* Tailwind-first component; add component-scoped styles below when needed. */
+:host {
+  display: block;
+}
+
+.auth-stage {
+  background:
+    radial-gradient(40rem 28rem at 92% 12%, rgb(143 196 200 / 0.2), transparent 70%),
+    radial-gradient(30rem 22rem at 6% 92%, rgb(200 220 222 / 0.14), transparent 72%),
+    linear-gradient(160deg, #0e2a32 0%, #12343d 58%, #0e2a32 100%);
+}
+
+.auth-grid {
+  background-image: radial-gradient(rgb(200 220 222 / 0.22) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.36;
+  mask-image: radial-gradient(70% 60% at 38% 45%, #000 4%, transparent 78%);
+  -webkit-mask-image: radial-gradient(70% 60% at 38% 45%, #000 4%, transparent 78%);
+}
+
+.auth-glow {
+  background: radial-gradient(circle, rgb(143 196 200 / 0.38), transparent 66%);
+  filter: blur(28px);
+  animation: auth-drift 18s ease-in-out infinite alternate;
+}
+
+.auth-paper {
+  animation: auth-rise 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) 0.08s both;
+}
+
+.auth-paper-back {
+  background: rgb(200 220 222 / 0.16);
+  border: 1px solid rgb(200 220 222 / 0.2);
+  transform: translate(10px, 10px) rotate(-1deg);
+}
+
+@keyframes auth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes auth-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-14px, 10px, 0) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-paper,
+  .auth-glow {
+    animation: none;
+  }
+}

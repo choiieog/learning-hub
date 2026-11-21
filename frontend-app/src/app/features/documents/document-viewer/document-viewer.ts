@@ -15,6 +15,7 @@ import { DomSanitizer, SafeResourceUrl, Title } from '@angular/platform-browser'
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { renderAsync } from 'docx-preview';
 import { Subscription } from 'rxjs';
+import { AuthService } from '../../../core/services/auth.service';
 import { fileExtension } from '../../../core/utils/format.util';
 
 type ViewerKind = 'pdf' | 'docx' | 'other';
@@ -47,7 +48,9 @@ export class DocumentViewerPage {
   private readonly route = inject(ActivatedRoute);
   private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly auth = inject(AuthService);
 
+  protected readonly isAdmin = this.auth.isAdmin;
   protected readonly fileName = signal('');
   protected readonly kind = signal<ViewerKind>('other');
   protected readonly invalid = signal(false);
@@ -135,16 +138,16 @@ export class DocumentViewerPage {
 
           if (kind === 'docx') {
             this.pendingDocx.set(typed);
-            return;
+          } else {
+            this.objectUrl = URL.createObjectURL(new Blob([typed], { type: this.mimeType() }));
+            this.downloadUrl.set(this.objectUrl);
+
+            if (kind === 'pdf') {
+              this.pdfUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.objectUrl));
+            }
           }
 
-          this.objectUrl = URL.createObjectURL(new Blob([typed], { type: this.mimeType() }));
-          this.downloadUrl.set(this.objectUrl);
-
-          if (kind === 'pdf') {
-            this.pdfUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.objectUrl));
-          }
-
+          // DOCX dựng sau khi template tạo #docxHost; các định dạng khác hiển thị ngay.
           this.loading.set(false);
         },
         error: (error: unknown) => {
@@ -209,10 +212,7 @@ export class DocumentViewerPage {
       .then(() => {
         if (container !== this.activeDocx) {
           container.remove();
-          return;
         }
-
-        this.loading.set(false);
       })
       .catch(() => {
         container.remove();
@@ -223,7 +223,6 @@ export class DocumentViewerPage {
 
         this.activeDocx = null;
         this.error.set('Không dựng được bản xem trước tệp này.');
-        this.loading.set(false);
       });
   }
 }

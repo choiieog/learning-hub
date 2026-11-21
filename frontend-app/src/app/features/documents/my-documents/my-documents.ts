@@ -188,10 +188,10 @@ export class MyDocuments implements OnInit {
 
   protected badgeClass(status: DocumentStatus): string {
     if (status === 'APPROVED') {
-      return 'rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700';
+      return 'rounded-md bg-success-soft px-2 py-0.5 text-[11px] font-bold text-success';
     }
 
-    return 'rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700';
+    return 'rounded-md bg-warning-soft px-2 py-0.5 text-[11px] font-bold text-warning';
   }
 
   protected fileType(name: string): string {

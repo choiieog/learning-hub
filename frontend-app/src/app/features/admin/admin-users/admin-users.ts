@@ -87,14 +87,14 @@ export class AdminUsers implements OnInit {
     const base = 'shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold';
 
     if (status === 'BANNED') {
-      return `${base} bg-rose-50 text-rose-700`;
+      return `${base} bg-danger-soft text-danger`;
     }
 
     if (status === 'WARNED') {
-      return `${base} bg-amber-50 text-amber-700`;
+      return `${base} bg-warning-soft text-warning`;
     }
 
-    return `${base} bg-emerald-50 text-emerald-700`;
+    return `${base} bg-success-soft text-success`;
   }
 
   protected applyFilters(): void {

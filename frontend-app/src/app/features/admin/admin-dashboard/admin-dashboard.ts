@@ -35,8 +35,8 @@ export class AdminDashboard implements OnInit {
 
   protected activityBadgeClass(type: 'DOCUMENT' | 'WARNING'): string {
     return type === 'WARNING'
-      ? 'shrink-0 rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700'
-      : 'shrink-0 rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-700';
+      ? 'status-pill status-pending'
+      : 'status-pill border-line bg-wash text-ink-soft';
   }
 
   private fetch(): void {

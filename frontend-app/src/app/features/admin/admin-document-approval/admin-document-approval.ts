@@ -8,7 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import {
   DocumentFile,
   DocumentStatus,
@@ -35,7 +34,7 @@ type StatusTab = { value: DocumentStatus; label: string };
 @Component({
   selector: 'app-admin-document-approval',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe],
+  imports: [DatePipe],
   templateUrl: './admin-document-approval.html',
   styleUrl: './admin-document-approval.css',
 })
@@ -98,9 +97,9 @@ export class AdminDocumentApproval implements OnInit {
     return formatFileSize(file.size);
   }
 
-  /** Trang đọc nội dung tệp ở tab mới — xem `DocumentViewerPage`. */
+  /** Trang đọc nội dung tệp ở tab mới — dùng route riêng trong console quản trị. */
   protected viewerHref(file: DocumentFile): string {
-    return `/viewer?src=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}`;
+    return `/admin/viewer?src=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}`;
   }
 
   protected authorInitials(fullName: string): string {

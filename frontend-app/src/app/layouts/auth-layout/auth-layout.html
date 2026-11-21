@@ -1,6 +1,97 @@
-<div class="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-  <div class="w-full max-w-md rounded-xl bg-white p-8 shadow-sm">
-    <p class="mb-6 text-center text-xl font-semibold text-indigo-600">Learning Hub</p>
-    <router-outlet />
-  </div>
+<div class="grid h-screen grid-cols-[1.08fr_0.92fr] overflow-hidden bg-white">
+  <aside class="auth-stage relative flex h-screen flex-col overflow-hidden px-12 py-10 text-white">
+    <div class="auth-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+    <div class="auth-glow pointer-events-none absolute -right-28 top-24 h-[32rem] w-[32rem] rounded-full" aria-hidden="true"></div>
+
+    <a routerLink="/" class="relative z-10 flex w-fit items-center gap-2.5" aria-label="Learning Hub — trang chủ">
+      <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-marine text-[10px] font-semibold tracking-[0.02em] text-ink">
+        LH
+      </span>
+      <span class="text-[15px] font-semibold tracking-[-0.02em] text-white">Learning Hub</span>
+    </a>
+
+    <div class="relative z-10 my-auto max-w-[560px] py-9">
+      <h2 class="text-[clamp(2.7rem,4vw,4rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-white">
+        Mọi môn học,<br />
+        <span class="text-marine">một thư viện.</span>
+      </h2>
+      <p class="mt-6 max-w-[43ch] text-[15px] leading-[1.8] text-mist/75">
+        Bài giảng, đề cương và đề thi của từng môn — do sinh viên chia sẻ, xếp đúng chỗ và mở
+        đọc ngay trên web.
+      </p>
+
+      <div class="auth-paper relative mt-11 max-w-[470px]">
+        <div class="auth-paper-back absolute inset-0 rounded-2xl" aria-hidden="true"></div>
+        <div class="relative overflow-hidden rounded-2xl border border-white/60 bg-white text-ink">
+          <div class="flex items-center justify-between gap-4 border-b border-line-soft px-5 py-3.5">
+            <div>
+              <p class="text-[12px] font-semibold text-ink">Thư viện của Minh</p>
+              <p class="mt-0.5 text-[10px] text-muted">5 môn · 24 tài liệu</p>
+            </div>
+            <span class="rounded-full bg-foam px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-tide">
+              Minh hoạ
+            </span>
+          </div>
+
+          <div class="divide-y divide-line-soft">
+            <div class="flex items-center gap-3 px-5 py-3">
+              <span class="file-mark h-8 w-8 rounded-md text-[8px]">PDF</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-[11px] font-semibold text-ink">Đề cương ôn tập Giải tích 1</p>
+                <p class="mt-0.5 text-[9px] text-muted">MAT1203 · Giải tích 1</p>
+              </div>
+              <span class="text-[9px] font-semibold text-tide">Đang mở</span>
+            </div>
+            <div class="flex items-center gap-3 px-5 py-3">
+              <span class="file-mark h-8 w-8 rounded-md text-[8px]">DOCX</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-[11px] font-semibold text-ink">Kế thừa và đa hình trong OOP</p>
+                <p class="mt-0.5 text-[9px] text-muted">INT2204 · Lập trình hướng đối tượng</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 px-5 py-3">
+              <span class="file-mark h-8 w-8 rounded-md text-[8px]">PPTX</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-[11px] font-semibold text-ink">Đề thi giữa kỳ CNPM 2024</p>
+                <p class="mt-0.5 text-[9px] text-muted">INT2208 · Công nghệ phần mềm</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between border-t border-line-soft bg-wash px-5 py-3">
+            <span class="text-[9px] text-muted">Học kỳ này</span>
+            <span class="text-[9px] font-semibold text-ink-soft">16 / 24 tài liệu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative z-10 flex items-center gap-2.5 border-t border-white/10 pt-5 text-[11px] text-mist/70">
+      <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0 text-marine" aria-hidden="true">
+        <path d="M5.5 8.5V6a4.5 4.5 0 0 1 9 0v2.5M4.75 8.5h10.5A1.75 1.75 0 0 1 17 10.25v5A1.75 1.75 0 0 1 15.25 17H4.75A1.75 1.75 0 0 1 3 15.25v-5A1.75 1.75 0 0 1 4.75 8.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      Tệp tài liệu không phải link công khai. Mỗi lần mở đều qua phiên đăng nhập.
+    </div>
+  </aside>
+
+  <main class="app-scrollbar flex h-screen flex-col overflow-y-auto bg-white px-12 py-8">
+    <div class="flex justify-end">
+      <a routerLink="/" class="flex items-center gap-1.5 text-[11px] font-medium text-muted transition hover:text-ink">
+        <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+          <path d="M15.5 10h-11m0 0 4-4m-4 4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Về trang chủ
+      </a>
+    </div>
+
+    <div class="my-auto flex justify-center py-8">
+      <div class="w-full max-w-[420px]">
+        <router-outlet />
+      </div>
+    </div>
+
+    <p class="text-center text-[10px] text-muted/70">
+      © 2026 Learning Hub · Dành cho sinh viên
+    </p>
+  </main>
 </div>

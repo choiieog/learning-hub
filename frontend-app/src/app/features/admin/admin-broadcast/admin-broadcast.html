@@ -1,7 +1,7 @@
 <div class="flex flex-wrap items-end justify-between gap-4">
   <div>
-    <h1 class="text-2xl font-semibold tracking-tight">Thông báo hàng loạt</h1>
-    <p class="mt-1 text-sm text-slate-500">
+    <h1 class="page-title">Thông báo hàng loạt</h1>
+    <p class="mt-1 text-sm text-muted">
       Gửi một thông báo chung tới tất cả sinh viên — hiện trong chuông và trang thông báo.
     </p>
   </div>
@@ -12,7 +12,6 @@
   <div class="alert alert-success mt-6" role="status">
     <p class="font-medium">Đã gửi thông báo</p>
     <p class="mt-1">“{{ sent() }}” đã xuất hiện trong thông báo của mọi sinh viên.</p>
-    <a routerLink="/notifications" class="btn-primary mt-3 w-auto">Xem trang thông báo</a>
   </div>
 }
 
@@ -25,7 +24,7 @@
 }
 
 <form
-  class="mt-6 max-w-3xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+  class="mt-6 max-w-3xl panel p-6"
   [formGroup]="form"
   (ngSubmit)="submit()"
   novalidate
@@ -41,7 +40,7 @@
       placeholder="VD: Bảo trì hệ thống tối nay"
       [attr.aria-invalid]="showError('title')"
     />
-    <p class="mt-1 text-right text-xs text-slate-400">
+    <p class="mt-1 text-right text-xs text-muted">
       {{ titleLength() }}/120 ký tự
     </p>
     @if (showError('title')) {
@@ -60,7 +59,7 @@
       placeholder="VD: Hệ thống bảo trì từ 22:00 đến 23:00 ngày 10/11. Trong thời gian này bạn không đăng nhập được."
       [attr.aria-invalid]="showError('message')"
     ></textarea>
-    <p class="mt-1 text-right text-xs text-slate-400">
+    <p class="mt-1 text-right text-xs text-muted">
       {{ messageLength() }}/1000 ký tự
     </p>
     @if (showError('message')) {
@@ -68,7 +67,7 @@
     }
   </div>
 
-  <div class="mt-2 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+  <div class="mt-2 rounded-lg bg-warning-soft px-4 py-3 text-sm text-warning">
     Thông báo gửi đi không sửa được. Chỉ dùng cho thông tin chung, không dùng để nhắc riêng một
     tài khoản (dùng “Quản lý tài khoản” → gửi cảnh báo). Gửi nhầm thì thu hồi ở danh sách bên dưới.
   </div>
@@ -80,32 +79,32 @@
 
 <section class="mt-10 max-w-3xl">
   <h2 class="text-lg font-semibold tracking-tight">Đã gửi gần đây</h2>
-  <p class="mt-1 text-sm text-slate-500">
+  <p class="mt-1 text-sm text-muted">
     Thu hồi thông báo gửi nhầm — tin biến mất khỏi chuông của mọi sinh viên.
   </p>
 
   @if (loadingSent()) {
-    <p class="mt-4 text-sm text-slate-500" aria-busy="true">Đang tải...</p>
+    <p class="mt-4 text-sm text-muted" aria-busy="true">Đang tải...</p>
   } @else if (sentItems().length === 0) {
     <p
-      class="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500"
+      class="mt-4 rounded-xl border border-dashed border-line bg-white p-6 text-center text-sm text-muted"
     >
       Chưa gửi thông báo chung nào.
     </p>
   } @else {
-    <ul class="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+    <ul class="mt-4 divide-y divide-line-soft panel">
       @for (item of sentItems(); track item.id) {
         <li class="flex items-start gap-3 px-4 py-3">
           <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-slate-900">{{ item.title }}</p>
-            <p class="mt-1 text-sm text-slate-600">{{ item.message }}</p>
-            <p class="mt-1 text-xs text-slate-400">
+            <p class="text-sm font-semibold text-ink">{{ item.title }}</p>
+            <p class="mt-1 text-sm text-ink-soft">{{ item.message }}</p>
+            <p class="mt-1 text-xs text-muted">
               {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}
             </p>
           </div>
           <button
             type="button"
-            class="shrink-0 self-center rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 transition hover:border-rose-300 hover:text-rose-600"
+            class="shrink-0 self-center rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-muted transition hover:border-danger-line hover:text-danger"
             [attr.aria-label]="'Thu hồi thông báo: ' + item.title"
             (click)="revoke(item)"
           >

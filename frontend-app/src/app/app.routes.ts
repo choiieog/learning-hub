@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
+import { studentGuard } from './core/guards/student.guard';
 import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 
 /**
@@ -11,8 +12,8 @@ import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
  *   /auth/verify-email?token=...     → AuthLayout  (guestGuard, link trong email)
  *   /auth/forgot-password            → AuthLayout  (guestGuard, yêu cầu link đặt lại mật khẩu)
  *   /auth/reset-password?token=...   → AuthLayout  (guestGuard, link đặt lại mật khẩu trong email)
- *   /dashboard, /documents, ...      → UserLayout  (authGuard)
- *   /notifications                   → UserLayout  (authGuard, trang danh sách đầy đủ)
+ *   /dashboard, /documents, ...      → UserLayout  (authGuard + studentGuard)
+ *   /notifications                   → UserLayout  (authGuard + studentGuard, trang danh sách đầy đủ)
  *   /admin/...                       → AdminLayout (authGuard + adminGuard)
  */
 export const routes: Routes = [
@@ -74,7 +75,7 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./layouts/user-layout/user-layout').then((m) => m.UserLayout),
-    canActivate: [authGuard],
+    canActivate: [authGuard, studentGuard],
     children: [
       {
         path: 'dashboard',
@@ -184,6 +185,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/admin-document-approval/admin-document-approval').then(
             (m) => m.AdminDocumentApproval,
+          ),
+      },
+      {
+        path: 'viewer',
+        title: 'Xem tệp · Quản trị Learning Hub',
+        loadComponent: () =>
+          import('./features/documents/document-viewer/document-viewer').then(
+            (m) => m.DocumentViewerPage,
           ),
       },
       {
