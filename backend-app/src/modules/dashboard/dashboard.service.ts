@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { DocumentStatus } from '../../common/enums/document-status.enum';
 import { vietnamDayKey } from '../../common/utils/day-key.util';
+import { cutoffBefore } from '../../common/utils/retention.util';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
 const RECENT_LIMIT = 5;
 const TOP_LIMIT = 5;
 const TREND_DAYS = 7;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Thẻ tài liệu trên tổng quan — đủ để hiện tiêu đề, môn, trạng thái, lượt xem, file. */
 const DASHBOARD_DOCUMENT_SELECT = {
@@ -67,7 +67,7 @@ export class DashboardService {
   async getOverview(userId: string): Promise<DashboardOverview> {
     const mine: Prisma.DocumentWhereInput = { authorId: userId };
     const trendDays = buildTrendDays();
-    const trendStart = new Date(Date.now() - (TREND_DAYS - 1) * DAY_MS);
+    const trendStart = cutoffBefore(TREND_DAYS - 1);
     trendStart.setHours(0, 0, 0, 0);
 
     const [totalDocuments, approved, pending, viewsAgg, recentDocuments, topDocuments, trendRows] =
@@ -119,9 +119,9 @@ export class DashboardService {
 
 /** 7 ngày gần nhất theo giờ Việt Nam, cũ → mới. */
 function buildTrendDays(): string[] {
-  const now = Date.now();
+  const now = new Date();
 
   return Array.from({ length: TREND_DAYS }, (_, index) =>
-    vietnamDayKey(new Date(now - (TREND_DAYS - 1 - index) * DAY_MS)),
+    vietnamDayKey(cutoffBefore(TREND_DAYS - 1 - index, now)),
   );
 }

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { DocumentStatus } from '../../common/enums/document-status.enum';
+import { cutoffBefore } from '../../common/utils/retention.util';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 const TOP_DOCUMENTS_LIMIT = 5;
 const ACTIVITY_LIMIT = 10;
 const ACTIVITY_DOCUMENTS = 6;
@@ -44,7 +44,7 @@ export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getOverview(): Promise<AdminOverview> {
-    const since7Days = new Date(Date.now() - 7 * DAY_MS);
+    const since7Days = cutoffBefore(7);
     const activeDocuments = {} as const;
 
     const [
