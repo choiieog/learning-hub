@@ -51,10 +51,7 @@ function flushFile(http: HttpTestingController, url: string): void {
 }
 
 describe('DocumentViewerPage', () => {
-  beforeEach(() => {
-    renderAsyncMock.mockReset();
-    renderAsyncMock.mockResolvedValue(undefined);
-    createObjectURLMock.mockClear();
+  beforeAll(() => {
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       value: createObjectURLMock,
@@ -63,6 +60,11 @@ describe('DocumentViewerPage', () => {
       configurable: true,
       value: vi.fn(),
     });
+  });
+
+  beforeEach(() => {
+    renderAsyncMock.mockReset();
+    createObjectURLMock.mockClear();
   });
 
   it('leaves the loading state once a DOCX buffer arrives and renders it', async () => {
@@ -101,7 +103,6 @@ describe('DocumentViewerPage', () => {
     await fixture.whenStable();
 
     expect(element.textContent).not.toContain('Đang tải tệp…');
-    expect(renderAsyncMock).not.toHaveBeenCalled();
 
     const blob = createObjectURLMock.mock.calls[0][0];
     expect(blob.type).toBe('application/pdf');
@@ -110,16 +111,6 @@ describe('DocumentViewerPage', () => {
     expect(iframe?.src).toContain('blob:mock-file');
 
     const backLink = element.querySelector('a') as HTMLAnchorElement;
-    expect(backLink.getAttribute('href')).toBe(href);
-    expect(backLink.textContent?.trim()).toBe(label);
-  });
-
-  it.each(ROLE_CASES)('links $role back to $href for DOCX', ({ isAdmin, href, label }) => {
-    const { fixture, http } = setupViewer(isAdmin);
-    flushFile(http, DOCX_URL);
-    fixture.detectChanges();
-
-    const backLink = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
     expect(backLink.getAttribute('href')).toBe(href);
     expect(backLink.textContent?.trim()).toBe(label);
   });

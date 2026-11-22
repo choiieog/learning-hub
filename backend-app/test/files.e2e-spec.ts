@@ -144,8 +144,9 @@ describe('Tệp tài liệu (e2e)', () => {
     await server().get(fileUrl).expect(401);
   });
 
-  it('bài PENDING chỉ tác giả và admin tải được', async () => {
-    await server().get(fileUrl).set(bearer(otherToken)).expect(403);
+  it('ADMIN tải được tệp PENDING, tài khoản khác nhận 403', async () => {
+    const forbidden = await server().get(fileUrl).set(bearer(otherToken)).expect(403);
+    expect((forbidden.body as { message: string }).message).toContain('chờ duyệt');
 
     await server()
       .get(fileUrl)
@@ -153,7 +154,13 @@ describe('Tệp tài liệu (e2e)', () => {
       .expect(200)
       .expect('Content-Type', /application\/pdf/);
 
-    await server().get(fileUrl).set(bearer(adminToken)).expect(200);
+    const adminDownload = await server()
+      .get(fileUrl)
+      .set(bearer(adminToken))
+      .expect(200)
+      .expect('Content-Type', /application\/pdf/);
+
+    expect(adminDownload.body).toEqual(PDF_BYTES);
   });
 
   it('bài APPROVED mở cho mọi user đã đăng nhập', async () => {
