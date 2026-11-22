@@ -351,7 +351,9 @@ export class AuthService {
     );
 
     const refreshToken = await this.jwt.signAsync(
-      { sub: user.id, type: 'refresh' },
+      // `jti` ngẫu nhiên: JWT chỉ có `iat` độ phân giải giây nên thiếu trường này thì
+      // hai lần đăng nhập trong cùng một giây sinh ra đúng cùng một refresh token.
+      { sub: user.id, type: 'refresh', jti: randomBytes(16).toString('hex') },
       { secret: this.config.jwt.refreshSecret, expiresIn: this.config.jwt.refreshTtlSeconds },
     );
 
