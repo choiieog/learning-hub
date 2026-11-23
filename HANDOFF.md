@@ -386,11 +386,10 @@ Migrations (in order): `20261105172926_init`, `20261108043759_add_password_reset
 16. ExpLog has no cascade from `User`; if user deletion is ever added, handle it explicitly.
 17. `ExpReason.ADMIN_ADJUST` exists but **no endpoint** uses it yet (documented in `gamification/README.md`).
 18. `settings` README notes an old `document.dailyLimit` key may still exist as a leftover DB row; it is no longer read.
-19. **Typecheck discrepancy (verified locally, cause UNVERIFIED).** `npx tsc --noEmit -p tsconfig.json` reports two
-    pre-existing errors in spec files — `src/infra/storage/storage.service.spec.ts:32` and
-    `src/modules/uploads/uploads.service.spec.ts:149`, both `TS2554` (“Expected 0 arguments, but got N”) where
-    mocks are typed with no parameters. `tsconfig.build.json` excludes specs and is clean (`exit 0`). CI runs
-    `tsc -p tsconfig.json`, so check that step before assuming a new change broke it.
+19. **Typecheck is clean on both configs.** `npx tsc --noEmit -p tsconfig.json` and `-p tsconfig.build.json`
+    both exit 0. (Two spec-only `TS2554` errors — `storage.service.spec.ts` and `uploads.service.spec.ts` — were
+    fixed by typing the `jest.fn` mocks with their real parameters instead of zero arguments. CI runs
+    `tsc -p tsconfig.json`, so keep that config green, not just the build one.)
 
 ---
 

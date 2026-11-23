@@ -59,7 +59,11 @@ function setup() {
       }),
     ),
   };
-  const prisma = { uploadedFile: { create: jest.fn(async () => undefined) } };
+  const prisma = {
+    uploadedFile: {
+      create: jest.fn(async (_args: { data: Record<string, unknown> }) => undefined),
+    },
+  };
   const service = new UploadsService(
     storage as unknown as StorageService,
     prisma as unknown as PrismaService,

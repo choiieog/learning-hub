@@ -1,5 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import type { StorageDriver, StoredFile } from './storage.types';
+import type { UploadFolder } from '../../common/constants/upload.constants';
+import type { StorageDriver, StorageUploadInput, StoredFile } from './storage.types';
 import { StorageService } from './storage.service';
 
 const STORED: StoredFile = {
@@ -13,7 +14,9 @@ const STORED: StoredFile = {
 function setup() {
   const driver = {
     name: 'fake',
-    upload: jest.fn(async () => STORED),
+    upload: jest.fn(
+      async (_input: StorageUploadInput, _folder: UploadFolder) => STORED,
+    ),
     remove: jest.fn(async (_publicId: string) => undefined),
   };
   const service = new StorageService(driver as unknown as StorageDriver);
