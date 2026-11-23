@@ -1,5 +1,8 @@
 import '../src/config/load-env';
-import { retentionDays } from '../src/config/retention';
+import {
+  retentionDays,
+  retentionWindowsFromEnv,
+} from '../src/config/retention';
 import { PrismaService } from '../src/infra/prisma/prisma.service';
 import { createStorageDriver } from '../src/infra/storage/storage.module';
 import { StorageService } from '../src/infra/storage/storage.service';
@@ -17,27 +20,12 @@ async function main(): Promise<void> {
   const prisma = new PrismaService();
   await prisma.$connect();
 
-  const viewDays = retentionDays(process.env.DOCUMENT_VIEW_RETENTION_DAYS, 180);
-  const readDays = retentionDays(
-    process.env.NOTIFICATION_READ_RETENTION_DAYS,
-    180,
-  );
-  const expDays = retentionDays(process.env.EXP_LOG_RETENTION_DAYS, 180);
-  const personalDays = retentionDays(
-    process.env.PERSONAL_NOTIFICATION_RETENTION_DAYS,
-    180,
-  );
-
-  const pruned = await pruneRetentionData(prisma, {
-    documentViewDays: viewDays,
-    notificationReadDays: readDays,
-    personalNotificationDays: personalDays,
-    expLogDays: expDays,
-  });
+  const windows = retentionWindowsFromEnv();
+  const pruned = await pruneRetentionData(prisma, windows);
 
   console.log(
-    `DocumentView: xoá ${pruned.documentViews.deleted} dòng cũ hơn ${viewDays} ngày ` +
-      `(trước ${pruned.documentViews.cutoff.toISOString()}).`,
+    `DocumentView: xoá ${pruned.documentViews.deleted} dòng cũ hơn ` +
+      `${windows.documentViewDays} ngày (trước ${pruned.documentViews.cutoff.toISOString()}).`,
   );
 
   const uploadDays = retentionDays(process.env.UPLOAD_ORPHAN_RETENTION_DAYS, 7);
@@ -54,18 +42,21 @@ async function main(): Promise<void> {
 
   console.log(
     `NotificationRead: xoá ${pruned.broadcasts.reads} trạng thái đọc của ` +
-      `${pruned.broadcasts.deleted} thông báo chung cũ hơn ${readDays} ngày ` +
+      `${pruned.broadcasts.deleted} thông báo chung cũ hơn ` +
+      `${windows.notificationReadDays} ngày ` +
       `(trước ${pruned.broadcasts.cutoff.toISOString()}).`,
   );
 
   console.log(
-    `ExpLog: xoá ${pruned.expLogs.deleted} dòng cũ hơn ${expDays} ngày ` +
+    `ExpLog: xoá ${pruned.expLogs.deleted} dòng cũ hơn ` +
+      `${windows.expLogDays} ngày ` +
       `(trước ${pruned.expLogs.cutoff.toISOString()}).`,
   );
 
   console.log(
     `Notification: xoá ${pruned.personalNotifications.deleted} thông báo cá nhân đã đọc ` +
-      `cũ hơn ${personalDays} ngày (trước ${pruned.personalNotifications.cutoff.toISOString()}).`,
+      `cũ hơn ${windows.personalNotificationDays} ngày ` +
+      `(trước ${pruned.personalNotifications.cutoff.toISOString()}).`,
   );
 
   await prisma.$disconnect();

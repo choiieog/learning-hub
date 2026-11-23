@@ -1,4 +1,5 @@
 import { cutoffBefore } from '../../common/utils/retention.util';
+import type { RetentionWindows } from '../../config/retention';
 import { Prisma } from '../../generated/prisma/client';
 import type { PrismaService } from '../../infra/prisma/prisma.service';
 
@@ -11,15 +12,7 @@ type RetentionPrisma = Pick<
   'documentView' | 'notificationRead' | 'notification' | 'expLog'
 >;
 
-export interface RetentionWindows {
-  /** `DOCUMENT_VIEW_RETENTION_DAYS`. */
-  documentViewDays: number;
-  /** `NOTIFICATION_READ_RETENTION_DAYS`. */
-  notificationReadDays: number;
-  /** `PERSONAL_NOTIFICATION_RETENTION_DAYS`. */
-  personalNotificationDays: number;
-  /** `EXP_LOG_RETENTION_DAYS`. */
-  expLogDays: number;
+export interface PruneRetentionOptions extends RetentionWindows {
   /** Thời điểm "bây giờ" — tham số để test khoá được các mốc cutoff. */
   now?: Date;
 }
@@ -45,7 +38,7 @@ export interface PruneRetentionResult {
  */
 export async function pruneRetentionData(
   prisma: RetentionPrisma,
-  windows: RetentionWindows,
+  windows: PruneRetentionOptions,
 ): Promise<PruneRetentionResult> {
   const viewCutoff = cutoffBefore(windows.documentViewDays, windows.now);
   const documentViews = await prisma.documentView.deleteMany({
