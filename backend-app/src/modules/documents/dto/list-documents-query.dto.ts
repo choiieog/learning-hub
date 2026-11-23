@@ -66,7 +66,7 @@ export class ListDocumentsQueryDto extends PaginationQueryDto {
   @IsEnum(DocumentStatus, { message: 'status không hợp lệ' })
   status?: DocumentStatus;
 
-  /** (phase 2) điểm sao tối thiểu */
+  /** Điểm sao tối thiểu — lọc theo `Document.ratingAvg` */
   @IsOptional()
   @Type(() => Number)
   @IsNumber({}, { message: 'minRating phải là số' })

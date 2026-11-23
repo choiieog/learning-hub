@@ -54,7 +54,7 @@ export class DocumentsController {
     return this.documentsService.create(authorId, dto);
   }
 
-  /** DELETE /api/documents/:id — sinh viên tự xóa tài liệu của mình (xóa mềm) */
+  /** DELETE /api/documents/:id — sinh viên tự xoá hẳn tài liệu của mình */
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.documentsService.removeOwn(id, userId);

@@ -372,12 +372,12 @@ Migrations (in order): `20261105172926_init`, `20261108043759_add_password_reset
 7. **Cloud storage driver missing** (`src/infra/storage/README.md` documents the 5-step recipe). Local disk means uploads are lost on redeploy/ephemeral disk; also old URLs would need migration if the driver changes.
 8. **No frontend tests or e2e in CI.** `.github/workflows/ci.yml` runs backend typecheck/lint/build/unit/e2e and `ng build` only. `npm test` (Vitest) is never run in CI. `npm run db:prune` is never exercised in CI (only unit/e2e coverage of its extracted functions).
 9. **`prune-retention.e2e-spec.ts` has a single `it` with many assertions.** Intentional (one seeded scenario, id-pinned), but a failure only tells you “something in the 4 sections broke”; split it if diagnosis cost matters.
-10. **Stale documentation** (verified):
-    - `backend-app/README.md` module table still marks `ratings`, `gamification`, `settings` as “⬜ phase 2, mới có README” — all three are implemented.
-    - `backend-app/src/infra/prisma/README.md` still says “chưa tạo file vì chưa chốt ORM” and shows a `PrismaClient` without the driver adapter — outdated, the real `PrismaService` uses `PrismaPg`.
-    - `documents/dto/list-documents-query.dto.ts` comments `minRating` as “(phase 2)”, but it is implemented (`documents.service.ts:594`).
-    - `documents.controller.ts` DELETE comment says “xóa mềm”, but the delete is **hard** (schema has no `deletedAt` on `Document`).
-    - `frontend-app/README.md` is untouched Angular CLI boilerplate.
+10. **Documentation drift** — four backend spots were corrected after this handoff was written:
+    `backend-app/README.md` (module table now lists `ratings`/`gamification`/`settings` as done and
+    `subjects` as hard delete), `src/infra/prisma/README.md` (now documents the Prisma 7 + `PrismaPg`
+    setup instead of “ORM not chosen”), the `minRating` comment in `list-documents-query.dto.ts`, and
+    the “xoá mềm” comment on `DELETE /api/documents/:id`. Still open:
+    `frontend-app/README.md` is untouched Angular CLI boilerplate.
 11. **No `@nestjs/config` / env schema validation** (`TODO(phase 1)` in `config/configuration.ts`); invalid values are handled per-field with fallbacks, which is deliberate but means typos can be silent.
 12. **`shared/components/README.md` is the only file there** — no shared presentational components yet; duplicated markup across feature pages is possible.
 13. **`@nestjs/mau` `^0.2.6`** is listed in backend `devDependencies` and its purpose is **UNVERIFIED** (not imported anywhere obvious). Treat with suspicion before adding/removing.
@@ -386,6 +386,11 @@ Migrations (in order): `20261105172926_init`, `20261108043759_add_password_reset
 16. ExpLog has no cascade from `User`; if user deletion is ever added, handle it explicitly.
 17. `ExpReason.ADMIN_ADJUST` exists but **no endpoint** uses it yet (documented in `gamification/README.md`).
 18. `settings` README notes an old `document.dailyLimit` key may still exist as a leftover DB row; it is no longer read.
+19. **Typecheck discrepancy (verified locally, cause UNVERIFIED).** `npx tsc --noEmit -p tsconfig.json` reports two
+    pre-existing errors in spec files — `src/infra/storage/storage.service.spec.ts:32` and
+    `src/modules/uploads/uploads.service.spec.ts:149`, both `TS2554` (“Expected 0 arguments, but got N”) where
+    mocks are typed with no parameters. `tsconfig.build.json` excludes specs and is clean (`exit 0`). CI runs
+    `tsc -p tsconfig.json`, so check that step before assuming a new change broke it.
 
 ---
 
@@ -410,9 +415,11 @@ Acceptance: 7 unit suites / 37 tests pass; 17 e2e suites / 67 tests pass; typech
 **1. Re-run the full e2e suite after `4f29cc6`** (only the config/script/tests changed; the previous full run was against `c090bd2`).
 Acceptance: same 17/67 green; if anything fails, fix the code/test (not by weakening assertions) and report exactly what changed.
 
-**2. Fix the stale documentation listed in §7.10.**
-Files: `backend-app/README.md`, `backend-app/src/infra/prisma/README.md`, `backend-app/src/modules/documents/dto/list-documents-query.dto.ts` (comment), `backend-app/src/modules/documents/documents.controller.ts` (comment), optionally `frontend-app/README.md`.
-Acceptance: no statement contradicts the code; no behavior change; typecheck/lint still pass.
+**2. Remaining documentation cleanup (optional).**
+The four stale backend docs/comments listed in §7.10 were already fixed; only
+`frontend-app/README.md` is still default Angular CLI boilerplate.
+Files: `frontend-app/README.md`.
+Acceptance: no statement contradicts the code; no behavior change.
 
 **3. Run frontend tests in CI and make them reliable.**
 Files: `.github/workflows/ci.yml` (frontend job), plus any flaky specs.

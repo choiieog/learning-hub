@@ -37,11 +37,13 @@ npm run test:e2e        # e2e thật: cần DATABASE_URL + `npx prisma migrate d
 | `documents` | ✅ danh sách, chi tiết + đếm view, đăng, `GET /mine`, duyệt / từ chối (từ chối = xoá hẳn), xoá hẳn (cascade rating) |
 | `uploads` | ✅ `POST /api/uploads` — validate rồi ghi qua `StorageService`, PDF/DOCX/PPTX, ≤ 20MB |
 | `infra/storage` | 🟡 `StorageService` + driver `local`; driver cloud (Cloudinary/S3) chưa viết |
-| `subjects` | ✅ đọc công khai + thêm/xoá mềm (chặn khi còn tài liệu) |
+| `subjects` | ✅ đọc công khai + thêm/xoá hẳn (chặn khi môn còn tài liệu) |
 | `users` | ✅ hồ sơ (xem/sửa), avatar, hồ sơ công khai, danh sách cho admin, cảnh báo (tự khoá ở lần 3) |
 | `admin` | ✅ duyệt/từ chối/xoá bài, overview, môn học, tài khoản + cảnh báo |
 | `infra/mail` | ✅ `console` + `smtp` (nodemailer) gửi email xác thực |
 | `notifications` | ✅ duyệt/từ chối/xoá/cảnh báo, đọc tin, xoá tin cá nhân; admin gửi & thu hồi thông báo chung — xem `src/modules/notifications/README.md` |
-| `ratings`, `gamification`, `settings` | ⬜ phase 2, mới có README |
+| `ratings` | ✅ đánh giá 1–5 sao + nhận xét, upsert theo người dùng, chỉ tài liệu đã duyệt — xem `src/modules/ratings/README.md` |
+| `gamification` | ✅ EXP/level theo sự kiện (`ExpLog`), bảng xếp hạng `GET /api/leaderboard` — xem `src/modules/gamification/README.md` |
+| `settings` | ✅ bật/tắt đăng tài liệu (`document.uploadsEnabled`), admin đọc/ghi qua `/api/admin/settings` — xem `src/modules/settings/README.md` |
 
 Chi tiết việc còn thiếu: xem README của từng module trong `src/modules/`.
