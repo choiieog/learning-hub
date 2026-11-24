@@ -1,8 +1,10 @@
 <div class="mx-auto max-w-[1380px]">
   <div class="flex items-end justify-between gap-6">
     <div>
-      <h1 class="page-title">Tổng quan quản trị</h1>
-      <p class="page-subtitle max-w-[56ch]">
+      <h1 class="text-[1.5rem] font-semibold leading-tight tracking-[-0.03em] text-ink">
+        Tổng quan quản trị
+      </h1>
+      <p class="mt-1.5 max-w-[62ch] text-[13px] leading-relaxed text-muted">
         Sức khoẻ thư viện tài liệu, hàng chờ duyệt và hoạt động gần đây trong một màn hình.
       </p>
     </div>
@@ -20,127 +22,189 @@
   }
 
   @if (loading()) {
-    <div class="mt-8 space-y-6" aria-busy="true">
-      <div class="metric-strip grid-cols-4 divide-x divide-line-soft">
+    <div class="mt-6 space-y-6" aria-busy="true">
+      <div class="kpi-strip">
         @for (placeholder of [1, 2, 3, 4]; track placeholder) {
-          <div class="metric animate-pulse">
-            <div class="h-2.5 w-1/2 rounded bg-line"></div>
-            <div class="mt-4 h-6 w-2/5 rounded bg-foam"></div>
-            <div class="mt-3 h-2 w-3/4 rounded bg-foam"></div>
+          <div class="kpi animate-pulse">
+            <div class="h-3.5 w-1/2 rounded bg-line"></div>
+            <div class="mt-3 h-7 w-2/5 rounded bg-foam"></div>
+            <div class="mt-3 h-2.5 w-3/4 rounded bg-foam"></div>
           </div>
         }
       </div>
-      <div class="grid grid-cols-[1.15fr_1fr] gap-6">
+      <div class="grid grid-cols-[minmax(0,1.15fr)_minmax(320px,1fr)] gap-6">
         @for (placeholder of [1, 2]; track placeholder) {
-          <div class="panel h-[400px] animate-pulse p-5">
+          <div class="panel h-[360px] animate-pulse p-6">
             <div class="h-4 w-1/3 rounded bg-line"></div>
             <div class="mt-6 space-y-3">
               @for (row of [1, 2, 3, 4]; track row) {
-                <div class="h-14 rounded bg-wash"></div>
+                <div class="h-12 rounded bg-wash"></div>
               }
             </div>
           </div>
         }
       </div>
+      <div class="panel h-[300px] animate-pulse p-6">
+        <div class="h-4 w-1/4 rounded bg-line"></div>
+      </div>
     </div>
   } @else if (overview(); as data) {
-    <div class="metric-strip mt-8 grid-cols-4 divide-x divide-line-soft">
-      <div class="metric">
-        <p class="metric-label">Người dùng</p>
-        <p class="metric-value">{{ data.users.total }}</p>
-        <p class="metric-hint">
+    <div class="kpi-strip mt-6">
+      <div class="kpi">
+        <p class="kpi-label">Người dùng</p>
+        <p class="kpi-value">{{ data.users.total }}</p>
+        <p class="kpi-hint">
           +{{ data.users.newIn7Days }} trong 7 ngày · {{ data.users.warned }} cảnh báo ·
           {{ data.users.banned }} bị khoá
         </p>
       </div>
-      <div class="metric">
-        <p class="metric-label">Tài liệu</p>
-        <p class="metric-value">{{ data.documents.total }}</p>
-        <p class="metric-hint">{{ data.documents.approved }} tài liệu đã duyệt</p>
+      <div class="kpi">
+        <p class="kpi-label">Tài liệu</p>
+        <p class="kpi-value">{{ data.documents.total }}</p>
+        <p class="kpi-hint">{{ data.documents.approved }} tài liệu đã duyệt</p>
       </div>
-      <a routerLink="/admin/documents" class="metric group transition hover:bg-wash">
-        <p class="metric-label">Chờ duyệt</p>
-        <p class="metric-value text-warning">{{ data.documents.pending }}</p>
-        <span class="metric-hint transition group-hover:text-tide">
+      <a routerLink="/admin/documents" class="kpi group">
+        <p class="kpi-label">Chờ duyệt</p>
+        <p class="kpi-value text-warning">{{ data.documents.pending }}</p>
+        <span class="kpi-hint transition group-hover:text-tide">
           Mở hàng chờ
           <span class="ml-0.5 inline-block transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
         </span>
       </a>
-      <div class="metric">
-        <p class="metric-label">Lượt xem</p>
-        <p class="metric-value">{{ data.views.total }}</p>
-        <p class="metric-hint">{{ data.views.in7Days }} lượt trong 7 ngày</p>
+      <div class="kpi">
+        <p class="kpi-label">Lượt xem</p>
+        <p class="kpi-value">{{ data.views.total }}</p>
+        <p class="kpi-hint">{{ data.views.in7Days }} lượt trong 7 ngày</p>
       </div>
     </div>
 
-    <div class="mt-6 grid grid-cols-[1.15fr_1fr] items-start gap-6">
+    <div class="mt-6 grid grid-cols-[minmax(0,1.15fr)_minmax(320px,1fr)] items-start gap-6">
       <section class="panel overflow-hidden">
-        <header class="panel-head">
+        <header class="flex items-center justify-between gap-4 border-b border-line-soft px-6 py-4">
           <div>
             <h2 class="panel-title">Tài liệu nhiều lượt xem</h2>
-            <p class="mt-0.5 text-[11px] text-muted">Những tài liệu đang được đọc nhiều nhất</p>
+            <p class="mt-1 text-[11px] text-muted">Những tài liệu đang được đọc nhiều nhất</p>
           </div>
           <a routerLink="/admin/documents" class="panel-link">Mở hàng chờ</a>
         </header>
 
         @if (data.topDocuments.length === 0) {
-          <p class="px-5 py-10 text-center text-sm text-muted">Chưa có tài liệu đã duyệt.</p>
+          <p class="px-6 py-10 text-center text-sm text-muted">Chưa có tài liệu đã duyệt.</p>
         } @else {
-          <ul class="divide-y divide-line-soft">
+          <ol class="divide-y divide-line-soft px-6">
             @for (item of data.topDocuments; track item.id) {
-              <li class="flex items-center gap-4 px-5 py-3.5">
-                <span class="w-8 shrink-0 text-[11px] font-semibold tabular-nums text-muted">
-                  0{{ $index + 1 }}
-                </span>
-                <div class="min-w-0 flex-1">
-                  <p class="truncate text-[12.5px] font-semibold text-ink">
+              <li class="rank-row">
+                <div class="flex items-baseline justify-between gap-3">
+                  <a
+                    routerLink="/admin/documents"
+                    class="min-w-0 truncate text-[12.5px] font-medium text-ink transition hover:text-tide"
+                  >
+                    <span class="mr-2 text-[10.5px] tabular-nums text-muted">0{{ $index + 1 }}</span>
                     {{ item.title }}
-                  </p>
-                  <p class="mt-0.5 truncate text-[10px] text-muted">
-                    <span class="font-medium text-tide">{{ item.subject.code }}</span>
-                    · {{ item.subject.name }}
-                  </p>
-                </div>
-                <div class="shrink-0 text-right">
-                  <p class="text-[11px] font-semibold tabular-nums text-ink-soft">
+                  </a>
+                  <span class="shrink-0 text-[12px] font-medium tabular-nums text-ink-soft">
                     {{ item.viewCount }}
-                  </p>
-                  <p class="mt-0.5 text-[9px] text-muted">lượt xem</p>
+                  </span>
+                </div>
+                <p class="mt-1 truncate text-[10.5px] text-muted">
+                  <span class="font-medium text-tide">{{ item.subject.code }}</span>
+                  · {{ item.subject.name }} · {{ item.author.fullName }}
+                </p>
+                <div class="mt-2 flex items-center gap-3">
+                  <div
+                    class="rank-bar flex-1"
+                    role="progressbar"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    [attr.aria-valuenow]="shareOfViews(item.viewCount)"
+                    [attr.aria-label]="'Tỷ lệ lượt xem của ' + item.title"
+                  >
+                    <span [style.width.%]="shareOfViews(item.viewCount)"></span>
+                  </div>
+                  <span class="w-8 shrink-0 text-right text-[10.5px] tabular-nums text-muted">
+                    {{ shareOfViews(item.viewCount) }}%
+                  </span>
                 </div>
               </li>
             }
-          </ul>
+          </ol>
         }
       </section>
 
       <section class="panel overflow-hidden">
-        <header class="panel-head">
-          <div>
-            <h2 class="panel-title">Hoạt động gần đây</h2>
-            <p class="mt-0.5 text-[11px] text-muted">Bài đăng mới và cảnh báo hệ thống</p>
-          </div>
+        <header class="border-b border-line-soft px-6 py-4">
+          <h2 class="panel-title">Sức khoẻ thư viện</h2>
+          <p class="mt-1 text-[11px] text-muted">Tỉ lệ trên toàn bộ tài liệu và tài khoản</p>
         </header>
 
-        @if (data.recentActivity.length === 0) {
-          <p class="px-5 py-10 text-center text-sm text-muted">Chưa có hoạt động nào.</p>
-        } @else {
-          <ul class="divide-y divide-line-soft">
-            @for (activity of data.recentActivity; track activity.id) {
-              <li class="flex items-start gap-3 px-5 py-3.5">
-                <span [class]="activityBadgeClass(activity.type)">
-                  {{ activity.type === 'WARNING' ? 'Cảnh báo' : 'Tài liệu' }}
-                </span>
-                <div class="min-w-0 flex-1">
-                  <p class="text-[12px] leading-relaxed text-ink-soft">{{ activity.message }}</p>
-                  <p class="mt-1 text-[10px] text-muted/75">
-                    {{ activity.createdAt | date: 'dd/MM/yyyy HH:mm' }}
-                  </p>
-                </div>
-              </li>
-            }
-          </ul>
-        }
+        <div class="divide-y divide-line-soft px-6">
+          @for (row of health(); track row.label) {
+            <div class="rank-row">
+              <div class="flex items-baseline justify-between gap-3">
+                <p class="text-[12.5px] font-medium text-ink">{{ row.label }}</p>
+                <p class="text-[12.5px] font-medium tabular-nums text-ink-soft">{{ row.value }}</p>
+              </div>
+              <div
+                class="rank-bar mt-2"
+                [class.is-success]="row.tone === 'success'"
+                [class.is-warning]="row.tone === 'warning'"
+                [class.is-danger]="row.tone === 'danger'"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-valuenow]="row.percent"
+                [attr.aria-label]="row.label"
+              >
+                <span [style.width.%]="row.percent"></span>
+              </div>
+              <p class="mt-1.5 text-[10.5px] text-muted">{{ row.percent }}% · {{ row.note }}</p>
+            </div>
+          }
+        </div>
+
+        <div class="border-t border-line-soft px-6 py-4">
+          <a routerLink="/admin/documents" class="panel-link">Xử lý {{ data.documents.pending }} tài liệu đang chờ →</a>
+        </div>
       </section>
     </div>
+
+    <section class="panel mt-6 overflow-hidden">
+      <header class="flex items-center justify-between gap-4 border-b border-line-soft px-6 py-4">
+        <div>
+          <h2 class="panel-title">Hoạt động gần đây</h2>
+          <p class="mt-1 text-[11px] text-muted">Bài đăng mới và cảnh báo hệ thống</p>
+        </div>
+        <a routerLink="/admin/users" class="panel-link">Quản lý tài khoản</a>
+      </header>
+
+      @if (data.recentActivity.length === 0) {
+        <p class="px-6 py-10 text-center text-sm text-muted">Chưa có hoạt động nào.</p>
+      } @else {
+        <table class="data-table w-full table-fixed text-left">
+          <thead>
+            <tr class="border-b border-line-soft">
+              <th class="w-[132px]">Loại</th>
+              <th>Nội dung</th>
+              <th class="w-[180px]">Thời gian</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line-soft">
+            @for (activity of data.recentActivity; track activity.id) {
+              <tr class="transition hover:bg-wash">
+                <td>
+                  <span [class]="activityBadgeClass(activity.type)">
+                    {{ activity.type === 'WARNING' ? 'Cảnh báo' : 'Tài liệu' }}
+                  </span>
+                </td>
+                <td class="text-[12.5px] leading-relaxed text-ink-soft">{{ activity.message }}</td>
+                <td class="tabular-nums text-[11px] text-muted">
+                  {{ activity.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
   }
 </div>

@@ -7,15 +7,35 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import {
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+import { filter, map } from 'rxjs';
 import { AppNotification } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationStateService } from '../../core/services/notification-state.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { initials } from '../../core/utils/format.util';
 
-/** Khung giao diện cho sinh viên: header (nav + chuông thông báo) + nội dung trang. */
+const RAIL_STORAGE_KEY = 'lh.user.rail.mini';
+
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Tổng quan',
+  '/documents': 'Thư viện tài liệu',
+  '/upload': 'Đăng tài liệu',
+  '/my-documents': 'Đã chia sẻ',
+  '/leaderboard': 'Bảng xếp hạng',
+  '/notifications': 'Thông báo',
+  '/profile/password': 'Đổi mật khẩu',
+  '/profile': 'Hồ sơ cá nhân',
+};
+
+/** Khung giao diện cho sinh viên: rail thu gọn được + header (breadcrumb, chuông thông báo, tài khoản). */
 @Component({
   selector: 'app-user-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,6 +57,29 @@ export class UserLayout {
     initials(this.auth.currentUser()?.fullName ?? ''),
   );
 
+  /** Rail mini 77px, nhớ lựa chọn giữa các lần tải. */
+  protected readonly mini = signal(this.readMini());
+  protected readonly railToggleLabel = computed(() =>
+    this.mini() ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng',
+  );
+
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map(() => this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  protected readonly pageTitle = computed(() => {
+    const path = this.currentUrl().split('?')[0].split('#')[0];
+    const match = Object.keys(PAGE_TITLES)
+      .sort((a, b) => b.length - a.length)
+      .find((route) => path === route || path.startsWith(`${route}/`));
+
+    return match ? PAGE_TITLES[match] : 'Tổng quan';
+  });
+
   protected readonly panelOpen = signal(false);
   protected readonly notifications = signal<AppNotification[]>([]);
   /** Dùng chung với trang /notifications để badge đổi ngay khi đọc tin ở đó. */
@@ -45,6 +88,17 @@ export class UserLayout {
 
   constructor() {
     this.load();
+  }
+
+  protected toggleRail(): void {
+    const next = !this.mini();
+    this.mini.set(next);
+
+    try {
+      localStorage.setItem(RAIL_STORAGE_KEY, next ? '1' : '0');
+    } catch {
+      // Chế độ riêng tư có thể chặn localStorage; thu gọn vẫn hoạt động trong phiên.
+    }
   }
 
   protected togglePanel(): void {
@@ -95,6 +149,14 @@ export class UserLayout {
   protected logout(): void {
     this.auth.logout();
     void this.router.navigate(['/auth/login']);
+  }
+
+  private readMini(): boolean {
+    try {
+      return localStorage.getItem(RAIL_STORAGE_KEY) === '1';
+    } catch {
+      return false;
+    }
   }
 
   private load(): void {

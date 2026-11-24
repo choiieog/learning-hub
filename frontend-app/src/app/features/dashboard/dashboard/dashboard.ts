@@ -17,19 +17,70 @@ import { getApiErrorMessages } from '../../../core/utils/api-error.util';
 import { DOCUMENT_STATUS_LABEL } from '../../../core/utils/document-status.util';
 import { fileExtension } from '../../../core/utils/format.util';
 
-interface StatCard {
+interface Kpi {
   label: string;
   value: number;
   hint: string;
-  link: string;
+  link?: string;
   queryParams?: Record<string, string>;
+}
+
+interface TrendPoint {
+  x: number;
+  y: number;
+  label: string;
+  count: number;
+}
+
+interface TrendChart {
+  line: string;
+  area: string;
+  points: TrendPoint[];
+  ticks: { y: number; label: string }[];
+  empty: boolean;
+}
+
+/* Khung vẽ của chart: rộng 1000, cao 260, chừa 44px trục Y và 28px nhãn ngày. */
+const CHART_WIDTH = 1000;
+const CHART_HEIGHT = 260;
+const CHART_LEFT = 44;
+const CHART_RIGHT = 16;
+const CHART_TOP = 12;
+const CHART_BOTTOM = 28;
+
+/** Nối các điểm bằng đường cong Catmull-Rom đổi sang Bezier để chart mềm như mẫu. */
+function smoothPath(points: TrendPoint[]): string {
+  if (points.length === 0) {
+    return '';
+  }
+
+  if (points.length < 3) {
+    return points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`).join(' ');
+  }
+
+  let path = `M${points[0].x} ${points[0].y}`;
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const before = points[index - 1] ?? points[index];
+    const current = points[index];
+    const next = points[index + 1];
+    const after = points[index + 2] ?? next;
+    const c1x = current.x + (next.x - before.x) / 6;
+    const c1y = current.y + (next.y - before.y) / 6;
+    const c2x = next.x - (after.x - current.x) / 6;
+    const c2y = next.y - (after.y - current.y) / 6;
+
+    path += ` C${c1x} ${c1y}, ${c2x} ${c2y}, ${next.x} ${next.y}`;
+  }
+
+  return path;
 }
 
 /**
  * Trang tổng quan sinh viên.
  *
  * Một request `GET /api/dashboard/overview` trả đủ: số tài liệu theo trạng thái,
- * tổng lượt xem + lượt xem 7 ngày (kèm biểu đồ cột nhỏ), 5 tài liệu gần đây của tôi
+ * tổng lượt xem + lượt xem 7 ngày (kèm biểu đồ vùng), 5 tài liệu gần đây của tôi
  * và 5 tài liệu nhiều lượt xem nhất.
  */
 @Component({
@@ -66,7 +117,7 @@ export class Dashboard implements OnInit {
     return fullName.split(/\s+/).filter(Boolean).slice(-1)[0];
   });
 
-  protected readonly statCards = computed<StatCard[]>(() => {
+  protected readonly kpis = computed<Kpi[]>(() => {
     const stats = this.overview()?.stats;
     return [
       {
@@ -85,11 +136,61 @@ export class Dashboard implements OnInit {
       {
         label: 'Chờ duyệt',
         value: stats?.pending ?? 0,
-        hint: 'Admin sẽ xử lý sớm',
+        hint: 'Chờ admin xử lý',
         link: '/my-documents',
         queryParams: { status: 'PENDING' },
       },
+      {
+        label: 'Lượt xem',
+        value: stats?.totalViews ?? 0,
+        hint: `${stats?.viewsLast7Days ?? 0} lượt trong 7 ngày`,
+      },
     ];
+  });
+
+  /** Chart chỉ vẽ từ dữ liệu thật của 7 ngày; không có mẫu số bịa. */
+  protected readonly chart = computed<TrendChart>(() => {
+    const trend = this.overview()?.viewTrend ?? [];
+    const counts = trend.map((point) => point.count);
+    const step = Math.max(1, Math.ceil(Math.max(1, ...counts) / 4));
+    const max = step * 4;
+    const innerWidth = CHART_WIDTH - CHART_LEFT - CHART_RIGHT;
+    const innerHeight = CHART_HEIGHT - CHART_TOP - CHART_BOTTOM;
+    const baseline = CHART_TOP + innerHeight;
+
+    const points: TrendPoint[] = trend.map((point, index) => ({
+      x:
+        trend.length === 1
+          ? CHART_LEFT + innerWidth / 2
+          : CHART_LEFT + (index * innerWidth) / (trend.length - 1),
+      y: baseline - (point.count / max) * innerHeight,
+      label: `${point.day.slice(8, 10)}/${point.day.slice(5, 7)}`,
+      count: point.count,
+    }));
+
+    const line = smoothPath(points);
+    const area =
+      points.length > 0
+        ? `${line} L${points[points.length - 1].x} ${baseline} L${points[0].x} ${baseline} Z`
+        : '';
+
+    return {
+      line,
+      area,
+      points,
+      ticks: Array.from({ length: 5 }, (_, index) => ({
+        y: CHART_TOP + (innerHeight / 4) * index,
+        label: String(max - step * index),
+      })),
+      empty: counts.every((count) => count === 0),
+    };
+  });
+
+  /** Tỉ lệ thanh xếp hạng so với tài liệu nhiều lượt xem nhất trong danh sách. */
+  protected readonly topShare = computed(() => {
+    const documents = this.overview()?.topDocuments ?? [];
+    const max = Math.max(1, ...documents.map((document) => document.viewCount));
+    return max;
   });
 
   ngOnInit(): void {
@@ -106,11 +207,8 @@ export class Dashboard implements OnInit {
       : 'status-pill status-pending';
   }
 
-  /** Chiều cao cột theo giá trị lớn nhất trong 7 ngày; ngày 0 vẫn có 1% để thấy trục. */
-  protected trendHeight(count: number): number {
-    const trend = this.overview()?.viewTrend ?? [];
-    const max = Math.max(1, ...trend.map((point) => point.count));
-    return Math.max(2, Math.round((count / max) * 100));
+  protected shareOfViews(viewCount: number): number {
+    return Math.round((viewCount / this.topShare()) * 100);
   }
 
   protected fileType(name: string): string {

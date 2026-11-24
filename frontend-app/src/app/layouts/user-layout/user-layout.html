@@ -1,173 +1,195 @@
 <div class="min-h-screen bg-canvas text-ink">
-  <div class="grid min-h-screen grid-cols-[264px_minmax(0,1fr)]">
-    <aside class="sticky top-0 flex h-screen flex-col border-r border-white/5 bg-ink px-4 py-6">
-      <a routerLink="/dashboard" class="flex items-center gap-2.5 px-2" aria-label="Learning Hub">
-        <span
-          class="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[10px] font-semibold tracking-[0.02em] text-ink"
-        >
-          LH
-        </span>
-        <span class="text-[15px] font-semibold tracking-[-0.02em] text-white">Learning Hub</span>
-      </a>
+  <div class="app-shell" [class.is-mini]="mini()">
+    <aside class="rail">
+      <div class="rail-head">
+        <a routerLink="/dashboard" class="flex min-w-0 items-center gap-2.5" aria-label="Learning Hub">
+          <span class="rail-mark">LH</span>
+          <span class="rail-wordmark rail-text truncate">Learning Hub</span>
+        </a>
 
-      <p class="mt-9 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-mist/70">
-        Không gian sinh viên
-      </p>
+      </div>
 
-      <nav class="mt-3 flex flex-col gap-5" aria-label="Điều hướng sinh viên">
-        <div>
-          <p class="px-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-mist/70">
-            Bàn học
-          </p>
-          <div class="mt-1.5 flex flex-col gap-0.5">
-            <a
-              routerLink="/dashboard"
-              routerLinkActive="bg-white/10 text-white"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-mist/70 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0" aria-hidden="true">
-                <rect x="3" y="3" width="5.5" height="5.5" rx="1.4" stroke="currentColor" stroke-width="1.5" />
-                <rect x="11.5" y="3" width="5.5" height="5.5" rx="1.4" stroke="currentColor" stroke-width="1.5" />
-                <rect x="3" y="11.5" width="5.5" height="5.5" rx="1.4" stroke="currentColor" stroke-width="1.5" />
-                <rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1.4" stroke="currentColor" stroke-width="1.5" />
-              </svg>
-              Tổng quan
-            </a>
-            <a
-              routerLink="/documents"
-              routerLinkActive="bg-white/10 text-white"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-mist/70 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0" aria-hidden="true">
-                <path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h3.2l1.7 2h6.1A1.5 1.5 0 0 1 17 7.5v7A1.5 1.5 0 0 1 15.5 16h-11A1.5 1.5 0 0 1 3 14.5v-9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-              </svg>
-              Thư viện tài liệu
-            </a>
-            <a
-              routerLink="/upload"
-              routerLinkActive="bg-white/10 text-white"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-mist/70 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0" aria-hidden="true">
-                <path d="M10 13V4m0 0L6.5 7.5M10 4l3.5 3.5M4 13v2.5A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              Đăng tài liệu
-            </a>
-          </div>
+      <div class="rail-sep"></div>
+
+      <nav class="rail-scroll" aria-label="Điều hướng sinh viên">
+        <div class="rail-group">
+          <p class="rail-label">Bàn học</p>
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="is-active"
+            ariaCurrentWhenActive="page"
+            aria-label="Tổng quan"
+            class="rail-item"
+          >
+            <svg viewBox="0 0 20 20" fill="none" class="rail-icon" aria-hidden="true">
+              <rect x="3" y="3" width="5.5" height="5.5" rx="1.4" stroke="currentColor" stroke-width="1.5" />
+              <rect x="11.5" y="3" width="5.5" height="5.5" rx="1.4" stroke="currentColor" stroke-width="1.5" />
+              <rect x="3" y="11.5" width="5.5" height="5.5" rx="1.4" stroke="currentColor" stroke-width="1.5" />
+              <rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1.4" stroke="currentColor" stroke-width="1.5" />
+            </svg>
+            <span class="rail-text">Tổng quan</span>
+          </a>
+          <a
+            routerLink="/documents"
+            routerLinkActive="is-active"
+            ariaCurrentWhenActive="page"
+            aria-label="Thư viện tài liệu"
+            class="rail-item"
+          >
+            <svg viewBox="0 0 20 20" fill="none" class="rail-icon" aria-hidden="true">
+              <path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h3.2l1.7 2h6.1A1.5 1.5 0 0 1 17 7.5v7A1.5 1.5 0 0 1 15.5 16h-11A1.5 1.5 0 0 1 3 14.5v-9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+            </svg>
+            <span class="rail-text">Thư viện tài liệu</span>
+          </a>
+          <a
+            routerLink="/upload"
+            routerLinkActive="is-active"
+            ariaCurrentWhenActive="page"
+            aria-label="Đăng tài liệu"
+            class="rail-item"
+          >
+            <svg viewBox="0 0 20 20" fill="none" class="rail-icon" aria-hidden="true">
+              <path d="M10 13V4m0 0L6.5 7.5M10 4l3.5 3.5M4 13v2.5A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="rail-text">Đăng tài liệu</span>
+          </a>
         </div>
 
-        <div>
-          <p class="px-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-mist/70">
-            Của bạn
-          </p>
-          <div class="mt-1.5 flex flex-col gap-0.5">
-            <a
-              routerLink="/my-documents"
-              routerLinkActive="bg-white/10 text-white"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-mist/70 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0" aria-hidden="true">
-                <path d="M5 3.5h6.5L15 7v9.5A1.5 1.5 0 0 1 13.5 18h-8A1.5 1.5 0 0 1 4 16.5v-12A1 1 0 0 1 5 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-                <path d="M7 10.5h5M7 13.5h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-              </svg>
-              Đã chia sẻ
-            </a>
-            <a
-              routerLink="/profile"
-              routerLinkActive="bg-white/10 text-white"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-mist/70 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0" aria-hidden="true">
-                <circle cx="10" cy="6.5" r="2.75" stroke="currentColor" stroke-width="1.5" />
-                <path d="M4.5 16c.8-2.5 2.8-4 5.5-4s4.7 1.5 5.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-              </svg>
-              Hồ sơ cá nhân
-            </a>
-          </div>
+        <div class="rail-group">
+          <p class="rail-label">Của bạn</p>
+          <a
+            routerLink="/my-documents"
+            routerLinkActive="is-active"
+            ariaCurrentWhenActive="page"
+            aria-label="Đã chia sẻ"
+            class="rail-item"
+          >
+            <svg viewBox="0 0 20 20" fill="none" class="rail-icon" aria-hidden="true">
+              <path d="M5 3.5h6.5L15 7v9.5A1.5 1.5 0 0 1 13.5 18h-8A1.5 1.5 0 0 1 4 16.5v-12A1 1 0 0 1 5 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              <path d="M7 10.5h5M7 13.5h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            <span class="rail-text">Đã chia sẻ</span>
+          </a>
+          <a
+            routerLink="/profile"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            ariaCurrentWhenActive="page"
+            aria-label="Hồ sơ cá nhân"
+            class="rail-item"
+          >
+            <svg viewBox="0 0 20 20" fill="none" class="rail-icon" aria-hidden="true">
+              <circle cx="10" cy="6.5" r="2.75" stroke="currentColor" stroke-width="1.5" />
+              <path d="M4.5 16c.8-2.5 2.8-4 5.5-4s4.7 1.5 5.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            <span class="rail-text">Hồ sơ cá nhân</span>
+          </a>
         </div>
 
-        <div>
-          <p class="px-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-mist/70">
-            Cộng đồng
-          </p>
-          <div class="mt-1.5 flex flex-col gap-0.5">
-            <a
-              routerLink="/leaderboard"
-              routerLinkActive="bg-white/10 text-white"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-mist/70 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0" aria-hidden="true">
-                <path d="M4 16V9.5M10 16V4M16 16v-4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-              </svg>
-              Bảng xếp hạng
-            </a>
-            <a
-              routerLink="/notifications"
-              routerLinkActive="bg-white/10 text-white"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-mist/70 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <svg viewBox="0 0 20 20" fill="none" class="h-4 w-4 shrink-0" aria-hidden="true">
-                <path d="M5 8a5 5 0 0 1 10 0v2.2c0 .6.2 1.1.6 1.5l.8.9a.9.9 0 0 1-.7 1.4H4.3a.9.9 0 0 1-.7-1.4l.8-.9c.4-.4.6-.9.6-1.5V8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-                <path d="M8 16.2a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-              </svg>
-              Thông báo
-            </a>
-          </div>
+        <div class="rail-group">
+          <p class="rail-label">Cộng đồng</p>
+          <a
+            routerLink="/leaderboard"
+            routerLinkActive="is-active"
+            ariaCurrentWhenActive="page"
+            aria-label="Bảng xếp hạng"
+            class="rail-item"
+          >
+            <svg viewBox="0 0 20 20" fill="none" class="rail-icon" aria-hidden="true">
+              <path d="M4 16V9.5M10 16V4M16 16v-4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+            <span class="rail-text">Bảng xếp hạng</span>
+          </a>
+          <a
+            routerLink="/notifications"
+            routerLinkActive="is-active"
+            ariaCurrentWhenActive="page"
+            aria-label="Thông báo"
+            class="rail-item"
+          >
+            <svg viewBox="0 0 20 20" fill="none" class="rail-icon" aria-hidden="true">
+              <path d="M5 8a5 5 0 0 1 10 0v2.2c0 .6.2 1.1.6 1.5l.8.9a.9.9 0 0 1-.7 1.4H4.3a.9.9 0 0 1-.7-1.4l.8-.9c.4-.4.6-.9.6-1.5V8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+              <path d="M8 16.2a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            <span class="rail-text">Thông báo</span>
+            @if (unreadCount() > 0) {
+              <span class="rail-badge" aria-label="Chưa đọc">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+            }
+          </a>
         </div>
       </nav>
 
-      <div class="mt-auto border-t border-white/10 pt-4">
-        <a
-          routerLink="/profile"
-          class="flex items-center gap-3 rounded-2xl bg-white/[0.04] p-3 transition hover:bg-white/[0.07]"
-          title="Mở hồ sơ của bạn"
-        >
+      <div class="rail-foot">
+        <a routerLink="/profile" class="rail-user" title="Mở hồ sơ của bạn">
           <span
-            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
             [style.background]="headerFrame() ?? 'transparent'"
             [class.p-0.5]="headerFrame() !== null"
           >
             @if (auth.currentUser()?.avatarUrl; as avatarUrl) {
               <img [src]="avatarUrl" alt="" class="h-full w-full rounded-full object-cover" />
             } @else {
-              <span
-                class="flex h-full w-full items-center justify-center rounded-full bg-marine text-[10px] font-semibold text-ink"
-              >
+              <span class="flex h-full w-full items-center justify-center rounded-full bg-marine text-[10px] font-semibold text-ink">
                 {{ headerInitials() }}
               </span>
             }
           </span>
-          <span class="min-w-0 flex-1">
-            <span class="block truncate text-[12px] font-semibold text-white">
+          <span class="rail-text min-w-0 flex-1">
+            <span class="block truncate text-[12.5px] font-medium text-ink">
               {{ auth.currentUser()?.fullName }}
             </span>
-            <span class="mt-0.5 block text-[10px] text-mist/65">Sinh viên</span>
+            <span class="mt-0.5 block text-[11px] text-muted">Sinh viên</span>
           </span>
-          <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5 text-mist/40" aria-hidden="true">
-            <path d="m7.5 4.5 5 5.5-5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
         </a>
 
         <button
           type="button"
-          class="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-medium text-mist/70 transition hover:bg-white/[0.05] hover:text-white"
+          class="rail-logout"
+          aria-label="Đăng xuất"
+          title="Đăng xuất"
           (click)="logout()"
         >
-          <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none" class="h-[18px] w-[18px] shrink-0" aria-hidden="true">
             <path d="M8 4H5.5A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8M12.5 6.5 16 10l-3.5 3.5M8 10h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-          Đăng xuất
+          <span class="rail-text">Đăng xuất</span>
         </button>
       </div>
     </aside>
 
     <div class="flex min-w-0 flex-col">
-      <header class="flex h-[68px] items-center justify-between border-b border-line bg-white px-8">
-        <div class="flex items-center gap-2.5 text-[11px]">
-          <span class="h-1.5 w-1.5 rounded-full bg-marine" aria-hidden="true"></span>
-          <span class="font-medium text-muted">Không gian học tập</span>
-          <span class="text-mist" aria-hidden="true">/</span>
-          <span class="font-semibold text-ink-soft">Bàn học của bạn</span>
+      <header class="topbar">
+        <div class="flex min-w-0 items-center gap-3">
+          <button
+            type="button"
+            class="topbar-btn"
+            [attr.aria-label]="railToggleLabel()"
+            [attr.aria-expanded]="!mini()"
+            [attr.title]="railToggleLabel()"
+            (click)="toggleRail()"
+          >
+            <svg viewBox="0 0 20 20" fill="none" class="h-[18px] w-[18px]" aria-hidden="true">
+              <rect x="3" y="3.5" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5" />
+              <path d="M8 3.5v13" stroke="currentColor" stroke-width="1.5" />
+              @if (mini()) {
+                <path d="m12 8 2 2-2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              } @else {
+                <path d="m13.5 8-2 2 2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              }
+            </svg>
+          </button>
+
+          <nav class="flex min-w-0 items-center gap-2" aria-label="Breadcrumb">
+            <a routerLink="/dashboard" class="crumb">Learning Hub</a>
+            <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5 shrink-0 text-mist" aria-hidden="true">
+              <path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="crumb">Không gian sinh viên</span>
+            <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5 shrink-0 text-mist" aria-hidden="true">
+              <path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="crumb is-current" aria-current="page">{{ pageTitle() }}</span>
+          </nav>
         </div>
 
         <div class="flex items-center gap-2">
@@ -183,7 +205,7 @@
           <div class="relative">
             <button
               type="button"
-              class="relative flex h-9 w-9 items-center justify-center rounded-full border border-line text-ink-soft transition hover:border-mist hover:bg-wash"
+              class="topbar-btn relative"
               [attr.aria-expanded]="panelOpen()"
               aria-haspopup="true"
               aria-label="Thông báo"
@@ -194,9 +216,7 @@
                 <path d="M8 16.2a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
               </svg>
               @if (unreadCount() > 0) {
-                <span
-                  class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[9px] font-semibold text-white"
-                >
+                <span class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[9px] font-semibold text-white">
                   {{ unreadCount() > 9 ? '9+' : unreadCount() }}
                 </span>
               }
@@ -204,9 +224,7 @@
 
             @if (panelOpen()) {
               <div class="fixed inset-0 z-30" (click)="panelOpen.set(false)" aria-hidden="true"></div>
-              <div
-                class="absolute right-0 top-full z-40 mt-3 w-[360px] overflow-hidden rounded-2xl border border-line bg-white shadow-[0_24px_60px_-30px_rgba(14,42,50,0.35)]"
-              >
+              <div class="absolute right-0 top-full z-40 mt-2 w-[360px] overflow-hidden rounded-2xl border border-line bg-white shadow-[0_12px_16px_-4px_rgba(14,42,50,0.08),0_4px_6px_-2px_rgba(14,42,50,0.03)]">
                 <div class="flex items-center justify-between gap-2 border-b border-line-soft px-4 py-3">
                   <p class="text-sm font-semibold text-ink">Thông báo</p>
                   @if (unreadCount() > 0) {
@@ -238,10 +256,7 @@
                             <div class="flex items-start justify-between gap-2">
                               <p class="text-[13px] font-semibold text-ink">{{ item.title }}</p>
                               @if (!item.readAt) {
-                                <span
-                                  class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-tide"
-                                  aria-label="Chưa đọc"
-                                ></span>
+                                <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-tide" aria-label="Chưa đọc"></span>
                               }
                             </div>
                             <p class="mt-1 line-clamp-3 text-[11px] leading-relaxed text-muted">
@@ -267,10 +282,35 @@
               </div>
             }
           </div>
+
+          <a
+            routerLink="/profile"
+            class="ml-1 flex items-center gap-2.5 rounded-lg py-1 pl-2 pr-1.5 transition hover:bg-wash"
+          >
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+              [style.background]="headerFrame() ?? 'transparent'"
+              [class.p-0.5]="headerFrame() !== null"
+            >
+              @if (auth.currentUser()?.avatarUrl; as avatarUrl) {
+                <img [src]="avatarUrl" alt="" class="h-full w-full rounded-full object-cover" />
+              } @else {
+                <span class="flex h-full w-full items-center justify-center rounded-full bg-marine text-[11px] font-semibold text-ink">
+                  {{ headerInitials() }}
+                </span>
+              }
+            </span>
+            <span class="hidden min-w-0 xl:block">
+              <span class="block max-w-[170px] truncate text-[14px] font-medium leading-5 text-ink">
+                {{ auth.currentUser()?.fullName }}
+              </span>
+              <span class="mt-0.5 block text-[12.5px] leading-4 text-muted">Sinh viên</span>
+            </span>
+          </a>
         </div>
       </header>
 
-      <main class="app-scrollbar min-w-0 flex-1 px-8 py-8 xl:px-10 xl:py-9">
+      <main class="app-scrollbar min-w-0 flex-1 px-6 py-6">
         <router-outlet />
       </main>
     </div>

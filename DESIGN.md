@@ -68,29 +68,46 @@ privacy panel, FAQ and dark CTA follow the existing tidal system.
 
 ### Student shell — /dashboard, /documents, /upload, /my-documents, /leaderboard, /notifications, /profile
 
-- 264px ink rail, sticky full height.
-- Rail groups: Bàn học / Của bạn / Cộng đồng. Active item uses a white 10% field.
-- 68px white top bar with breadcrumb, bell and (for admins only) a small “Quản trị” link.
-- Content canvas, 32–40px padding, max width 1380px.
-- Dashboard: greeting + actions, five-cell metric strip, recent-document panel, 7-day sharing
-  rhythm, a full-width pending strip when needed, then a ranked library table.
+- 254px white rail on `line` border, sticky full height, collapsible to a 77px icon rail
+  (state remembered per browser); 38px rows, 16px side padding, 16px panel radius inside.
+- Rail groups: Bàn học / Của bạn / Cộng đồng, 12px muted group labels above 14px items.
+  Active item is a foam pill with ink text; no weight jump beyond 500.
+- 76px white top bar: breadcrumb (“Không gian sinh viên / <page>”), bell and account block;
+  admins also see the small “Quản trị” link.
+- Content canvas, 24px padding, max width 1380px.
+- Dashboard: page tabs (Tổng quan / Thư viện / Đã chia sẻ), greeting + actions, a seamless
+  four-cell KPI band, a 7-day “Nhịp chia sẻ” area chart, then recent documents beside a
+  ranked “Đang được đọc nhiều” list with share bars.
 - Other pages inherit the same `panel`, `page-title`, status pill and field vocabulary.
+
+### Dashboard bands
+
+- KPI band: one white block, 16px radius, four equal cells with 22–24px padding, separated
+  by spacing only; a 1px ambient shadow carries the elevation instead of a border.
+- Analysis panels: white, `line` border, 16px radius, 24px padding, section title at 15px.
+- Ranked rows carry a 4px `foam` track with a `tide` fill and a right-aligned percentage;
+  progress bars stay decorative for sighted users and expose `role="progressbar"` values.
+- Charts are inline SVG built from the real 7-day series — axes in `muted`, grid in
+  `line-soft`, line and dot in `tide`, fill as a tide gradient fading to transparent.
 
 ### Admin console — /admin/*
 
-- 248px ink rail, 64px top bar, max-width 1380px.
+- Same 254/77px white rail and 76px top bar as the student shell, with an “Admin” chip in
+  the top bar; max-width 1380px.
+- Rail groups: Vận hành / Cộng đồng / Hệ thống, with a footer showing the signed-in admin.
 - Rail is explicitly an **Admin** console. There is **no** link back to the student interface;
   `studentGuard` blocks the student route tree for `ADMIN` users and redirects them to
   `/admin/dashboard`. An admin who wants the student view signs in with a student account.
 - File preview in the admin context uses `/admin/viewer`, never the student `/viewer` route.
-- Overview: four-cell metric strip, top-documents panel, recent-activity panel.
+- Overview: four-cell KPI band, top-documents ranked list, “Sức khoẻ thư viện” ratio card,
+  then a recent-activity table. No page-tab row; navigation lives in the rail and breadcrumb.
 - All admin pages use the same panels, fields, pills and destructive red.
 
 ## Components
 
-`.panel`, `.panel-head`, `.panel-title`, `.panel-link`, `.metric-strip`, `.metric`,
-`.metric-value`, `.metric-label`, `.metric-hint`, `.status-pill`, `.status-approved`,
-`.status-pending`, `.data-row`, `.file-mark`, `.empty-state`, `.field-input`, `.btn-primary`,
+`.panel`, `.panel-head`, `.panel-title`, `.panel-link`, `.app-shell`, `.rail`, `.rail-*`,
+`.topbar`, `.topbar-btn`, `.crumb`, `.kpi-strip`, `.kpi`, `.kpi-*`, `.rank-row`, `.rank-bar`,
+`.data-table`, `.data-row`, `.file-mark`, `.empty-state`, `.field-input`, `.btn-primary`,
 `.btn-secondary`, `.alert-*` are defined in `frontend-app/src/styles.css`.
 
 Use these before adding page-specific classes. Do not introduce a second card style, a new
