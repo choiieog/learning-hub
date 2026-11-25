@@ -78,6 +78,7 @@ export class Profile implements OnInit {
   protected readonly roleLabel = computed(() =>
     this.user()?.role === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên',
   );
+  protected readonly profilePath = this.auth.profilePath;
 
   /** Có thay đổi chưa lưu trong form hồ sơ → guard sẽ hỏi trước khi rời trang. */
   hasUnsavedChanges(): boolean {

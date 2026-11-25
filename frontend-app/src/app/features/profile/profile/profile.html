@@ -3,7 +3,7 @@
     <h1 class="page-title">Hồ sơ</h1>
     <p class="mt-1 text-sm text-muted">Thông tin hiển thị cùng tài liệu bạn chia sẻ.</p>
   </div>
-  <a routerLink="/profile/password" class="btn-secondary w-auto">Đổi mật khẩu</a>
+  <a [routerLink]="profilePath() + '/password'" class="btn-secondary w-auto">Đổi mật khẩu</a>
 </div>
 
 @if (loading()) {

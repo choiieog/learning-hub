@@ -68,9 +68,12 @@ export class DocumentDetailPage implements OnInit {
     return formatFileSize(bytes);
   }
 
-  /** Trang đọc nội dung tệp ở tab mới — xem `DocumentViewerPage`. */
+  /** Trang đọc nội dung tệp ở tab mới — xem `DocumentViewerPage`. `doc` để breadcrumb quay lại đây. */
   protected viewerHref(file: DocumentFile): string {
-    return `/viewer?src=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}`;
+    const id = this.documentId();
+    const idParam = id ? `&doc=${encodeURIComponent(id)}` : '';
+
+    return `/viewer?src=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}${idParam}`;
   }
 
   protected authorInitials(fullName: string): string {

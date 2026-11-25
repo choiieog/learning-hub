@@ -38,6 +38,8 @@ export class AuthService {
   readonly currentUser = this.userSignal.asReadonly();
   readonly isAuthenticated = computed(() => this.userSignal() !== null);
   readonly isAdmin = computed(() => this.userSignal()?.role === 'ADMIN');
+  /** Hồ sơ cá nhân nằm trong đúng không gian: /profile hoặc /admin/profile. */
+  readonly profilePath = computed(() => (this.isAdmin() ? '/admin/profile' : '/profile'));
   readonly level = computed(() => this.userSignal()?.level ?? 1);
 
   /** Access token hiện tại — chỉ interceptor dùng. */

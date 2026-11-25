@@ -68,14 +68,15 @@ privacy panel, FAQ and dark CTA follow the existing tidal system.
 
 ### Student shell — /dashboard, /documents, /upload, /my-documents, /leaderboard, /notifications, /profile
 
-- 254px white rail on `line` border, sticky full height, collapsible to a 77px icon rail
-  (state remembered per browser); 38px rows, 16px side padding, 16px panel radius inside.
+- 254px white rail on `line` border, sticky full height, fixed width (no collapse control),
+  functions only — no account block or logout in the rail; 38px rows, 16px side padding.
 - Rail groups: Bàn học / Của bạn / Cộng đồng, 12px muted group labels above 14px items.
   Active item is a foam pill with ink text; no weight jump beyond 500.
-- 76px white top bar: breadcrumb (“Không gian sinh viên / <page>”), bell and account block;
+- 76px white top bar: linked breadcrumb (“Trang chủ › <page>”, with library and document/viewer levels), bell, and an
+  account dropdown (Thông tin cá nhân, Thông báo, Đăng xuất; admins get profile/logout only, no notification item);
   admins also see the small “Quản trị” link.
 - Content canvas, 24px padding, max width 1380px.
-- Dashboard: page tabs (Tổng quan / Thư viện / Đã chia sẻ), greeting + actions, a seamless
+- Dashboard: greeting + actions, a seamless
   four-cell KPI band, a 7-day “Nhịp chia sẻ” area chart, then recent documents beside a
   ranked “Đang được đọc nhiều” list with share bars.
 - Other pages inherit the same `panel`, `page-title`, status pill and field vocabulary.
@@ -92,9 +93,9 @@ privacy panel, FAQ and dark CTA follow the existing tidal system.
 
 ### Admin console — /admin/*
 
-- Same 254/77px white rail and 76px top bar as the student shell, with an “Admin” chip in
-  the top bar; max-width 1380px.
-- Rail groups: Vận hành / Cộng đồng / Hệ thống, with a footer showing the signed-in admin.
+- Same 254px white rail and 76px top bar as the student shell; the top bar has no role chip,
+  only the account dropdown (Thông tin cá nhân, Đăng xuất); max-width 1380px.
+- Rail groups: Vận hành / Cộng đồng / Hệ thống; no footer account block or logout.
 - Rail is explicitly an **Admin** console. There is **no** link back to the student interface;
   `studentGuard` blocks the student route tree for `ADMIN` users and redirects them to
   `/admin/dashboard`. An admin who wants the student view signs in with a student account.

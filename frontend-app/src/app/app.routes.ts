@@ -217,6 +217,21 @@ export const routes: Routes = [
             (m) => m.AdminSettings,
           ),
       },
+      {
+        path: 'profile/password',
+        title: 'Đổi mật khẩu · Learning Hub',
+        loadComponent: () =>
+          import('./features/profile/change-password/change-password').then(
+            (m) => m.ChangePassword,
+          ),
+      },
+      {
+        path: 'profile',
+        title: 'Hồ sơ · Learning Hub',
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () =>
+          import('./features/profile/profile/profile').then((m) => m.Profile),
+      },
     ],
   },
 

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   NavigationEnd,
@@ -8,10 +8,12 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { filter, map } from 'rxjs';
-import { AuthService } from '../../core/services/auth.service';
-import { initials } from '../../core/utils/format.util';
+import { AccountMenu } from '../account-menu/account-menu';
 
-const RAIL_STORAGE_KEY = 'lh.admin.rail.mini';
+interface Crumb {
+  label: string;
+  link?: string;
+}
 
 const PAGE_TITLES: Record<string, string> = {
   '/admin/dashboard': 'Tổng quan',
@@ -20,28 +22,20 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/users': 'Quản lý tài khoản',
   '/admin/broadcast': 'Thông báo hàng loạt',
   '/admin/settings': 'Cấu hình hệ thống',
+  '/admin/profile/password': 'Đổi mật khẩu',
+  '/admin/profile': 'Hồ sơ cá nhân',
 };
 
-/** Khung dashboard admin: rail vận hành thu gọn được + header. Không có lối quay lại giao diện sinh viên. */
+/** Khung dashboard admin: rail chức năng cố định + header (breadcrumb, menu tài khoản). Không có lối quay lại giao diện sinh viên. */
 @Component({
   selector: 'app-admin-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AccountMenu],
   templateUrl: './admin-layout.html',
   styleUrl: './admin-layout.css',
 })
 export class AdminLayout {
-  protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-
-  protected readonly adminInitials = computed(() =>
-    initials(this.auth.currentUser()?.fullName ?? 'Quản trị viên'),
-  );
-
-  protected readonly mini = signal(this.readMini());
-  protected readonly railToggleLabel = computed(() =>
-    this.mini() ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng',
-  );
 
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -60,27 +54,21 @@ export class AdminLayout {
     return match ? PAGE_TITLES[match] : 'Tổng quan';
   });
 
-  protected toggleRail(): void {
-    const next = !this.mini();
-    this.mini.set(next);
+  /** Breadcrumb dạng liên kết, thêm nhánh khi mở tệp từ hàng chờ duyệt. */
+  protected readonly trail = computed<Crumb[]>(() => {
+    const [path] = this.currentUrl().split('?');
+    const trail: Crumb[] = [{ label: 'Trang chủ', link: '/admin/dashboard' }];
 
-    try {
-      localStorage.setItem(RAIL_STORAGE_KEY, next ? '1' : '0');
-    } catch {
-      // Chế độ riêng tư có thể chặn localStorage; thu gọn vẫn hoạt động trong phiên.
+    if (path === '/admin/viewer') {
+      return [
+        ...trail,
+        { label: 'Phê duyệt bài viết', link: '/admin/documents' },
+        { label: 'Xem tệp' },
+      ];
     }
-  }
 
-  protected logout(): void {
-    this.auth.logout();
-    void this.router.navigate(['/auth/login']);
-  }
+    trail.push({ label: this.pageTitle() });
+    return trail;
+  });
 
-  private readMini(): boolean {
-    try {
-      return localStorage.getItem(RAIL_STORAGE_KEY) === '1';
-    } catch {
-      return false;
-    }
-  }
 }

@@ -43,6 +43,8 @@ export class ChangePassword {
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
+  protected readonly profileLink = this.auth.profilePath;
+
   protected readonly submitting = signal(false);
   protected readonly success = signal<string | null>(null);
   protected readonly errors = signal<string[]>([]);

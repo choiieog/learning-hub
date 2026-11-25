@@ -17,12 +17,15 @@ import {
 } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AppNotification } from '../../core/models';
+import { AccountMenu } from '../account-menu/account-menu';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationStateService } from '../../core/services/notification-state.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { initials } from '../../core/utils/format.util';
 
-const RAIL_STORAGE_KEY = 'lh.user.rail.mini';
+interface Crumb {
+  label: string;
+  link?: string;
+}
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Tổng quan',
@@ -35,11 +38,11 @@ const PAGE_TITLES: Record<string, string> = {
   '/profile': 'Hồ sơ cá nhân',
 };
 
-/** Khung giao diện cho sinh viên: rail thu gọn được + header (breadcrumb, chuông thông báo, tài khoản). */
+/** Khung giao diện cho sinh viên: rail cố định + header (breadcrumb, chuông thông báo, tài khoản). */
 @Component({
   selector: 'app-user-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, DatePipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, DatePipe, AccountMenu],
   templateUrl: './user-layout.html',
   styleUrl: './user-layout.css',
 })
@@ -49,19 +52,6 @@ export class UserLayout {
   private readonly notificationState = inject(NotificationStateService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-
-  protected readonly headerFrame = computed(
-    () => this.auth.currentUser()?.avatarFrameUrl ?? null,
-  );
-  protected readonly headerInitials = computed(() =>
-    initials(this.auth.currentUser()?.fullName ?? ''),
-  );
-
-  /** Rail mini 77px, nhớ lựa chọn giữa các lần tải. */
-  protected readonly mini = signal(this.readMini());
-  protected readonly railToggleLabel = computed(() =>
-    this.mini() ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng',
-  );
 
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -80,6 +70,38 @@ export class UserLayout {
     return match ? PAGE_TITLES[match] : 'Tổng quan';
   });
 
+  /**
+   * Breadcrumb dạng liên kết: "Trang chủ" luôn về tổng quan; các mục giữa như thư viện
+   * hay chi tiết tài liệu bấm được để quay lại đúng trang đó.
+   */
+  protected readonly trail = computed<Crumb[]>(() => {
+    const [path, query = ''] = this.currentUrl().split('?');
+    const trail: Crumb[] = [{ label: 'Trang chủ', link: '/dashboard' }];
+
+    if (path.startsWith('/documents/')) {
+      return [
+        ...trail,
+        { label: 'Thư viện tài liệu', link: '/documents' },
+        { label: 'Chi tiết tài liệu' },
+      ];
+    }
+
+    if (path === '/viewer') {
+      trail.push({ label: 'Thư viện tài liệu', link: '/documents' });
+
+      const documentId = new URLSearchParams(query).get('doc');
+      if (documentId) {
+        trail.push({ label: 'Chi tiết tài liệu', link: `/documents/${documentId}` });
+      }
+
+      trail.push({ label: 'Xem tệp' });
+      return trail;
+    }
+
+    trail.push({ label: this.pageTitle() });
+    return trail;
+  });
+
   protected readonly panelOpen = signal(false);
   protected readonly notifications = signal<AppNotification[]>([]);
   /** Dùng chung với trang /notifications để badge đổi ngay khi đọc tin ở đó. */
@@ -88,17 +110,6 @@ export class UserLayout {
 
   constructor() {
     this.load();
-  }
-
-  protected toggleRail(): void {
-    const next = !this.mini();
-    this.mini.set(next);
-
-    try {
-      localStorage.setItem(RAIL_STORAGE_KEY, next ? '1' : '0');
-    } catch {
-      // Chế độ riêng tư có thể chặn localStorage; thu gọn vẫn hoạt động trong phiên.
-    }
   }
 
   protected togglePanel(): void {
@@ -144,19 +155,6 @@ export class UserLayout {
         },
         error: () => undefined,
       });
-  }
-
-  protected logout(): void {
-    this.auth.logout();
-    void this.router.navigate(['/auth/login']);
-  }
-
-  private readMini(): boolean {
-    try {
-      return localStorage.getItem(RAIL_STORAGE_KEY) === '1';
-    } catch {
-      return false;
-    }
   }
 
   private load(): void {
