@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { TRANSACTION_OPTIONS } from '../../common/constants/transaction.constants';
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -168,7 +169,7 @@ export class NotificationsService {
       }),
       this.prisma.notification.count({ where: { userId, readAt: null } }),
       this.prisma.notification.count({ where: { userId: null, reads: { none: { userId } } } }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     const items: NotificationSummary[] = rows.map(({ reads, ...row }) => ({
       ...row,
@@ -231,7 +232,7 @@ export class NotificationsService {
         where: { userId: null, reads: { none: { userId } } },
         select: { id: true },
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     if (broadcasts.length > 0) {
       await this.prisma.notificationRead.createMany({
@@ -317,7 +318,7 @@ export class NotificationsService {
         take: limit,
         select: NOTIFICATION_SELECT,
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     return {
       items,

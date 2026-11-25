@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { TRANSACTION_OPTIONS } from '../../common/constants/transaction.constants';
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -144,7 +145,7 @@ export class UsersService {
 
   /** Hồ sơ công khai: tên, avatar, level, số tài liệu đã duyệt + tổng lượt xem. */
   async getPublicProfile(userId: string): Promise<PublicProfile> {
-    const [user, stats] = await Promise.all([
+    const [user, stats] = await this.prisma.$transaction([
       this.prisma.user.findFirst({
         where: { id: userId, deletedAt: null },
         select: {
@@ -163,7 +164,7 @@ export class UsersService {
         _count: { _all: true },
         _sum: { viewCount: true },
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     if (!user) {
       throw new NotFoundException('Không tìm thấy người dùng');
@@ -266,7 +267,7 @@ export class UsersService {
         take: limit,
         select: ADMIN_USER_SELECT,
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     return {
       items: users.map(toAdminUserSummary),
@@ -369,7 +370,7 @@ export class UsersService {
           userId,
         },
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     return this.findDetailForAdmin(userId);
   }
@@ -454,6 +455,7 @@ export class UsersService {
           },
         }),
       ),
+      TRANSACTION_OPTIONS,
     );
   }
 

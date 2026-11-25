@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { TRANSACTION_OPTIONS } from '../../common/constants/transaction.constants';
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -94,7 +95,7 @@ export class RatingsService {
         where: { documentId_userId: { documentId, userId } },
         select: RATING_SELECT,
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     const distribution: RatingSummary['distribution'] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     for (const group of groups) {
@@ -154,7 +155,7 @@ export class RatingsService {
       });
 
       return { rating: rating as RatingItem, ratingAvg, ratingCount };
-    });
+    }, TRANSACTION_OPTIONS);
 
     // Chỉ đánh giá mới cộng EXP; sửa lại đánh giá cũ không cộng thêm để tránh farm.
     if (!existing) {

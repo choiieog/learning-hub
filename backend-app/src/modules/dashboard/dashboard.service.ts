@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { TRANSACTION_OPTIONS } from '../../common/constants/transaction.constants';
 import { DocumentStatus } from '../../common/enums/document-status.enum';
 import { vietnamDayKey } from '../../common/utils/day-key.util';
 import { cutoffBefore } from '../../common/utils/retention.util';
@@ -56,7 +57,7 @@ export interface DashboardOverview {
 /**
  * Số liệu cho trang tổng quan sinh viên.
  *
- * Một request gom đủ dữ liệu (Promise.all) để trang chỉ cần gọi API một lần:
+ * Một request gom đủ dữ liệu để trang chỉ cần gọi API một lần:
  * đếm tài liệu theo trạng thái, tổng lượt xem, lượt xem 7 ngày, 5 bài gần đây
  * của chính người dùng và 5 bài nhiều lượt xem nhất toàn hệ thống.
  */
@@ -70,44 +71,57 @@ export class DashboardService {
     const trendStart = cutoffBefore(TREND_DAYS - 1);
     trendStart.setHours(0, 0, 0, 0);
 
-    const [totalDocuments, approved, pending, viewsAgg, recentDocuments, topDocuments, trendRows] =
-      await Promise.all([
-        this.prisma.document.count({ where: mine }),
-        this.prisma.document.count({ where: { ...mine, status: DocumentStatus.APPROVED } }),
-        this.prisma.document.count({ where: { ...mine, status: DocumentStatus.PENDING } }),
-        this.prisma.document.aggregate({ where: mine, _sum: { viewCount: true } }),
-        this.prisma.document.findMany({
-          where: mine,
-          orderBy: { createdAt: 'desc' },
-          take: RECENT_LIMIT,
-          select: DASHBOARD_DOCUMENT_SELECT,
-        }),
-        this.prisma.document.findMany({
-          where: { status: DocumentStatus.APPROVED },
-          orderBy: [{ viewCount: 'desc' }, { publishedAt: 'desc' }],
-          take: TOP_LIMIT,
-          select: TOP_DOCUMENT_CARD_SELECT,
-        }),
-        this.prisma.documentView.groupBy({
-          by: ['dayKey'],
-          where: {
-            dayKey: { in: trendDays },
-            document: { authorId: userId },
-            createdAt: { gte: trendStart },
-          },
-          _count: { _all: true },
-        }),
-      ]);
+    // Một transaction chỉ-đọc giữ 4 truy vấn trên cùng một connection. Ngoài việc giảm
+    // số connection mở song song, cách này tránh lỗi giao thức của Prisma Dev khi tải cao.
+    const [statusGroups, recentDocuments, topDocuments, trendRows] = await this.prisma.$transaction([
+      this.prisma.document.groupBy({
+        by: ['status'],
+        where: mine,
+        _count: { _all: true },
+        _sum: { viewCount: true },
+      }),
+      this.prisma.document.findMany({
+        where: mine,
+        orderBy: { createdAt: 'desc' },
+        take: RECENT_LIMIT,
+        select: DASHBOARD_DOCUMENT_SELECT,
+      }),
+      this.prisma.document.findMany({
+        where: { status: DocumentStatus.APPROVED },
+        orderBy: [{ viewCount: 'desc' }, { publishedAt: 'desc' }],
+        take: TOP_LIMIT,
+        select: TOP_DOCUMENT_CARD_SELECT,
+      }),
+      this.prisma.documentView.groupBy({
+        by: ['dayKey'],
+        where: {
+          dayKey: { in: trendDays },
+          document: { authorId: userId },
+          createdAt: { gte: trendStart },
+        },
+        _count: { _all: true },
+      }),
+    ], TRANSACTION_OPTIONS);
+
+    // Một groupBy thay cho 3 count + 1 aggregate: tổng bài và tổng lượt xem suy ra từ
+    // chính các nhóm trạng thái nên overview chỉ còn 4 truy vấn thay vì 7.
+    const totals = { totalDocuments: 0, approved: 0, pending: 0, totalViews: 0 };
+    for (const group of statusGroups) {
+      totals.totalDocuments += group._count._all;
+      totals.totalViews += group._sum.viewCount ?? 0;
+      if (group.status === DocumentStatus.APPROVED) {
+        totals.approved = group._count._all;
+      } else if (group.status === DocumentStatus.PENDING) {
+        totals.pending = group._count._all;
+      }
+    }
 
     const countByDay = new Map(trendRows.map((row) => [row.dayKey, row._count._all]));
     const viewTrend = trendDays.map((day) => ({ day, count: countByDay.get(day) ?? 0 }));
 
     return {
       stats: {
-        totalDocuments,
-        approved,
-        pending,
-        totalViews: viewsAgg._sum.viewCount ?? 0,
+        ...totals,
         viewsLast7Days: viewTrend.reduce((sum, point) => sum + point.count, 0),
       },
       viewTrend,

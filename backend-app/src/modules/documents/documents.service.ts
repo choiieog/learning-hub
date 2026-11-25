@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { TRANSACTION_OPTIONS } from '../../common/constants/transaction.constants';
 import {
   DEFAULT_PAGE,
   DEFAULT_PAGE_SIZE,
@@ -151,7 +152,7 @@ export class DocumentsService {
         take: limit,
         select: DOCUMENT_SUMMARY_SELECT,
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     return {
       items: items as DocumentSummary[],
@@ -204,7 +205,7 @@ export class DocumentsService {
             data: { viewCount: { increment: 1 } },
             select: { viewCount: true },
           }),
-        ]);
+        ], TRANSACTION_OPTIONS);
 
         viewCount = updated.viewCount;
         viewCountedToday = true;
@@ -268,7 +269,7 @@ export class DocumentsService {
       await this.markFilesUsed(tx, files, document.id, authorId);
 
       return document;
-    });
+    }, TRANSACTION_OPTIONS);
 
     return created as DocumentSummary;
   }
@@ -363,7 +364,7 @@ export class DocumentsService {
       );
 
       return document;
-    });
+    }, TRANSACTION_OPTIONS);
 
     return this.toDetail(updated, { viewCountedToday: false });
   }
@@ -400,7 +401,7 @@ export class DocumentsService {
       );
 
       await tx.document.delete({ where: { id: documentId } });
-    });
+    }, TRANSACTION_OPTIONS);
 
     await this.deleteStoredFiles(document.files.map((file) => file.publicId));
 
@@ -435,7 +436,7 @@ export class DocumentsService {
         { id: document.id, title: document.title, authorId: document.authorId },
         tx,
       );
-    });
+    }, TRANSACTION_OPTIONS);
 
     await this.deleteStoredFiles(document.files.map((file) => file.publicId));
 
@@ -607,7 +608,7 @@ export class DocumentsService {
         take: limit,
         select: DOCUMENT_SUMMARY_SELECT,
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     return {
       items: items as DocumentSummary[],

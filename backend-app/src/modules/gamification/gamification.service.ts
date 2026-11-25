@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { TRANSACTION_OPTIONS } from '../../common/constants/transaction.constants';
 import { ExpReason, Prisma, Role } from '../../generated/prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { LevelProgress, levelFromExp, levelProgress } from './gamification.constants';
@@ -79,7 +80,9 @@ export class GamificationService {
     };
 
     try {
-      return tx ? await apply(tx) : await this.prisma.$transaction((inner) => apply(inner));
+      return tx
+        ? await apply(tx)
+        : await this.prisma.$transaction((inner) => apply(inner), TRANSACTION_OPTIONS);
     } catch (error) {
       // Tài khoản đã bị xoá cứng giữa chừng: bỏ qua thay vì làm hỏng request chính.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
@@ -95,37 +98,39 @@ export class GamificationService {
     const take = Math.min(50, Math.max(1, limit));
     const where: Prisma.UserWhereInput = { role: Role.USER, deletedAt: null };
 
-    const [users, total, viewer] = await Promise.all([
-      this.prisma.user.findMany({
+    // Một transaction chỉ-đọc giữ các truy vấn trên cùng một connection, tránh lỗi
+    // giao thức của Prisma Dev khi nhiều người mở bảng xếp hạng cùng lúc.
+    return this.prisma.$transaction(async (tx) => {
+      const users = await tx.user.findMany({
         where,
         orderBy: [{ exp: 'desc' }, { level: 'desc' }, { createdAt: 'asc' }],
         take,
         select: LEADERBOARD_USER_SELECT,
-      }),
-      this.prisma.user.count({ where }),
-      this.prisma.user.findUnique({
+      });
+      const total = await tx.user.count({ where });
+      const viewer = await tx.user.findUnique({
         where: { id: viewerId },
         select: LEADERBOARD_USER_SELECT,
-      }),
-    ]);
+      });
 
-    const items: LeaderboardEntry[] = users.map((user, index) => ({
-      rank: index + 1,
-      ...user,
-      ...levelProgress(user.exp),
-    }));
+      const items: LeaderboardEntry[] = users.map((user, index) => ({
+        rank: index + 1,
+        ...user,
+        ...levelProgress(user.exp),
+      }));
 
-    let me: LeaderboardEntry | null = null;
-    if (viewer) {
-      const rank =
-        1 +
-        (await this.prisma.user.count({
-          where: { ...where, exp: { gt: viewer.exp } },
-        }));
+      let me: LeaderboardEntry | null = null;
+      if (viewer) {
+        const rank =
+          1 +
+          (await tx.user.count({
+            where: { ...where, exp: { gt: viewer.exp } },
+          }));
 
-      me = { rank, ...viewer, ...levelProgress(viewer.exp) };
-    }
+        me = { rank, ...viewer, ...levelProgress(viewer.exp) };
+      }
 
-    return { items, total, me };
+      return { items, total, me };
+    }, TRANSACTION_OPTIONS);
   }
 }

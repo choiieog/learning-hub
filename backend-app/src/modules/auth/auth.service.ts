@@ -10,6 +10,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import { TRANSACTION_OPTIONS } from '../../common/constants/transaction.constants';
 import configuration from '../../config/configuration';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { MailService } from '../../infra/mail/mail.service';
@@ -89,7 +90,7 @@ export class AuthService {
         where: { id: record.userId },
         data: { emailVerifiedAt: record.user.emailVerifiedAt ?? new Date() },
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     return { message: 'Xác thực email thành công. Bạn có thể đăng nhập.' };
   }
@@ -187,7 +188,7 @@ export class AuthService {
         where: { id: record.userId },
         data: { passwordHash, refreshTokenHash: null },
       }),
-    ]);
+    ], TRANSACTION_OPTIONS);
 
     return { message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.' };
   }
