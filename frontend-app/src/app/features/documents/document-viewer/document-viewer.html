@@ -1,27 +1,23 @@
 <article class="space-y-5">
-  <div class="flex flex-wrap items-end justify-between gap-3">
-    <div class="min-w-0">
-      <a
-        [routerLink]="isAdmin() ? '/admin/documents' : '/documents'"
-        class="text-sm font-medium text-muted transition hover:text-tide"
-      >
-        {{ isAdmin() ? '← Về hàng chờ duyệt' : '← Về danh sách' }}
-      </a>
-      <h1 class="mt-2 truncate text-2xl font-semibold tracking-tight text-ink">
-        {{ fileName() || 'Xem tệp' }}
-      </h1>
-    </div>
+  <header class="page-head">
+    <a
+      [routerLink]="isAdmin() ? '/admin/documents' : '/documents'"
+      class="text-xs font-medium text-muted transition hover:text-tide"
+    >
+      {{ isAdmin() ? '← Về hàng chờ duyệt' : '← Về danh sách' }}
+    </a>
+    <h1 class="page-title mt-2 truncate" [title]="fileName() || 'Xem tệp'">
+      {{ fileName() || 'Xem tệp' }}
+    </h1>
+  </header>
 
-    @if (downloadUrl(); as href) {
-      <a
-        [href]="href"
-        [attr.download]="fileName()"
-        class="btn-secondary w-auto"
-      >
+  @if (downloadUrl(); as href) {
+    <div class="page-toolbar">
+      <a [href]="href" [attr.download]="fileName()" class="btn-secondary">
         Tải xuống
       </a>
-    }
-  </div>
+    </div>
+  }
 
   @if (invalid()) {
     <div class="alert alert-error" role="alert">

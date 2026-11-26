@@ -1,18 +1,15 @@
 <div class="mx-auto max-w-[1380px]">
-  <div class="flex items-end justify-between gap-6">
-    <div>
-      <h1 class="text-[1.5rem] font-semibold leading-tight tracking-[-0.03em] text-ink">
-        Chào {{ greetingName() }},
-      </h1>
-      <p class="mt-1.5 max-w-[62ch] text-[13px] leading-relaxed text-muted">
-        Đây là nhịp chia sẻ tài liệu của bạn. Mọi thứ đã duyệt, đang chờ và đang được đọc nằm
-        trong một bàn học.
-      </p>
-    </div>
-    <div class="flex shrink-0 items-center gap-2">
-      <a routerLink="/documents" class="btn-secondary">Mở thư viện</a>
-      <a routerLink="/upload" class="btn-primary w-auto">Đăng tài liệu</a>
-    </div>
+  <header class="page-head">
+    <h1 class="page-title">Chào {{ greetingName() }},</h1>
+    <p class="page-subtitle">
+      Đây là nhịp chia sẻ tài liệu của bạn. Mọi thứ đã duyệt, đang chờ và đang được đọc nằm
+      trong một bàn học.
+    </p>
+  </header>
+
+  <div class="page-toolbar">
+    <a routerLink="/upload" class="btn-primary">Đăng tài liệu</a>
+    <a routerLink="/documents" class="btn-secondary">Mở thư viện</a>
   </div>
 
   @if (errors().length > 0) {

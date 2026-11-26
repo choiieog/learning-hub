@@ -1,26 +1,21 @@
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="page-title">Tài liệu đã chia sẻ</h1>
-    <p class="mt-1 text-sm text-muted">
-      Theo dõi trạng thái duyệt của từng tài liệu bạn đã đăng.
-    </p>
-  </div>
-  <div class="flex flex-wrap items-center gap-3">
-    <p class="text-sm text-muted">{{ rangeLabel() }}</p>
-    <a routerLink="/upload" class="btn-primary w-auto">Đăng tài liệu</a>
-  </div>
+<header class="page-head">
+  <h1 class="page-title">Tài liệu đã chia sẻ</h1>
+  <p class="page-subtitle">
+    Theo dõi trạng thái duyệt của từng tài liệu bạn đã đăng.
+  </p>
+</header>
+
+<div class="page-toolbar">
+  <a routerLink="/upload" class="btn-primary">Đăng tài liệu</a>
+  <p class="page-toolbar-note">{{ rangeLabel() }}</p>
 </div>
 
-<div class="mt-6 flex flex-wrap gap-2">
+<div class="filter-pills mt-4" role="group" aria-label="Trạng thái tài liệu">
   @for (tab of tabs; track tab.value) {
     <button
       type="button"
+      class="filter-pill"
       [attr.aria-pressed]="status() === tab.value"
-      [class]="
-        status() === tab.value
-          ? 'rounded-lg border border-ink bg-ink px-3 py-1.5 text-sm font-semibold text-white transition'
-          : 'rounded-lg border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink-soft transition hover:border-marine hover:text-tide'
-      "
       (click)="setStatus(tab.value)"
     >
       {{ tab.label }}

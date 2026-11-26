@@ -209,9 +209,16 @@ export class AdminDocumentApproval implements OnInit {
           this.items.set(result.items);
           this.meta.set(result.meta);
           this.loading.set(false);
+
+          const current = this.selected();
+          const stillVisible = current && result.items.some((item) => item.id === current.id);
+          if (!stillVisible) {
+            this.selected.set(result.items[0] ?? null);
+          }
         },
         error: (error: unknown) => {
           this.items.set([]);
+          this.selected.set(null);
           this.meta.set({ page, limit: PAGE_SIZE, total: 0, totalPages: 0 });
           this.errors.set(getApiErrorMessages(error));
           this.loading.set(false);

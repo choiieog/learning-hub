@@ -1,25 +1,21 @@
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="page-title">Hồ sơ</h1>
-    <p class="mt-1 text-sm text-muted">Thông tin hiển thị cùng tài liệu bạn chia sẻ.</p>
-  </div>
-  <a [routerLink]="profilePath() + '/password'" class="btn-secondary w-auto">Đổi mật khẩu</a>
-</div>
+<header class="page-head">
+  <h1 class="page-title">Hồ sơ</h1>
+  <p class="page-subtitle">Thông tin hiển thị cùng tài liệu bạn chia sẻ.</p>
+</header>
 
 @if (loading()) {
-  <div class="mt-6 grid gap-6 grid-cols-3" aria-busy="true">
-    <div class="animate-pulse panel p-6">
-      <div class="mx-auto h-24 w-24 rounded-full bg-mist"></div>
-      <div class="mx-auto mt-4 h-4 w-1/2 rounded bg-foam"></div>
-      <div class="mx-auto mt-2 h-3 w-2/3 rounded bg-foam"></div>
-    </div>
-    <div class="animate-pulse panel p-6 col-span-2">
-      <div class="h-4 w-1/3 rounded bg-mist"></div>
-      <div class="mt-4 space-y-4">
-        @for (row of [1, 2, 3]; track row) {
-          <div class="h-10 rounded bg-foam"></div>
-        }
+  <div class="mt-6 space-y-6" aria-busy="true">
+    <div class="animate-pulse panel flex items-center gap-6 p-6">
+      <div class="h-24 w-24 rounded-full bg-mist"></div>
+      <div class="flex-1 space-y-3">
+        <div class="h-5 w-1/3 rounded bg-mist"></div>
+        <div class="h-3 w-1/2 rounded bg-foam"></div>
+        <div class="h-3 w-1/4 rounded bg-foam"></div>
       </div>
+    </div>
+    <div class="grid grid-cols-[minmax(0,1.25fr)_minmax(340px,0.75fr)] items-start gap-6">
+      <div class="animate-pulse panel h-80 p-6"></div>
+      <div class="animate-pulse panel h-64 p-6"></div>
     </div>
   </div>
 } @else {
@@ -37,11 +33,11 @@
     </div>
   }
 
-  <div class="mt-6 grid gap-6 grid-cols-3">
-    <!-- Thẻ định danh -->
-    <section class="panel p-6 text-center">
+  <!-- Danh tính: một dải hồ sơ ngang, không phải card dọc chiếm nửa trang. -->
+  <section class="panel mt-6 flex flex-wrap items-center gap-6 p-6">
+    <div class="flex w-[116px] shrink-0 flex-col items-center gap-2">
       <div
-        class="mx-auto flex h-28 w-28 items-center justify-center rounded-full"
+        class="flex h-24 w-24 items-center justify-center rounded-full"
         [style.background]="currentFrameAsset() ?? 'transparent'"
         [class.p-1]="currentFrameAsset() !== null"
       >
@@ -61,101 +57,50 @@
         }
       </div>
 
-      <h2 class="mt-4 text-lg font-semibold text-ink">{{ user()?.fullName }}</h2>
-      <p class="mt-0.5 text-sm text-muted">{{ user()?.email }}</p>
-      <p class="mt-2 inline-block rounded-md bg-foam px-2 py-0.5 text-xs font-semibold text-tide-deep">
-        {{ roleLabel() }}
+      <input
+        #avatarInput
+        type="file"
+        class="hidden"
+        accept="image/png,image/jpeg,image/webp"
+        (change)="onAvatarSelected($event)"
+      />
+      <button
+        type="button"
+        class="text-xs font-semibold text-tide transition hover:text-ink"
+        [disabled]="uploadingAvatar()"
+        (click)="avatarInput.click()"
+      >
+        {{ uploadingAvatar() ? 'Đang tải...' : 'Đổi ảnh' }}
+      </button>
+    </div>
+
+    <div class="min-w-0 flex-1">
+      <div class="flex flex-wrap items-center gap-2.5">
+        <h2 class="truncate text-[1.55rem] font-semibold leading-tight tracking-[-0.02em] text-ink">
+          {{ user()?.fullName }}
+        </h2>
+        <span class="rounded-full bg-foam px-2.5 py-1 text-[10px] font-semibold text-tide-deep">
+          {{ roleLabel() }}
+        </span>
+      </div>
+      <p class="mt-1 truncate text-sm text-muted">{{ user()?.email }}</p>
+      <p class="mt-3 text-[12.5px] text-ink-soft">
+        Cấp {{ user()?.level ?? 1 }}
+        <span class="mx-1.5 text-mist">·</span>
+        Tham gia {{ user()?.createdAt | date: 'dd/MM/yyyy' }}
       </p>
+      <p class="mt-4 text-[11.5px] text-muted">
+        Ảnh đại diện: PNG, JPG hoặc WEBP, tối đa {{ maxAvatarMb }} MB.
+      </p>
+      @if (avatarError()) {
+        <p class="mt-2 text-sm text-danger" role="alert">{{ avatarError() }}</p>
+      }
+    </div>
+  </section>
 
-      <div class="mt-5">
-        <input
-          #avatarInput
-          type="file"
-          class="hidden"
-          accept="image/png,image/jpeg,image/webp"
-          (change)="onAvatarSelected($event)"
-        />
-        <button
-          type="button"
-          class="btn-secondary w-full"
-          [disabled]="uploadingAvatar()"
-          (click)="avatarInput.click()"
-        >
-          {{ uploadingAvatar() ? 'Đang tải ảnh...' : 'Đổi ảnh đại diện' }}
-        </button>
-        <p class="mt-2 text-xs text-muted">PNG, JPG hoặc WEBP, tối đa {{ maxAvatarMb }} MB.</p>
-        @if (avatarError()) {
-          <p class="mt-2 text-sm text-danger" role="alert">{{ avatarError() }}</p>
-        }
-      </div>
-
-      <dl class="mt-6 space-y-3 border-t border-line-soft pt-4 text-left text-sm">
-        <div class="flex justify-between gap-3">
-          <dt class="text-muted">Cấp độ</dt>
-          <dd class="font-medium text-ink">Cấp {{ user()?.level ?? 1 }}</dd>
-        </div>
-        <div class="flex justify-between gap-3">
-          <dt class="text-muted">Tham gia</dt>
-          <dd class="font-medium text-ink">
-            {{ user()?.createdAt | date: 'dd/MM/yyyy' }}
-          </dd>
-        </div>
-      </dl>
-
-      <div class="mt-6 border-t border-line-soft pt-4 text-left">
-        <div class="flex items-center justify-between gap-2">
-          <h3 class="text-sm font-semibold text-ink">Khung avatar</h3>
-          @if (currentFrameId()) {
-            <button
-              type="button"
-              class="text-xs font-semibold text-muted transition hover:text-ink-soft"
-              [disabled]="savingFrame()"
-              (click)="selectFrame(null)"
-            >
-              Bỏ khung
-            </button>
-          }
-        </div>
-        <p class="mt-1 text-xs text-muted">Mở khoá theo cấp độ của bạn.</p>
-
-        <ul class="mt-3 grid grid-cols-2 gap-2">
-          @for (frame of frames(); track frame.id) {
-            <li>
-              <button
-                type="button"
-                class="w-full rounded-lg border p-2 text-center transition disabled:cursor-not-allowed disabled:opacity-60"
-                [class]="
-                  currentFrameId() === frame.id
-                    ? 'border-marine bg-foam'
-                    : 'border-line hover:bg-wash'
-                "
-                [disabled]="!frame.unlocked || savingFrame()"
-                [attr.title]="frame.unlocked ? frame.name : 'Mở ở cấp ' + frame.minLevel"
-                (click)="selectFrame(frame.id)"
-              >
-                <span
-                  class="mx-auto block h-8 w-8 rounded-full"
-                  [style.background]="frame.assetUrl"
-                ></span>
-                <span class="mt-1 block text-xs font-medium text-ink-soft">{{ frame.name }}</span>
-                @if (!frame.unlocked) {
-                  <span class="block text-[11px] text-muted">Cấp {{ frame.minLevel }}</span>
-                } @else if (currentFrameId() === frame.id) {
-                  <span class="block text-[11px] font-semibold text-tide">Đang dùng</span>
-                }
-              </button>
-            </li>
-          }
-        </ul>
-
-        @if (frameError()) {
-          <p class="mt-2 text-sm text-danger" role="alert">{{ frameError() }}</p>
-        }
-      </div>
-    </section>
-
+  <div class="mt-6 grid grid-cols-[minmax(0,1.25fr)_minmax(340px,0.75fr)] items-start gap-6">
     <!-- Form thông tin -->
-    <section class="panel p-6 col-span-2">
+    <section class="panel p-6">
       <h2 class="text-base font-semibold">Thông tin cá nhân</h2>
       <p class="mt-1 text-sm text-muted">
         Email đăng nhập không đổi được tại đây — liên hệ admin nếu cần.
@@ -211,6 +156,60 @@
           </button>
         </div>
       </form>
+    </section>
+
+    <!-- Khung avatar -->
+    <section class="panel p-6">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 class="text-base font-semibold">Khung avatar</h2>
+          <p class="mt-1 text-xs text-muted">Mở khoá theo cấp độ của bạn.</p>
+        </div>
+        @if (currentFrameId()) {
+          <button
+            type="button"
+            class="shrink-0 text-xs font-semibold text-muted transition hover:text-ink-soft"
+            [disabled]="savingFrame()"
+            (click)="selectFrame(null)"
+          >
+            Bỏ khung
+          </button>
+        }
+      </div>
+
+      <ul class="mt-4 grid grid-cols-2 gap-2">
+        @for (frame of frames(); track frame.id) {
+          <li>
+            <button
+              type="button"
+              class="w-full rounded-lg border p-2 text-center transition disabled:cursor-not-allowed disabled:opacity-60"
+              [class]="
+                currentFrameId() === frame.id
+                  ? 'border-marine bg-foam'
+                  : 'border-line hover:bg-wash'
+              "
+              [disabled]="!frame.unlocked || savingFrame()"
+              [attr.title]="frame.unlocked ? frame.name : 'Mở ở cấp ' + frame.minLevel"
+              (click)="selectFrame(frame.id)"
+            >
+              <span
+                class="mx-auto block h-8 w-8 rounded-full"
+                [style.background]="frame.assetUrl"
+              ></span>
+              <span class="mt-1 block text-xs font-medium text-ink-soft">{{ frame.name }}</span>
+              @if (!frame.unlocked) {
+                <span class="block text-[11px] text-muted">Cấp {{ frame.minLevel }}</span>
+              } @else if (currentFrameId() === frame.id) {
+                <span class="block text-[11px] font-semibold text-tide">Đang dùng</span>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+
+      @if (frameError()) {
+        <p class="mt-2 text-sm text-danger" role="alert">{{ frameError() }}</p>
+      }
     </section>
   </div>
 }

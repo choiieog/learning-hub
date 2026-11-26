@@ -2,7 +2,6 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { AppNotification } from '../../../core/models';
 import { AdminService } from '../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
@@ -18,7 +17,7 @@ import { getApiErrorMessages } from '../../../core/utils/api-error.util';
 @Component({
   selector: 'app-admin-broadcast',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe],
   templateUrl: './admin-broadcast.html',
   styleUrl: './admin-broadcast.css',
 })

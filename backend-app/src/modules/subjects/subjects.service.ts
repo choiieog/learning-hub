@@ -8,6 +8,7 @@ import { DocumentStatus } from '../../common/enums/document-status.enum';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 
+/** Môn học ở API công khai; documentCount chỉ tính tài liệu đã duyệt. */
 export interface SubjectSummary {
   id: string;
   code: string;
@@ -15,7 +16,15 @@ export interface SubjectSummary {
   documentCount: number;
 }
 
-const SUBJECT_SELECT = {
+/** Môn học trong danh mục admin; documentCount tính mọi trạng thái để khớp điều kiện xoá. */
+export interface AdminSubjectSummary {
+  id: string;
+  code: string;
+  name: string;
+  documentCount: number;
+}
+
+const PUBLIC_SUBJECT_SELECT = {
   id: true,
   code: true,
   name: true,
@@ -26,6 +35,13 @@ const SUBJECT_SELECT = {
       },
     },
   },
+} as const;
+
+const ADMIN_SUBJECT_SELECT = {
+  id: true,
+  code: true,
+  name: true,
+  _count: { select: { documents: true } },
 } as const;
 
 /**
@@ -42,7 +58,21 @@ export class SubjectsService {
   async findAll(_query?: PaginationQueryDto): Promise<SubjectSummary[]> {
     const subjects = await this.prisma.subject.findMany({
       orderBy: [{ code: 'asc' }],
-      select: SUBJECT_SELECT,
+      select: PUBLIC_SUBJECT_SELECT,
+    });
+
+    return subjects.map(toSummary);
+  }
+
+  /**
+   * Danh mục cho admin: đếm mọi tài liệu, kể cả PENDING, để trạng thái và nút xoá
+   * khớp đúng điều kiện chặn xoá ở remove(). Bộ lọc công khai vẫn dùng findAll()
+   * với số tài liệu đã duyệt.
+   */
+  async findAllForAdmin(): Promise<AdminSubjectSummary[]> {
+    const subjects = await this.prisma.subject.findMany({
+      orderBy: [{ code: 'asc' }],
+      select: ADMIN_SUBJECT_SELECT,
     });
 
     return subjects.map(toSummary);
@@ -51,7 +81,7 @@ export class SubjectsService {
   async findOne(id: string): Promise<SubjectSummary> {
     const subject = await this.prisma.subject.findFirst({
       where: { id },
-      select: SUBJECT_SELECT,
+      select: PUBLIC_SUBJECT_SELECT,
     });
 
     if (!subject) {
@@ -61,7 +91,7 @@ export class SubjectsService {
     return toSummary(subject);
   }
 
-  async create(dto: CreateSubjectDto): Promise<SubjectSummary> {
+  async create(dto: CreateSubjectDto): Promise<AdminSubjectSummary> {
     const existing = await this.prisma.subject.findUnique({
       where: { code: dto.code },
       select: { id: true },
@@ -73,7 +103,7 @@ export class SubjectsService {
 
     const subject = await this.prisma.subject.create({
       data: { code: dto.code, name: dto.name },
-      select: SUBJECT_SELECT,
+      select: ADMIN_SUBJECT_SELECT,
     });
 
     return toSummary(subject);

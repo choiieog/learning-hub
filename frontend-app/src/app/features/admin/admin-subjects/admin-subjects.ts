@@ -1,16 +1,27 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Subject } from '../../../core/models';
+import { AdminSubjectSummary } from '../../../core/models';
 import { AdminService } from '../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
 
 /**
  * Danh mục môn học (admin).
  *
- * Bảng môn + số tài liệu đã duyệt; thêm môn qua form (mã được chuẩn hoá chữ hoa ở backend);
- * xoá là xoá mềm và bị chặn khi môn còn tài liệu — backend trả 409 kèm số tài liệu,
- * UI cũng chặn nút xoá trước khi gọi.
+ * Mục lục môn + tổng số tài liệu ở mọi trạng thái (kể cả chờ duyệt); form thêm môn
+ * nằm ngay ô cuối của mục lục (mã được chuẩn hoá chữ hoa ở backend). Xoá là xoá cứng
+ * và bị chặn khi môn còn tài liệu — backend trả 409 kèm số tài liệu, UI cũng chỉ
+ * hiện nút xoá cho môn không còn tài liệu nào.
  */
 @Component({
   selector: 'app-admin-subjects',
@@ -28,9 +39,14 @@ export class AdminSubjects implements OnInit {
   protected readonly saving = signal(false);
   protected readonly errors = signal<string[]>([]);
   protected readonly success = signal<string | null>(null);
-  protected readonly subjects = signal<Subject[]>([]);
+  protected readonly subjects = signal<AdminSubjectSummary[]>([]);
+  protected readonly totalDocuments = computed(() =>
+    this.subjects().reduce((total, subject) => total + subject.documentCount, 0),
+  );
   protected readonly showForm = signal(false);
-  protected readonly deleteTarget = signal<Subject | null>(null);
+  private readonly codeInput = viewChild<ElementRef<HTMLInputElement>>('codeInput');
+  private readonly addSlot = viewChild<ElementRef<HTMLButtonElement>>('addSlot');
+  protected readonly deleteTarget = signal<AdminSubjectSummary | null>(null);
   protected readonly deleting = signal(false);
   protected readonly deleteError = signal<string | null>(null);
 
@@ -49,9 +65,22 @@ export class AdminSubjects implements OnInit {
   }
 
   protected toggleForm(): void {
-    this.showForm.update((open) => !open);
+    const open = !this.showForm();
+    this.showForm.set(open);
     this.errors.set([]);
     this.success.set(null);
+
+    setTimeout(() => {
+      if (open) {
+        this.codeInput()?.nativeElement.focus();
+      } else {
+        this.addSlot()?.nativeElement.focus();
+      }
+    });
+  }
+
+  protected countLabel(value: number): string {
+    return value < 10 ? `0${value}` : String(value);
   }
 
   protected create(): void {
@@ -84,7 +113,7 @@ export class AdminSubjects implements OnInit {
       });
   }
 
-  protected askDelete(subject: Subject): void {
+  protected askDelete(subject: AdminSubjectSummary): void {
     if (subject.documentCount > 0) {
       return;
     }
@@ -98,7 +127,7 @@ export class AdminSubjects implements OnInit {
     this.deleteError.set(null);
   }
 
-  protected confirmDelete(target: Subject): void {
+  protected confirmDelete(target: AdminSubjectSummary): void {
     this.deleting.set(true);
     this.deleteError.set(null);
 

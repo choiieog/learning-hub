@@ -4,6 +4,7 @@ import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from '../constants/api.constants';
 import {
   AdminOverview,
+  AdminSubjectSummary,
   AdminUserDetail,
   AdminUserSummary,
   AdminUsersQuery,
@@ -15,7 +16,6 @@ import {
   DocumentSummary,
   ModerationQuery,
   Paginated,
-  Subject,
   SystemSettings,
 } from '../models';
 import { toHttpParams } from '../utils/http-params.util';
@@ -61,15 +61,15 @@ export class AdminService {
 
   // --- Danh mục môn học ---
 
-  subjects(): Observable<Subject[]> {
+  subjects(): Observable<AdminSubjectSummary[]> {
     return this.http
-      .get<ApiResponse<Subject[]>>(`${this.baseUrl}/subjects`)
+      .get<ApiResponse<AdminSubjectSummary[]>>(`${this.baseUrl}/subjects`)
       .pipe(map((res) => res.data));
   }
 
-  createSubject(payload: CreateSubjectPayload): Observable<Subject> {
+  createSubject(payload: CreateSubjectPayload): Observable<AdminSubjectSummary> {
     return this.http
-      .post<ApiResponse<Subject>>(`${this.baseUrl}/subjects`, payload)
+      .post<ApiResponse<AdminSubjectSummary>>(`${this.baseUrl}/subjects`, payload)
       .pipe(map((res) => res.data));
   }
 

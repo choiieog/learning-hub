@@ -34,7 +34,7 @@ jobs:
           --health-retries=5
 
     env:
-      # Service Postgres ở trên; e2e dùng chung DB này (mỗi suite tự dọn dữ liệu).
+      # Service Postgres ở trên; e2e tự tạo/reset database riêng `learning_hub_test` từ URL này.
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/learning_hub?schema=public
       JWT_ACCESS_SECRET: ci-access-secret
       JWT_REFRESH_SECRET: ci-refresh-secret
@@ -59,9 +59,6 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
-
-      - name: Apply database migrations
-        run: npx prisma migrate deploy
 
       - name: Typecheck
         run: npx tsc --noEmit -p tsconfig.json

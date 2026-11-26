@@ -26,7 +26,7 @@ npm run build           # nest build
 npx tsc --noEmit -p tsconfig.json
 npx oxlint src/
 npm test                # unit test (jest ESM, không cần database)
-npm run test:e2e        # e2e thật: cần DATABASE_URL + `npx prisma migrate deploy` trước
+npm run test:e2e        # tự tạo/reset database `<DATABASE_URL>_test` (hoặc E2E_DATABASE_URL) + migrate, rồi chạy e2e
 ```
 
 ## Trạng thái module

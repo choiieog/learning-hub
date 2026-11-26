@@ -7,7 +7,6 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
 import { passwordValidators } from '../../../core/validators/password.validator';
@@ -34,7 +33,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
 @Component({
   selector: 'app-change-password',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   templateUrl: './change-password.html',
   styleUrl: './change-password.css',
 })
@@ -42,8 +41,6 @@ export class ChangePassword {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
-
-  protected readonly profileLink = this.auth.profilePath;
 
   protected readonly submitting = signal(false);
   protected readonly success = signal<string | null>(null);

@@ -117,6 +117,8 @@ describe('Gamification (e2e)', () => {
     const admin = await prisma.user.create({
       data: userData('E2E Quản trị EXP', `e2e-exp-admin-${suffix}@example.com`, {
         role: Role.ADMIN,
+        // Đủ cao để nếu filter role hỏng, admin sẽ nằm trong top và làm test fail.
+        exp: 5000,
       }),
       select: { id: true, email: true },
     });
@@ -235,29 +237,29 @@ describe('Gamification (e2e)', () => {
 
     expect((await userExp(authorId)).exp).toBe(26);
 
-    const board = await leaderboard(viewerToken, '?limit=10');
+    // E2E chạy trên database test trống (prepare-e2e-db.ts reset + migrate trước suite),
+    // nên chỉ có các user do test này tạo trong bảng xếp hạng.
+    const board = await leaderboard(viewerToken);
 
-    // Admin không nằm trong bảng; DB dev còn tài khoản seed nên chỉ kiểm tương đối.
+    expect(board.total).toBe(3);
+    expect(board.items).toHaveLength(3);
+    expect(board.items.map((item) => item.id)).toEqual([levelerId, authorId, viewerId]);
+    expect(board.items.map((item) => item.rank)).toEqual([1, 2, 3]);
+    expect(board.items.map((item) => item.exp)).toEqual([100, 26, 0]);
     expect(board.items.map((item) => item.id)).not.toContain(adminId);
-    expect(board.total).toBeGreaterThanOrEqual(3);
 
-    const first = board.items[0];
-    expect(first.id).toBe(levelerId);
-    expect(first.rank).toBe(1);
-    expect(first.level).toBe(2);
-    expect(first.exp).toBe(100);
+    const [levelerEntry, authorEntry] = board.items;
 
-    const second = board.items[1];
-    expect(second.id).toBe(authorId);
-    expect(second.rank).toBe(2);
-    expect(second.level).toBe(1);
-    expect(second.exp).toBe(26);
-    expect(second.levelStep).toBe(100);
-    expect(second.remaining).toBe(74);
-    expect(second.progressPercent).toBe(26);
+    expect(levelerEntry.level).toBe(2);
+    expect(levelerEntry.exp).toBe(100);
+    expect(authorEntry.level).toBe(1);
+    expect(authorEntry.exp).toBe(26);
+    expect(authorEntry.levelStep).toBe(100);
+    expect(authorEntry.remaining).toBe(74);
+    expect(authorEntry.progressPercent).toBe(26);
 
     expect(board.me?.id).toBe(viewerId);
-    expect(board.me?.rank).toBeGreaterThanOrEqual(3);
+    expect(board.me?.rank).toBe(3);
     expect(board.me?.exp).toBe(0);
     expect(board.me?.level).toBe(1);
 

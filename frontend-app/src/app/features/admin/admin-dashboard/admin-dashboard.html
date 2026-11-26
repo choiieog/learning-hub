@@ -1,17 +1,10 @@
 <div class="mx-auto max-w-[1380px]">
-  <div class="flex items-end justify-between gap-6">
-    <div>
-      <h1 class="text-[1.5rem] font-semibold leading-tight tracking-[-0.03em] text-ink">
-        Tổng quan quản trị
-      </h1>
-      <p class="mt-1.5 max-w-[62ch] text-[13px] leading-relaxed text-muted">
-        Sức khoẻ thư viện tài liệu, hàng chờ duyệt và hoạt động gần đây trong một màn hình.
-      </p>
-    </div>
-    <a routerLink="/admin/documents" class="btn-primary w-auto">
-      Xử lý hàng chờ{{ overview() ? ' (' + overview()!.documents.pending + ')' : '' }}
-    </a>
-  </div>
+  <header class="page-head">
+    <h1 class="page-title">Tổng quan quản trị</h1>
+    <p class="page-subtitle">
+      Sức khoẻ thư viện tài liệu, hàng chờ duyệt và hoạt động gần đây trong một màn hình.
+    </p>
+  </header>
 
   @if (errors().length > 0) {
     <div class="alert alert-error mt-6" role="alert">

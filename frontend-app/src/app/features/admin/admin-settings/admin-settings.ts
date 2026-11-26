@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { AdminService } from '../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
 
@@ -15,7 +14,7 @@ import { getApiErrorMessages } from '../../../core/utils/api-error.util';
 @Component({
   selector: 'app-admin-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   templateUrl: './admin-settings.html',
   styleUrl: './admin-settings.css',
 })

@@ -1,55 +1,110 @@
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="page-title">Quản lý tài khoản</h1>
-    <p class="mt-1 text-sm text-muted">
-      Tìm kiếm, xem lịch sử cảnh báo và gửi cảnh báo cho sinh viên vi phạm.
-    </p>
-  </div>
-  <p class="text-sm text-muted">{{ meta().total }} tài khoản</p>
-</div>
+<header class="page-head">
+  <h1 class="page-title">Quản lý tài khoản</h1>
+  <p class="page-subtitle">
+    Tìm kiếm, xem lịch sử cảnh báo và gửi cảnh báo cho sinh viên vi phạm.
+  </p>
+</header>
 
+<!-- Query deck: một dải tìm kiếm liền mạch, không phải form 5 cột. -->
 <form
-  class="mt-5 grid gap-3 panel p-4 grid-cols-5"
+  class="mt-6 overflow-hidden border-y border-line bg-white"
   [formGroup]="filters"
   (ngSubmit)="applyFilters()"
   novalidate
 >
-  <div class="field col-span-2">
-    <label class="field-label" for="keyword">Tìm kiếm</label>
-    <input
-      id="keyword"
-      class="field-input"
-      type="search"
-      formControlName="keyword"
-      placeholder="Email, họ tên hoặc mã sinh viên"
-    />
+  <div class="flex flex-wrap items-center gap-4 px-5 py-4">
+    <div class="relative min-w-0 flex-1">
+      <svg
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+        aria-hidden="true"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M9 3.5a5.5 5.5 0 1 0 3.4 9.8l3.15 3.15a.75.75 0 1 0 1.06-1.06l-3.15-3.15A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      <input
+        id="keyword"
+        class="w-full rounded-full border border-line bg-wash py-3 pl-11 pr-24 text-sm text-ink transition placeholder:text-muted focus:border-marine focus:bg-white focus:outline-none focus:ring-2 focus:ring-marine/20"
+        type="search"
+        formControlName="keyword"
+        placeholder="Tìm theo email, họ tên hoặc mã sinh viên"
+        aria-label="Tìm tài khoản"
+      />
+      <button
+        class="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white transition hover:bg-tide-deep"
+        type="submit"
+      >
+        Tìm
+      </button>
+    </div>
+    <div class="flex shrink-0 items-center gap-3">
+      <p class="text-xs font-medium text-muted">{{ meta().total }} tài khoản</p>
+      @if (hasActiveFilters()) {
+        <span class="h-3 w-px bg-line" aria-hidden="true"></span>
+        <button
+          type="button"
+          class="text-xs font-medium text-muted underline decoration-line underline-offset-4 transition hover:text-ink"
+          (click)="clearFilters()"
+        >
+          Xoá bộ lọc
+        </button>
+      }
+    </div>
   </div>
 
-  <div class="field">
-    <label class="field-label" for="role">Vai trò</label>
-    <select id="role" class="field-input" formControlName="role">
-      <option value="">Tất cả</option>
-      <option value="USER">Sinh viên</option>
-      <option value="ADMIN">Quản trị viên</option>
-    </select>
-  </div>
+  <div class="flex flex-wrap items-end gap-x-5 gap-y-3 border-t border-line-soft px-5 py-3.5">
+    <div class="flex flex-col gap-1.5" role="group" aria-label="Vai trò">
+      <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">Vai trò</span>
+      <div class="filter-pills">
+        @for (option of roleOptions; track option.value) {
+          <button
+            type="button"
+            class="filter-pill filter-pill--dense"
+            [attr.aria-pressed]="filters.controls.role.value === option.value"
+            (click)="setRole(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
 
-  <div class="field">
-    <label class="field-label" for="status">Trạng thái</label>
-    <select id="status" class="field-input" formControlName="status">
-      <option value="">Tất cả</option>
-      <option value="ACTIVE">Hoạt động</option>
-      <option value="WARNED">Đã cảnh báo</option>
-      <option value="BANNED">Bị khoá</option>
-    </select>
-  </div>
+    <div class="flex flex-col gap-1.5" role="group" aria-label="Trạng thái">
+      <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">Trạng thái</span>
+      <div class="filter-pills">
+        @for (option of statusOptions; track option.value) {
+          <button
+            type="button"
+            class="filter-pill filter-pill--dense"
+            [attr.aria-pressed]="filters.controls.status.value === option.value"
+            (click)="setStatus(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
 
-  <div class="flex flex-col justify-end gap-2">
-    <label class="flex items-center gap-2 text-sm text-ink-soft">
-      <input type="checkbox" formControlName="warnedOnly" class="h-4 w-4 rounded border-line" />
-      Chỉ tài khoản bị cảnh báo
-    </label>
-    <button class="btn-primary w-full" type="submit">Tìm kiếm</button>
+    <div class="flex flex-col gap-1.5">
+      <span class="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">Lọc nhanh</span>
+      <button
+        type="button"
+        class="filter-pill filter-pill--dense filter-pill--warning"
+        [attr.aria-pressed]="filters.controls.warnedOnly.value"
+        (click)="toggleWarnedOnly()"
+      >
+        <span
+          class="h-1.5 w-1.5 rounded-full"
+          [class]="filters.controls.warnedOnly.value ? 'bg-warning' : 'bg-mist'"
+        ></span>
+        Chỉ tài khoản bị cảnh báo
+      </button>
+    </div>
+
   </div>
 </form>
 
@@ -67,27 +122,42 @@
   </div>
 }
 
-<div class="mt-5 grid gap-6 grid-cols-5">
+<div class="mt-6 grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(370px,0.9fr)]">
   <!-- Danh sách tài khoản -->
-  <section class="overflow-hidden panel col-span-3">
+  <section class="overflow-hidden panel">
+    <div class="flex items-center justify-between gap-3 border-b border-line-soft px-4 py-3">
+      <p class="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">Tài khoản</p>
+      <p class="text-[11px] text-muted">Hồ sơ đang mở</p>
+    </div>
+
     @if (loading()) {
       <div class="space-y-2 p-3" aria-busy="true">
         @for (placeholder of [1, 2, 3, 4, 5]; track placeholder) {
-          <div class="h-14 animate-pulse rounded-lg bg-foam"></div>
+          <div class="h-[72px] animate-pulse rounded-lg bg-foam"></div>
         }
       </div>
     } @else if (items().length === 0) {
-      <p class="px-5 py-12 text-center text-sm text-muted">
-        Không tìm thấy tài khoản nào khớp bộ lọc.
-      </p>
+      <div class="px-5 py-14 text-center">
+        <p class="text-sm font-medium text-ink-soft">Không tìm thấy tài khoản nào khớp bộ lọc.</p>
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="mt-3 text-xs font-semibold text-tide underline decoration-marine underline-offset-4"
+            (click)="clearFilters()"
+          >
+            Xoá bộ lọc để xem tất cả
+          </button>
+        }
+      </div>
     } @else {
       <ul class="divide-y divide-line-soft">
         @for (user of items(); track user.id) {
           <li>
             <button
               type="button"
-              class="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-wash"
+              class="group flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-wash"
               [class.bg-foam]="selected()?.id === user.id"
+              [attr.aria-pressed]="selected()?.id === user.id"
               (click)="selectUser(user.id)"
             >
               <span
@@ -106,25 +176,35 @@
                     {{ statusLabel(user.status) }}
                   </span>
                   @if (user.role === 'ADMIN') {
-                    <span class="rounded-md bg-foam px-2 py-0.5 text-[11px] font-bold text-ink-soft">
-                      Admin
+                    <span class="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold text-ink-soft">
+                      Quản trị
                     </span>
                   }
                 </span>
                 <span class="mt-0.5 block truncate text-xs text-muted">{{ user.email }}</span>
-                <span class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+                <span class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-muted">
                   <span>{{ user.documentCount }} tài liệu</span>
-                  <span>{{ user.warningCount }} cảnh báo</span>
+                  <span [class.text-warning]="user.warningCount > 0">{{ user.warningCount }} cảnh báo</span>
                   <span>Tham gia {{ user.createdAt | date: 'dd/MM/yyyy' }}</span>
                 </span>
               </span>
+
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                class="h-4 w-4 shrink-0 text-mist transition group-hover:text-muted"
+                [class.text-tide]="selected()?.id === user.id"
+                aria-hidden="true"
+              >
+                <path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
             </button>
           </li>
         }
       </ul>
 
       <div class="flex items-center justify-between gap-3 border-t border-line-soft px-4 py-3 text-sm">
-        <p class="text-muted">
+        <p class="text-xs text-muted">
           Trang {{ meta().page }}/{{ meta().totalPages || 1 }}
         </p>
         <div class="flex gap-2">
@@ -150,55 +230,75 @@
   </section>
 
   <!-- Chi tiết + cảnh báo -->
-  <section class="panel p-5 col-span-2">
+  <section class="panel self-start p-5 xl:sticky xl:top-[100px]">
     @if (loadingDetail()) {
       <div class="space-y-3" aria-busy="true">
+        <div class="h-12 w-12 animate-pulse rounded-full bg-mist"></div>
         <div class="h-5 w-1/2 animate-pulse rounded bg-mist"></div>
         <div class="h-4 w-2/3 animate-pulse rounded bg-foam"></div>
         <div class="h-24 animate-pulse rounded bg-foam"></div>
       </div>
     } @else if (selected(); as user) {
-      <h2 class="text-base font-semibold">{{ user.fullName }}</h2>
-      <p class="mt-0.5 text-sm text-muted">{{ user.email }}</p>
-
-      <div class="mt-3 flex flex-wrap items-center gap-2">
-        <span [class]="statusBadgeClass(user.status)">{{ statusLabel(user.status) }}</span>
-        <span class="text-xs text-muted">{{ user.warningCount }}/3 cảnh báo</span>
-        @if (user.warningCount > 0) {
-          <span class="text-xs text-muted">(đủ 3 sẽ tự khoá)</span>
-        }
+      <div class="flex items-start gap-3">
+        <span
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-foam text-base font-semibold text-tide-deep"
+          aria-hidden="true"
+        >
+          {{ userInitials(user.fullName) }}
+        </span>
+        <div class="min-w-0">
+          <h2 class="truncate text-base font-semibold text-ink">{{ user.fullName }}</h2>
+          <p class="mt-0.5 truncate text-sm text-muted">{{ user.email }}</p>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <span [class]="statusBadgeClass(user.status)">{{ statusLabel(user.status) }}</span>
+            @if (user.role === 'ADMIN') {
+              <span class="rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold text-ink-soft">
+                Quản trị
+              </span>
+            }
+          </div>
+        </div>
       </div>
 
-      <dl class="mt-4 space-y-2 border-t border-line-soft pt-3 text-sm">
-        <div class="flex justify-between gap-3">
-          <dt class="text-muted">Tài liệu</dt>
-          <dd class="font-medium text-ink">{{ user.documentCount }}</dd>
+      <dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-line-soft py-4">
+        <div>
+          <dt class="text-[11px] text-muted">Tài liệu</dt>
+          <dd class="mt-0.5 text-sm font-semibold text-ink">{{ user.documentCount }}</dd>
         </div>
-        <div class="flex justify-between gap-3">
-          <dt class="text-muted">Email xác thực</dt>
-          <dd class="font-medium text-ink">
+        <div>
+          <dt class="text-[11px] text-muted">Cảnh báo</dt>
+          <dd class="mt-0.5 text-sm font-semibold text-ink">{{ user.warningCount }}/3</dd>
+        </div>
+        <div>
+          <dt class="text-[11px] text-muted">Email xác thực</dt>
+          <dd class="mt-0.5 text-sm font-semibold text-ink">
             {{ user.emailVerifiedAt ? 'Đã xác thực' : 'Chưa xác thực' }}
           </dd>
         </div>
-        <div class="flex justify-between gap-3">
-          <dt class="text-muted">Tham gia</dt>
-          <dd class="font-medium text-ink">
+        <div>
+          <dt class="text-[11px] text-muted">Tham gia</dt>
+          <dd class="mt-0.5 text-sm font-semibold text-ink">
             {{ user.createdAt | date: 'dd/MM/yyyy' }}
           </dd>
         </div>
       </dl>
 
-      <div class="mt-5 border-t border-line-soft pt-4">
-        <h3 class="text-sm font-semibold text-ink">Lịch sử cảnh báo</h3>
+      <div class="mt-5">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-sm font-semibold text-ink">Lịch sử cảnh báo</h3>
+          <span class="text-[11px] text-muted">Đủ 3 cảnh báo sẽ tự khoá</span>
+        </div>
 
         @if (user.warnings.length === 0) {
-          <p class="mt-2 text-sm text-muted">Chưa có cảnh báo nào.</p>
+          <p class="mt-3 rounded-lg bg-wash px-3 py-3 text-sm text-muted">
+            Chưa có cảnh báo nào. Tài khoản đang ở trạng thái tốt.
+          </p>
         } @else {
-          <ul class="mt-3 space-y-3">
+          <ul class="mt-3 space-y-2">
             @for (warning of user.warnings; track warning.id) {
-              <li class="rounded-lg border border-danger-line bg-danger-soft px-3 py-2">
-                <p class="text-sm text-danger">{{ warning.reason }}</p>
-                <p class="mt-1 text-xs text-danger">
+              <li class="rounded-lg border border-danger-line bg-danger-soft px-3 py-2.5">
+                <p class="text-sm leading-relaxed text-danger">{{ warning.reason }}</p>
+                <p class="mt-1 text-[11px] text-danger/80">
                   {{ warning.admin.fullName }} · {{ warning.createdAt | date: 'dd/MM/yyyy HH:mm' }}
                 </p>
               </li>
@@ -208,19 +308,19 @@
       </div>
 
       @if (user.status === 'BANNED') {
-        <p class="mt-4 rounded-lg bg-foam px-3 py-2 text-sm text-ink-soft">
+        <p class="mt-4 rounded-lg bg-foam px-3 py-2.5 text-sm text-ink-soft">
           Tài khoản đã bị khoá — không gửi cảnh báo thêm được.
         </p>
       } @else {
-        <form class="mt-4 border-t border-line-soft pt-4" [formGroup]="warnForm" (ngSubmit)="warn(user)" novalidate>
-          <label class="field-label" for="reason">Gửi cảnh báo</label>
+        <form class="mt-5 border-t border-line-soft pt-4" [formGroup]="warnForm" (ngSubmit)="warn(user)" novalidate>
+          <label class="field-label" for="reason">Ghi cảnh báo</label>
           <textarea
             id="reason"
             class="field-input"
             formControlName="reason"
             rows="3"
             maxlength="500"
-            placeholder="Lý do cảnh báo (ít nhất 10 ký tự), sinh viên sẽ thấy trong hồ sơ cảnh báo."
+            placeholder="Lý do cảnh báo (ít nhất 10 ký tự) — sinh viên sẽ thấy trong hồ sơ cảnh báo."
             [attr.aria-invalid]="warnError() !== null"
           ></textarea>
           @if (warnError()) {
@@ -232,11 +332,9 @@
         </form>
       }
     } @else {
-      <div class="py-10 text-center">
-        <p class="text-sm font-medium text-ink-soft">Chọn một tài khoản</p>
-        <p class="mt-1 text-sm text-muted">
-          Bấm vào dòng bên trái để xem chi tiết và lịch sử cảnh báo.
-        </p>
+      <div class="py-8 text-center">
+        <p class="text-sm font-medium text-ink-soft">Chưa có tài khoản để hiển thị</p>
+        <p class="mt-1 text-sm text-muted">Thử xoá bộ lọc hoặc đổi từ khoá tìm kiếm.</p>
       </div>
     }
   </section>

@@ -11,7 +11,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { AvatarFrame, User } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { AvatarFrameService } from '../../../core/services/avatar-frame.service';
@@ -36,7 +35,7 @@ const BIO_MAX = 500;
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -78,7 +77,6 @@ export class Profile implements OnInit {
   protected readonly roleLabel = computed(() =>
     this.user()?.role === 'ADMIN' ? 'Quản trị viên' : 'Sinh viên',
   );
-  protected readonly profilePath = this.auth.profilePath;
 
   /** Có thay đổi chưa lưu trong form hồ sơ → guard sẽ hỏi trước khi rời trang. */
   hasUnsavedChanges(): boolean {

@@ -51,10 +51,22 @@
         Thông tin cá nhân
       </a>
 
+      <a
+        [routerLink]="profileLink() + '/password'"
+        class="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-ink-soft transition hover:bg-wash hover:text-ink"
+        (click)="close()"
+      >
+        <svg viewBox="0 0 20 20" fill="none" class="h-[18px] w-[18px] shrink-0" aria-hidden="true">
+          <rect x="4.5" y="8.5" width="11" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.5" />
+          <path d="M7 8.5V6.8a3 3 0 0 1 6 0v1.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        Đổi mật khẩu
+      </a>
+
       @if (!isAdmin()) {
         <a
           routerLink="/notifications"
-          class="flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-ink-soft transition hover:bg-wash hover:text-ink"
+          class="flex items-center gap-2.5 border-t border-line-soft px-4 py-2.5 text-[13px] font-medium text-ink-soft transition hover:bg-wash hover:text-ink"
           (click)="close()"
         >
           <svg viewBox="0 0 20 20" fill="none" class="h-[18px] w-[18px] shrink-0" aria-hidden="true">

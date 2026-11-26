@@ -1,12 +1,9 @@
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="page-title">Cấu hình hệ thống</h1>
-    <p class="mt-1 text-sm text-muted">
-      Áp dụng ngay cho toàn bộ sinh viên, không cần khởi động lại backend.
-    </p>
-  </div>
-  <a routerLink="/admin/dashboard" class="btn-secondary w-auto">Về tổng quan</a>
-</div>
+<header class="page-head">
+  <h1 class="page-title">Cấu hình hệ thống</h1>
+  <p class="page-subtitle">
+    Áp dụng ngay cho toàn bộ sinh viên, không cần khởi động lại backend.
+  </p>
+</header>
 
 @if (success()) {
   <div class="alert alert-success mt-6" role="status">

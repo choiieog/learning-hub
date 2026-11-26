@@ -1,12 +1,9 @@
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="page-title">Thông báo hàng loạt</h1>
-    <p class="mt-1 text-sm text-muted">
-      Gửi một thông báo chung tới tất cả sinh viên — hiện trong chuông và trang thông báo.
-    </p>
-  </div>
-  <a routerLink="/admin/dashboard" class="btn-secondary w-auto">Về tổng quan</a>
-</div>
+<header class="page-head">
+  <h1 class="page-title">Thông báo hàng loạt</h1>
+  <p class="page-subtitle">
+    Gửi một thông báo chung tới tất cả sinh viên — hiện trong chuông và trang thông báo.
+  </p>
+</header>
 
 @if (sent()) {
   <div class="alert alert-success mt-6" role="status">

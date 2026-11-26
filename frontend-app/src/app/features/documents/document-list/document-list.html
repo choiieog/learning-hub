@@ -1,49 +1,48 @@
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="page-title">Tài liệu</h1>
-    <p class="mt-1 text-sm text-muted">
-      Tài liệu đã được kiểm duyệt — tìm theo môn, loại file hoặc từ khoá.
-    </p>
-  </div>
-  <p class="text-sm text-muted">{{ rangeLabel() }}</p>
-</div>
+<header class="page-head">
+  <h1 class="page-title">Tài liệu</h1>
+  <p class="page-subtitle">
+    Tài liệu đã được kiểm duyệt — tìm theo môn, loại file hoặc từ khoá.
+  </p>
+</header>
 
-<!-- Tìm kiếm -->
-<div class="relative mt-6 max-w-xl">
-  <svg
-    viewBox="0 0 20 20"
-    fill="currentColor"
-    class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-    aria-hidden="true"
-  >
-    <path
-      fill-rule="evenodd"
-      d="M9 3.5a5.5 5.5 0 1 0 3.4 9.8l3.15 3.15a.75.75 0 1 0 1.06-1.06l-3.15-3.15A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z"
-      clip-rule="evenodd"
-    />
-  </svg>
-  <input
-    type="search"
-    class="field-input py-2.5 pl-9 pr-10"
-    placeholder="Tìm theo tiêu đề hoặc mô tả…"
-    aria-label="Tìm kiếm tài liệu"
-    [value]="keyword()"
-    (input)="onKeywordInput($event)"
-  />
-  @if (keyword()) {
-    <button
-      type="button"
-      class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted transition hover:bg-foam hover:text-ink-soft"
-      aria-label="Xoá từ khoá"
-      (click)="clearKeyword()"
+<div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+  <div class="relative min-w-0 max-w-xl flex-1">
+    <svg
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+      aria-hidden="true"
     >
-      <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4" aria-hidden="true">
-        <path
-          d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"
-        />
-      </svg>
-    </button>
-  }
+      <path
+        fill-rule="evenodd"
+        d="M9 3.5a5.5 5.5 0 1 0 3.4 9.8l3.15 3.15a.75.75 0 1 0 1.06-1.06l-3.15-3.15A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z"
+        clip-rule="evenodd"
+      />
+    </svg>
+    <input
+      type="search"
+      class="field-input py-2.5 pl-9 pr-10"
+      placeholder="Tìm theo tiêu đề hoặc mô tả…"
+      aria-label="Tìm kiếm tài liệu"
+      [value]="keyword()"
+      (input)="onKeywordInput($event)"
+    />
+    @if (keyword()) {
+      <button
+        type="button"
+        class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted transition hover:bg-foam hover:text-ink-soft"
+        aria-label="Xoá từ khoá"
+        (click)="clearKeyword()"
+      >
+        <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4" aria-hidden="true">
+          <path
+            d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"
+          />
+        </svg>
+      </button>
+    }
+  </div>
+  <p class="text-xs font-medium text-muted">{{ rangeLabel() }}</p>
 </div>
 
 <!-- Bộ lọc -->
@@ -53,12 +52,8 @@
     @for (subject of subjects(); track subject.id) {
       <button
         type="button"
+        class="filter-pill filter-pill--dense"
         [attr.aria-pressed]="selectedSubjects().includes(subject.id)"
-        [class]="
-          selectedSubjects().includes(subject.id)
-            ? 'rounded-full border border-ink bg-ink px-3 py-1 text-xs font-medium text-white transition'
-            : 'rounded-full border border-line bg-white px-3 py-1 text-xs font-medium text-ink-soft transition hover:border-marine hover:text-tide'
-        "
         (click)="toggleSubject(subject.id)"
       >
         {{ subject.code }} · {{ subject.name }}
@@ -82,12 +77,8 @@
           @for (type of fileTypes; track type.value) {
             <button
               type="button"
+              class="filter-pill filter-pill--dense"
               [attr.aria-pressed]="selectedFileTypes().includes(type.value)"
-              [class]="
-                selectedFileTypes().includes(type.value)
-                  ? 'rounded-lg border border-ink bg-ink px-3 py-1 text-xs font-medium text-white transition'
-                  : 'rounded-lg border border-line bg-white px-3 py-1 text-xs font-medium text-ink-soft transition hover:border-marine hover:text-tide'
-              "
               (click)="toggleFileType(type.value)"
             >
               {{ type.label }}

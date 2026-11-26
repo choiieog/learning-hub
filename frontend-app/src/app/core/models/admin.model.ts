@@ -20,6 +20,14 @@ export interface AdminOverview {
   }[];
 }
 
+/** Dòng môn học trong danh mục admin; documentCount tính mọi trạng thái. */
+export interface AdminSubjectSummary {
+  id: string;
+  code: string;
+  name: string;
+  documentCount: number;
+}
+
 /** Thẻ tài khoản trong bảng quản lý của admin */
 export interface AdminUserSummary {
   id: string;

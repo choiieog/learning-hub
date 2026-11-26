@@ -1,35 +1,32 @@
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="page-title">Thông báo</h1>
-    <p class="mt-1 text-sm text-muted">
-      Kết quả duyệt bài, cảnh báo và tin chung từ quản trị viên.
-    </p>
-  </div>
+<header class="page-head">
+  <h1 class="page-title">Thông báo</h1>
+  <p class="page-subtitle">
+    Kết quả duyệt bài, cảnh báo và tin chung từ quản trị viên.
+  </p>
+</header>
 
-  <div class="flex flex-wrap items-center gap-3">
-    <label class="flex items-center gap-2 text-sm text-ink-soft">
-      <input
-        type="checkbox"
-        class="h-4 w-4 rounded border-line text-tide focus:ring-tide"
-        [checked]="unreadOnly()"
-        (change)="toggleUnreadOnly($event)"
-      />
-      Chỉ chưa đọc
-    </label>
-    <button
-      type="button"
-      class="btn-secondary w-auto"
-      [disabled]="unreadCount() === 0 || markingAll()"
-      (click)="markAllRead()"
-    >
-      {{ markingAll() ? 'Đang xử lý...' : 'Đọc tất cả' }}
-    </button>
-  </div>
+<div class="page-toolbar">
+  <label class="flex items-center gap-2 text-sm text-ink-soft">
+    <input
+      type="checkbox"
+      class="h-4 w-4 rounded border-line text-tide focus:ring-tide"
+      [checked]="unreadOnly()"
+      (change)="toggleUnreadOnly($event)"
+    />
+    Chỉ chưa đọc
+  </label>
+  <button
+    type="button"
+    class="btn-secondary"
+    [disabled]="unreadCount() === 0 || markingAll()"
+    (click)="markAllRead()"
+  >
+    {{ markingAll() ? 'Đang xử lý...' : 'Đọc tất cả' }}
+  </button>
+  <p class="page-toolbar-note">
+    {{ unreadCount() }} chưa đọc · {{ meta().total }} thông báo
+  </p>
 </div>
-
-<p class="mt-2 text-sm text-muted">
-  {{ unreadCount() }} thông báo chưa đọc · {{ meta().total }} thông báo
-</p>
 
 @if (errors().length > 0) {
   <div class="alert alert-error mt-6" role="alert">

@@ -339,13 +339,17 @@
     @apply font-medium text-ink-soft;
   }
 
-  /* Dải KPI liền: 4 ô, radius 16, shadow 1px, không kẻ chia. */
+  /* Dải KPI phẳng: một dải ledger có đường kẻ, không phải bốn card rời. */
   .kpi-strip {
-    @apply grid grid-cols-4 overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(14,42,50,0.07)];
+    @apply grid grid-cols-4 overflow-hidden border-y border-line bg-white;
   }
 
   .kpi {
-    @apply block px-6 py-[22px] transition-colors;
+    @apply block px-6 py-5 transition-colors;
+  }
+
+  .kpi + .kpi {
+    @apply border-l border-line-soft;
   }
 
   a.kpi:hover {
@@ -353,15 +357,15 @@
   }
 
   .kpi-label {
-    @apply text-[15px] font-medium leading-5 text-ink;
+    @apply text-[13px] font-medium leading-5 text-ink-soft;
   }
 
   .kpi-value {
-    @apply mt-2 text-[26px] font-medium leading-7 tracking-[-0.01em] text-ink tabular-nums;
+    @apply mt-1.5 text-[28px] font-medium leading-8 tracking-[-0.02em] text-ink tabular-nums;
   }
 
   .kpi-hint {
-    @apply mt-1.5 block text-[12px] font-normal leading-4 text-muted;
+    @apply mt-1.5 block text-[11.5px] font-normal leading-4 text-muted;
   }
 
   .rank-row {
@@ -410,7 +414,49 @@
   }
 
   .page-subtitle {
-    @apply mt-1.5 text-sm leading-relaxed text-muted;
+    @apply mt-1.5 max-w-[68ch] text-sm leading-relaxed text-muted;
+  }
+
+  .page-head {
+    @apply max-w-[900px];
+  }
+
+  .page-toolbar {
+    @apply mt-5 flex flex-wrap items-center gap-2.5;
+  }
+
+  .page-toolbar .btn-primary,
+  .page-toolbar .btn-secondary {
+    width: auto;
+  }
+
+  .page-toolbar-note {
+    @apply ml-auto text-xs font-medium text-muted;
+  }
+
+  /* Cùng một kiểu chip lọc cho mọi trang: trạng thái active đọc từ aria-pressed. */
+  .filter-pills {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .filter-pill {
+    @apply rounded-full border border-line bg-white px-3.5 py-1.5 text-xs font-medium text-ink-soft transition hover:border-marine hover:text-tide;
+  }
+
+  .filter-pill[aria-pressed='true'] {
+    @apply border-ink bg-ink text-white;
+  }
+
+  .filter-pill--dense {
+    @apply px-3 py-1 text-[11.5px];
+  }
+
+  .filter-pill--warning {
+    @apply inline-flex items-center gap-1.5;
+  }
+
+  .filter-pill--warning[aria-pressed='true'] {
+    @apply border-warning bg-warning-soft text-warning;
   }
 
   .empty-state {

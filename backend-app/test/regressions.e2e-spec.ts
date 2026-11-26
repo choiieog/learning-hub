@@ -191,6 +191,23 @@ describe('Hồi quy 5 lỗi đã sửa (e2e)', () => {
     });
     documentIds.push(document.id);
 
+    // Admin phải thấy tài liệu PENDING thì mới không hiện nút xoá;
+    // bộ lọc công khai vẫn chỉ đếm tài liệu đã duyệt.
+    const adminList = await server()
+      .get('/api/admin/subjects')
+      .set(bearer(adminToken))
+      .expect(200);
+    const adminSubject = (
+      adminList.body as Envelope<{ id: string; documentCount: number }[]>
+    ).data.find((item) => item.id === subject.id);
+    expect(adminSubject?.documentCount).toBe(1);
+
+    const publicList = await server().get('/api/subjects').set(bearer(adminToken)).expect(200);
+    const publicSubject = (
+      publicList.body as Envelope<{ id: string; documentCount: number }[]>
+    ).data.find((item) => item.id === subject.id);
+    expect(publicSubject?.documentCount).toBe(0);
+
     await server()
       .delete(`/api/admin/subjects/${subject.id}`)
       .set(bearer(adminToken))

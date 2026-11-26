@@ -73,10 +73,10 @@ Mặc định `MAIL_DRIVER=console` nên link xác thực email được **in ra
 
 Workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) chạy khi push vào `main` và với mọi pull request:
 
-- **Backend** (service Postgres 16): `npm ci` → `prisma generate` → `prisma migrate deploy` trên DB trống → `tsc --noEmit` → `oxlint` → `nest build` → unit test → e2e.
+- **Backend** (service Postgres 16): `npm ci` → `prisma generate` → `tsc --noEmit` → `oxlint` → `nest build` → unit test → e2e. E2E tự tạo/reset database test và chạy migrations.
 - **Frontend**: `npm ci` → `ng build` (production).
 
-Chạy lại cục bộ: `cd backend-app && npm run lint && npm test && npm run test:e2e` — e2e cần `DATABASE_URL` trỏ tới PostgreSQL đã chạy `prisma migrate deploy`.
+Chạy lại cục bộ: `cd backend-app && npm run lint && npm test && npm run test:e2e` — `test:e2e` tự tạo/reset database `<tên database trong DATABASE_URL>_test` (hoặc `E2E_DATABASE_URL`) và chạy migrations trước suite; cần quyền tạo database.
 
 Nên bật branch protection cho `main` (bắt buộc pull request + hai check trên phải xanh trước khi merge):
 GitHub → Settings → Branches → Add branch protection rule, chọn `main` và `Require status checks to pass`

@@ -1,14 +1,9 @@
-<div class="flex flex-wrap items-end justify-between gap-3">
-  <div>
-    <h1 class="page-title">Đăng tài liệu</h1>
-    <p class="mt-1 text-sm text-muted">
-      Tài liệu sẽ được admin duyệt trước khi hiển thị với mọi người.
-    </p>
-  </div>
-  <a routerLink="/documents" class="text-sm font-medium text-muted hover:text-tide">
-    ← Về danh sách
-  </a>
-</div>
+<header class="page-head">
+  <h1 class="page-title">Đăng tài liệu</h1>
+  <p class="page-subtitle">
+    Tài liệu sẽ được admin duyệt trước khi hiển thị với mọi người.
+  </p>
+</header>
 
 @if (errors().length > 0) {
   <div class="alert alert-error mt-5" role="alert">

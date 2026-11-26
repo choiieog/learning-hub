@@ -58,6 +58,19 @@ export class AdminUsers implements OnInit {
     reason: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
   });
 
+  protected readonly roleOptions = [
+    { value: '', label: 'Tất cả' },
+    { value: 'USER', label: 'Sinh viên' },
+    { value: 'ADMIN', label: 'Quản trị' },
+  ];
+
+  protected readonly statusOptions = [
+    { value: '', label: 'Tất cả' },
+    { value: 'ACTIVE', label: 'Hoạt động' },
+    { value: 'WARNED', label: 'Đã cảnh báo' },
+    { value: 'BANNED', label: 'Bị khoá' },
+  ];
+
   /**
    * URL là nguồn sự thật của bộ lọc: F5, Back hay gửi link cho đồng nghiệp đều
    * giữ đúng keyword/role/status/warnedOnly/page.
@@ -84,7 +97,7 @@ export class AdminUsers implements OnInit {
   }
 
   protected statusBadgeClass(status: string): string {
-    const base = 'shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold';
+    const base = 'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold';
 
     if (status === 'BANNED') {
       return `${base} bg-danger-soft text-danger`;
@@ -100,6 +113,31 @@ export class AdminUsers implements OnInit {
   protected applyFilters(): void {
     this.success.set(null);
     this.writeUrl(1);
+  }
+
+  protected setRole(role: string): void {
+    this.filters.controls.role.setValue(role);
+    this.applyFilters();
+  }
+
+  protected setStatus(status: string): void {
+    this.filters.controls.status.setValue(status);
+    this.applyFilters();
+  }
+
+  protected toggleWarnedOnly(): void {
+    this.filters.controls.warnedOnly.setValue(!this.filters.controls.warnedOnly.value);
+    this.applyFilters();
+  }
+
+  protected hasActiveFilters(): boolean {
+    const { keyword, role, status, warnedOnly } = this.filters.getRawValue();
+    return Boolean(keyword.trim() || role || status || warnedOnly);
+  }
+
+  protected clearFilters(): void {
+    this.filters.reset({ keyword: '', role: '', status: '', warnedOnly: false });
+    this.applyFilters();
   }
 
   protected goToPage(page: number): void {
@@ -215,6 +253,17 @@ export class AdminUsers implements OnInit {
           this.items.set(result.items);
           this.meta.set(result.meta);
           this.loading.set(false);
+
+          const current = this.selected();
+          const stillVisible = current && result.items.some((item) => item.id === current.id);
+          if (!stillVisible) {
+            const first = result.items[0];
+            if (first) {
+              this.selectUser(first.id);
+            } else {
+              this.selected.set(null);
+            }
+          }
         },
         error: (error: unknown) => {
           this.errors.set(getApiErrorMessages(error));

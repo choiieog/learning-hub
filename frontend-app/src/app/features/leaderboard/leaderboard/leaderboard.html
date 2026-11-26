@@ -1,11 +1,12 @@
-<div class="flex flex-wrap items-end justify-between gap-4">
-  <div>
-    <h1 class="page-title">Bảng xếp hạng</h1>
-    <p class="mt-1 text-sm text-muted">
-      Điểm EXP đến từ việc chia sẻ tài liệu và nhận tương tác từ cộng đồng.
-    </p>
-  </div>
-  <a routerLink="/upload" class="btn-primary w-auto">Đăng tài liệu</a>
+<header class="page-head">
+  <h1 class="page-title">Bảng xếp hạng</h1>
+  <p class="page-subtitle">
+    Điểm EXP đến từ việc chia sẻ tài liệu và nhận tương tác từ cộng đồng.
+  </p>
+</header>
+
+<div class="page-toolbar">
+  <a routerLink="/upload" class="btn-primary">Đăng tài liệu</a>
 </div>
 
 @if (errors().length > 0) {
