@@ -14,14 +14,21 @@ import { AdminOverview } from '../../../core/models';
 import { AdminService } from '../../../core/services/admin.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
 
-type HealthTone = 'success' | 'warning' | 'danger';
-
-interface HealthRow {
+interface DashboardStat {
   label: string;
   value: number;
-  percent: number;
-  tone: HealthTone;
-  note: string;
+  hint: string;
+  link: string;
+  tone?: 'warning';
+}
+
+interface DocumentHealth {
+  total: number;
+  approved: number;
+  pending: number;
+  approvedPercent: number;
+  pendingPercent: number;
+  approvalRate: number;
 }
 
 /**
@@ -47,46 +54,56 @@ export class AdminDashboard implements OnInit {
   protected readonly errors = signal<string[]>([]);
   protected readonly overview = signal<AdminOverview | null>(null);
 
-  /** Tỉ lệ sức khoẻ thư viện — tính từ số đếm thật, không phải mẫu số cố định. */
-  protected readonly health = computed<HealthRow[]>(() => {
+  protected readonly stats = computed<DashboardStat[]>(() => {
     const data = this.overview();
     if (!data) {
       return [];
     }
 
-    const share = (value: number, total: number): number =>
-      total > 0 ? Math.round((value / total) * 100) : 0;
-
     return [
       {
-        label: 'Tài liệu đã duyệt',
-        value: data.documents.approved,
-        percent: share(data.documents.approved, data.documents.total),
-        tone: 'success',
-        note: `${data.documents.total} tài liệu trong thư viện`,
+        label: 'Người dùng',
+        value: data.users.total,
+        hint: `+${data.users.newIn7Days} trong 7 ngày`,
+        link: '/admin/users',
       },
       {
-        label: 'Đang chờ duyệt',
+        label: 'Tài liệu',
+        value: data.documents.total,
+        hint: `${data.documents.approved} tài liệu đã duyệt`,
+        link: '/admin/documents',
+      },
+      {
+        label: 'Chờ duyệt',
         value: data.documents.pending,
-        percent: share(data.documents.pending, data.documents.total),
+        hint: data.documents.pending > 0 ? 'Cần xử lý để hiển thị công khai' : 'Hàng chờ đang trống',
+        link: '/admin/documents',
         tone: 'warning',
-        note: 'Cần xử lý để hiển thị công khai',
       },
       {
-        label: 'Tài khoản bị cảnh báo',
-        value: data.users.warned,
-        percent: share(data.users.warned, data.users.total),
-        tone: 'danger',
-        note: `${data.users.total} tài khoản`,
-      },
-      {
-        label: 'Tài khoản bị khoá',
-        value: data.users.banned,
-        percent: share(data.users.banned, data.users.total),
-        tone: 'danger',
-        note: `${data.users.newIn7Days} tài khoản mới trong 7 ngày`,
+        label: 'Lượt xem',
+        value: data.views.total,
+        hint: `${data.views.in7Days} lượt trong 7 ngày`,
+        link: '/admin/documents',
       },
     ];
+  });
+
+  /** Tỉ lệ duyệt thật của toàn thư viện, dùng cho gauge. */
+  protected readonly documentHealth = computed<DocumentHealth>(() => {
+    const data = this.overview();
+    const total = data?.documents.total ?? 0;
+    const approved = data?.documents.approved ?? 0;
+    const pending = data?.documents.pending ?? 0;
+
+    return {
+      total,
+      approved,
+      pending,
+      approvedPercent: total > 0 ? (approved / total) * 100 : 0,
+      pendingPercent: total > 0 ? (pending / total) * 100 : 0,
+      approvalRate: total > 0 ? Math.round((approved / total) * 100) : 0,
+    };
   });
 
   private readonly maxViews = computed(() => {

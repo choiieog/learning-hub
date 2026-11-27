@@ -1,7 +1,7 @@
 <div class="relative">
   <button
     type="button"
-    class="ml-1 flex items-center gap-2.5 rounded-lg py-1 pl-2 pr-2 transition hover:bg-wash"
+    class="account-menu-trigger"
     [attr.aria-expanded]="open()"
     aria-haspopup="menu"
     aria-label="Tài khoản"
@@ -21,10 +21,12 @@
       }
     </span>
     <span class="hidden min-w-0 xl:block">
-      <span class="block max-w-[170px] truncate text-[14px] font-medium leading-5 text-ink">
+      <span class="block max-w-[160px] truncate text-[13px] font-medium leading-5 text-ink">
         {{ user()?.fullName }}
       </span>
-      <span class="mt-0.5 block text-[12.5px] leading-4 text-muted">{{ roleLabel() }}</span>
+      <span class="mt-0.5 block max-w-[160px] truncate text-[11px] leading-4 text-muted">
+        {{ user()?.email }}
+      </span>
     </span>
     <svg viewBox="0 0 20 20" fill="none" class="hidden h-4 w-4 shrink-0 text-muted xl:block" aria-hidden="true">
       <path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
@@ -33,10 +35,13 @@
 
   @if (open()) {
     <div class="fixed inset-0 z-30" (click)="close()" aria-hidden="true"></div>
-    <div class="absolute right-0 top-full z-40 mt-2 w-64 overflow-hidden rounded-2xl border border-line bg-white shadow-[0_12px_16px_-4px_rgba(14,42,50,0.08),0_4px_6px_-2px_rgba(14,42,50,0.03)]">
+    <div class="account-menu-panel absolute right-0 top-full z-40 mt-3 w-[272px] overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_18px_40px_-18px_rgba(14,42,50,0.35)]">
       <div class="border-b border-line-soft px-4 py-3">
         <p class="truncate text-[13px] font-semibold text-ink">{{ user()?.fullName }}</p>
         <p class="mt-0.5 truncate text-[11px] text-muted">{{ user()?.email }}</p>
+        <p class="mt-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-tide">
+          {{ roleLabel() }}
+        </p>
       </div>
 
       <a

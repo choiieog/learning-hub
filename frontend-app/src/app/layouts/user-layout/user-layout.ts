@@ -3,42 +3,22 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  computed,
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import {
-  NavigationEnd,
-  Router,
-  RouterLink,
-  RouterLinkActive,
-  RouterOutlet,
-} from '@angular/router';
-import { filter, map } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppNotification } from '../../core/models';
 import { AccountMenu } from '../account-menu/account-menu';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationStateService } from '../../core/services/notification-state.service';
 import { NotificationService } from '../../core/services/notification.service';
 
-interface Crumb {
-  label: string;
-  link?: string;
-}
-
-const PAGE_TITLES: Record<string, string> = {
-  '/dashboard': 'Tổng quan',
-  '/documents': 'Thư viện tài liệu',
-  '/upload': 'Đăng tài liệu',
-  '/my-documents': 'Đã chia sẻ',
-  '/leaderboard': 'Bảng xếp hạng',
-  '/notifications': 'Thông báo',
-  '/profile/password': 'Đổi mật khẩu',
-  '/profile': 'Hồ sơ cá nhân',
-};
-
-/** Khung giao diện cho sinh viên: rail cố định + header (breadcrumb, chuông thông báo, tài khoản). */
+/**
+ * Khung giao diện cho sinh viên: rail cố định + header (tìm kiếm, chuông thông báo, tài khoản).
+ *
+ * Topbar tìm kiếm toàn cục: nhập từ khoá rồi Enter sẽ mở thư viện với bộ lọc `keyword`.
+ */
 @Component({
   selector: 'app-user-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,55 +33,6 @@ export class UserLayout {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly currentUrl = toSignal(
-    this.router.events.pipe(
-      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-      map(() => this.router.url),
-    ),
-    { initialValue: this.router.url },
-  );
-
-  protected readonly pageTitle = computed(() => {
-    const path = this.currentUrl().split('?')[0].split('#')[0];
-    const match = Object.keys(PAGE_TITLES)
-      .sort((a, b) => b.length - a.length)
-      .find((route) => path === route || path.startsWith(`${route}/`));
-
-    return match ? PAGE_TITLES[match] : 'Tổng quan';
-  });
-
-  /**
-   * Breadcrumb dạng liên kết: "Trang chủ" luôn về tổng quan; các mục giữa như thư viện
-   * hay chi tiết tài liệu bấm được để quay lại đúng trang đó.
-   */
-  protected readonly trail = computed<Crumb[]>(() => {
-    const [path, query = ''] = this.currentUrl().split('?');
-    const trail: Crumb[] = [{ label: 'Trang chủ', link: '/dashboard' }];
-
-    if (path.startsWith('/documents/')) {
-      return [
-        ...trail,
-        { label: 'Thư viện tài liệu', link: '/documents' },
-        { label: 'Chi tiết tài liệu' },
-      ];
-    }
-
-    if (path === '/viewer') {
-      trail.push({ label: 'Thư viện tài liệu', link: '/documents' });
-
-      const documentId = new URLSearchParams(query).get('doc');
-      if (documentId) {
-        trail.push({ label: 'Chi tiết tài liệu', link: `/documents/${documentId}` });
-      }
-
-      trail.push({ label: 'Xem tệp' });
-      return trail;
-    }
-
-    trail.push({ label: this.pageTitle() });
-    return trail;
-  });
-
   protected readonly panelOpen = signal(false);
   protected readonly notifications = signal<AppNotification[]>([]);
   /** Dùng chung với trang /notifications để badge đổi ngay khi đọc tin ở đó. */
@@ -110,6 +41,17 @@ export class UserLayout {
 
   constructor() {
     this.load();
+  }
+
+  protected search(term: string, event: Event): void {
+    event.preventDefault();
+    const keyword = term.trim();
+
+    if (!keyword) {
+      return;
+    }
+
+    void this.router.navigate(['/documents'], { queryParams: { keyword } });
   }
 
   protected togglePanel(): void {

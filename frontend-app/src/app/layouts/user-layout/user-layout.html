@@ -2,14 +2,11 @@
   <div class="app-shell">
     <aside class="rail">
       <div class="rail-head">
-        <a routerLink="/dashboard" class="flex min-w-0 items-center gap-2.5" aria-label="Learning Hub">
+        <a routerLink="/dashboard" class="flex min-w-0 items-center gap-2" aria-label="Learning Hub">
           <span class="rail-mark">LH</span>
           <span class="rail-wordmark truncate">Learning Hub</span>
         </a>
-
       </div>
-
-      <div class="rail-sep"></div>
 
       <nav class="rail-scroll" aria-label="Điều hướng sinh viên">
         <div class="rail-group">
@@ -119,33 +116,42 @@
         </div>
       </nav>
 
+      <div class="rail-foot">
+        <div class="rail-card">
+          <span class="rail-card__eyebrow">Góc học tập</span>
+          <p class="rail-card__title">Mọi tài liệu,<br />một thư viện.</p>
+          <p class="rail-card__text">Tài liệu được kiểm duyệt trước khi hiển thị.</p>
+          <a routerLink="/notifications" class="rail-card__action">
+            {{ unreadCount() > 0 ? unreadCount() + ' thông báo mới' : 'Mở thông báo' }}
+            <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+              <path d="M4 10h12m-4.5-4.5L16 10l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+        </div>
+      </div>
     </aside>
 
-    <div class="flex min-w-0 flex-col">
+    <div class="app-workspace">
       <header class="topbar">
-        <div class="flex min-w-0 items-center gap-3">
-          <nav class="flex min-w-0 items-center gap-2" aria-label="Breadcrumb">
-            @for (crumb of trail(); track $index; let last = $last) {
-              @if (!$first) {
-                <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5 shrink-0 text-mist" aria-hidden="true">
-                  <path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              }
-              @if (crumb.link && !last) {
-                <a [routerLink]="crumb.link" class="crumb">{{ crumb.label }}</a>
-              } @else {
-                <span class="crumb is-current" [attr.aria-current]="last ? 'page' : null">{{ crumb.label }}</span>
-              }
-            }
-          </nav>
-        </div>
+        <form class="topbar-search" role="search" (submit)="search(searchInput.value, $event)">
+          <label class="sr-only" for="student-global-search">Tìm tài liệu, môn học</label>
+          <svg viewBox="0 0 20 20" fill="currentColor" class="topbar-search__icon" aria-hidden="true">
+            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 3.4 9.8l3.15 3.15a.75.75 0 1 0 1.06-1.06l-3.15-3.15A5.5 5.5 0 0 0 9 3.5ZM5 9a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z" clip-rule="evenodd" />
+          </svg>
+          <input
+            #searchInput
+            id="student-global-search"
+            type="search"
+            name="q"
+            autocomplete="off"
+            placeholder="Tìm tài liệu, môn học..."
+            aria-label="Tìm tài liệu, môn học"
+          />
+        </form>
 
-        <div class="flex items-center gap-2">
+        <div class="topbar-actions">
           @if (auth.isAdmin()) {
-            <a
-              routerLink="/admin/dashboard"
-              class="rounded-full border border-line px-3.5 py-1.5 text-[11px] font-semibold text-ink-soft transition hover:border-mist hover:bg-wash"
-            >
+            <a routerLink="/admin/dashboard" class="topbar-admin-link">
               Quản trị
             </a>
           }
@@ -172,7 +178,7 @@
 
             @if (panelOpen()) {
               <div class="fixed inset-0 z-30" (click)="panelOpen.set(false)" aria-hidden="true"></div>
-              <div class="absolute right-0 top-full z-40 mt-2 w-[360px] overflow-hidden rounded-2xl border border-line bg-white shadow-[0_12px_16px_-4px_rgba(14,42,50,0.08),0_4px_6px_-2px_rgba(14,42,50,0.03)]">
+              <div class="topbar-popover absolute right-0 top-full z-40 mt-3 w-[360px] overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_18px_40px_-18px_rgba(14,42,50,0.35)]">
                 <div class="flex items-center justify-between gap-2 border-b border-line-soft px-4 py-3">
                   <p class="text-sm font-semibold text-ink">Thông báo</p>
                   @if (unreadCount() > 0) {
@@ -235,7 +241,7 @@
         </div>
       </header>
 
-      <main class="app-scrollbar min-w-0 flex-1 px-6 py-6">
+      <main class="app-scrollbar app-main min-w-0 flex-1">
         <router-outlet />
       </main>
     </div>

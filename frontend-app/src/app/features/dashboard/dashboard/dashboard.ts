@@ -21,60 +21,35 @@ interface Kpi {
   label: string;
   value: number;
   hint: string;
-  link?: string;
+  link: string;
   queryParams?: Record<string, string>;
+  tone?: 'warning';
 }
 
-interface TrendPoint {
-  x: number;
-  y: number;
+interface TrendBar {
+  key: string;
   label: string;
+  dateLabel: string;
   count: number;
+  height: number;
+  peak: boolean;
 }
 
 interface TrendChart {
-  line: string;
-  area: string;
-  points: TrendPoint[];
-  ticks: { y: number; label: string }[];
+  bars: TrendBar[];
   empty: boolean;
 }
 
-/* Khung vẽ của chart: rộng 1000, cao 260, chừa 44px trục Y và 28px nhãn ngày. */
-const CHART_WIDTH = 1000;
-const CHART_HEIGHT = 260;
-const CHART_LEFT = 44;
-const CHART_RIGHT = 16;
-const CHART_TOP = 12;
-const CHART_BOTTOM = 28;
-
-/** Nối các điểm bằng đường cong Catmull-Rom đổi sang Bezier để chart mềm như mẫu. */
-function smoothPath(points: TrendPoint[]): string {
-  if (points.length === 0) {
-    return '';
-  }
-
-  if (points.length < 3) {
-    return points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`).join(' ');
-  }
-
-  let path = `M${points[0].x} ${points[0].y}`;
-
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const before = points[index - 1] ?? points[index];
-    const current = points[index];
-    const next = points[index + 1];
-    const after = points[index + 2] ?? next;
-    const c1x = current.x + (next.x - before.x) / 6;
-    const c1y = current.y + (next.y - before.y) / 6;
-    const c2x = next.x - (after.x - current.x) / 6;
-    const c2y = next.y - (after.y - current.y) / 6;
-
-    path += ` C${c1x} ${c1y}, ${c2x} ${c2y}, ${next.x} ${next.y}`;
-  }
-
-  return path;
+interface LibraryHealth {
+  total: number;
+  approved: number;
+  pending: number;
+  approvedPercent: number;
+  pendingPercent: number;
+  approvalRate: number;
 }
+
+const WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
 /**
  * Trang tổng quan sinh viên.
@@ -123,7 +98,7 @@ export class Dashboard implements OnInit {
       {
         label: 'Tổng tài liệu',
         value: stats?.totalDocuments ?? 0,
-        hint: 'Xem tài liệu đã chia sẻ',
+        hint: `${stats?.approved ?? 0} đã duyệt · ${stats?.pending ?? 0} chờ duyệt`,
         link: '/my-documents',
       },
       {
@@ -136,14 +111,16 @@ export class Dashboard implements OnInit {
       {
         label: 'Chờ duyệt',
         value: stats?.pending ?? 0,
-        hint: 'Chờ admin xử lý',
+        hint: 'Cần admin xử lý',
         link: '/my-documents',
         queryParams: { status: 'PENDING' },
+        tone: 'warning',
       },
       {
         label: 'Lượt xem',
         value: stats?.totalViews ?? 0,
         hint: `${stats?.viewsLast7Days ?? 0} lượt trong 7 ngày`,
+        link: '/documents',
       },
     ];
   });
@@ -152,37 +129,43 @@ export class Dashboard implements OnInit {
   protected readonly chart = computed<TrendChart>(() => {
     const trend = this.overview()?.viewTrend ?? [];
     const counts = trend.map((point) => point.count);
-    const step = Math.max(1, Math.ceil(Math.max(1, ...counts) / 4));
-    const max = step * 4;
-    const innerWidth = CHART_WIDTH - CHART_LEFT - CHART_RIGHT;
-    const innerHeight = CHART_HEIGHT - CHART_TOP - CHART_BOTTOM;
-    const baseline = CHART_TOP + innerHeight;
-
-    const points: TrendPoint[] = trend.map((point, index) => ({
-      x:
-        trend.length === 1
-          ? CHART_LEFT + innerWidth / 2
-          : CHART_LEFT + (index * innerWidth) / (trend.length - 1),
-      y: baseline - (point.count / max) * innerHeight,
-      label: `${point.day.slice(8, 10)}/${point.day.slice(5, 7)}`,
-      count: point.count,
-    }));
-
-    const line = smoothPath(points);
-    const area =
-      points.length > 0
-        ? `${line} L${points[points.length - 1].x} ${baseline} L${points[0].x} ${baseline} Z`
-        : '';
+    const max = Math.max(1, ...counts);
+    const empty = counts.every((count) => count === 0);
 
     return {
-      line,
-      area,
-      points,
-      ticks: Array.from({ length: 5 }, (_, index) => ({
-        y: CHART_TOP + (innerHeight / 4) * index,
-        label: String(max - step * index),
-      })),
-      empty: counts.every((count) => count === 0),
+      empty,
+      bars: trend.map((point) => {
+        const date = new Date(`${point.day}T00:00:00`);
+        const dateLabel = Number.isNaN(date.getTime())
+          ? point.day.slice(5)
+          : `${point.day.slice(8, 10)}/${point.day.slice(5, 7)}`;
+
+        return {
+          key: point.day,
+          label: Number.isNaN(date.getTime()) ? '—' : (WEEKDAYS[date.getDay()] ?? '—'),
+          dateLabel,
+          count: point.count,
+          height: empty ? 0 : Math.max(4, Math.round((point.count / max) * 100)),
+          peak: !empty && point.count === max,
+        };
+      }),
+    };
+  });
+
+  /** Tỉ lệ duyệt thật của thư viện cá nhân, dùng cho gauge. */
+  protected readonly health = computed<LibraryHealth>(() => {
+    const stats = this.overview()?.stats;
+    const total = stats?.totalDocuments ?? 0;
+    const approved = stats?.approved ?? 0;
+    const pending = stats?.pending ?? 0;
+
+    return {
+      total,
+      approved,
+      pending,
+      approvedPercent: total > 0 ? (approved / total) * 100 : 0,
+      pendingPercent: total > 0 ? (pending / total) * 100 : 0,
+      approvalRate: total > 0 ? Math.round((approved / total) * 100) : 0,
     };
   });
 
