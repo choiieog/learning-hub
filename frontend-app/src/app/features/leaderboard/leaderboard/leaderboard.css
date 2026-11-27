@@ -1,1 +1,201 @@
-/* Tailwind-first component; add component-scoped styles below when needed. */
+/* Trang bảng xếp hạng dùng chung nhịp chuyển động với tổng quan; các thanh
+   tiến độ lớn dần từ trái sang như biểu đồ ở dashboard. */
+.page-head {
+  animation: board-head-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 20ms backwards;
+}
+
+.page-toolbar {
+  animation: board-controls-in 440ms cubic-bezier(0.22, 1, 0.36, 1) 60ms backwards;
+}
+
+.board-me {
+  animation: board-card-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 80ms backwards;
+}
+
+.board-card {
+  animation: board-card-in 480ms cubic-bezier(0.22, 1, 0.36, 1) 120ms backwards;
+}
+
+.board-bar {
+  transform-origin: left center;
+  animation: board-bar-grow 560ms cubic-bezier(0.22, 1, 0.36, 1) 200ms backwards;
+}
+
+.board-row {
+  animation: board-row-in 380ms cubic-bezier(0.22, 1, 0.36, 1) 160ms backwards;
+}
+
+.board-row:nth-child(2) {
+  animation-delay: 200ms;
+}
+
+.board-row:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+.board-row:nth-child(4) {
+  animation-delay: 280ms;
+}
+
+.board-row:nth-child(5) {
+  animation-delay: 320ms;
+}
+
+.board-row:nth-child(6) {
+  animation-delay: 360ms;
+}
+
+.board-row:nth-child(n + 7) {
+  animation-delay: 400ms;
+}
+
+/* Footer phân trang cùng kiểu với thư viện và trang thông báo. */
+.board-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  border-top: 1px solid var(--color-line-soft);
+  padding: 14px 20px 16px;
+  animation: board-controls-in 440ms cubic-bezier(0.22, 1, 0.36, 1) 240ms backwards;
+}
+
+.board-pagination__summary,
+.board-pagination__page {
+  color: var(--color-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.board-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.board-pagination__page {
+  margin-right: 7px;
+}
+
+.board-page-btn {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.board-page-btn:hover:not(:disabled) {
+  border-color: var(--color-mist);
+  background: var(--color-wash);
+  color: var(--color-ink);
+}
+
+.board-page-btn.is-active {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+.board-page-btn:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-line-soft);
+  color: var(--color-mist);
+}
+
+.board-tips {
+  animation: board-card-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 200ms backwards;
+}
+
+.board-tips li {
+  animation: board-row-in 340ms cubic-bezier(0.22, 1, 0.36, 1) 240ms backwards;
+}
+
+.board-tips li:nth-child(2) {
+  animation-delay: 280ms;
+}
+
+.board-tips li:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+@keyframes board-head-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes board-controls-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes board-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes board-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes board-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-head,
+  .page-toolbar,
+  .board-me,
+  .board-card,
+  .board-bar,
+      .board-row,
+    .board-pagination,
+    .board-tips,
+    .board-tips li {
+    animation: none;
+  }
+}

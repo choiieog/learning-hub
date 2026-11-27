@@ -25,4 +25,8 @@ export class NotificationStateService {
   markAllRead(): Observable<unknown> {
     return this.api.markAllRead().pipe(tap(() => this.count.set(0)));
   }
+
+  removeAll(): Observable<unknown> {
+    return this.api.removeAll().pipe(tap(() => this.count.set(0)));
+  }
 }

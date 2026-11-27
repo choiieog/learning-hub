@@ -5,31 +5,64 @@
   </p>
 </header>
 
-<div class="page-toolbar">
-  <label class="flex items-center gap-2 text-sm text-ink-soft">
-    <input
-      type="checkbox"
-      class="h-4 w-4 rounded border-line text-tide focus:ring-tide"
-      [checked]="unreadOnly()"
-      (change)="toggleUnreadOnly($event)"
-    />
-    Chỉ chưa đọc
-  </label>
-  <button
-    type="button"
-    class="btn-secondary"
-    [disabled]="unreadCount() === 0 || markingAll()"
-    (click)="markAllRead()"
-  >
-    {{ markingAll() ? 'Đang xử lý...' : 'Đọc tất cả' }}
-  </button>
-  <p class="page-toolbar-note">
-    {{ unreadCount() }} chưa đọc · {{ meta().total }} thông báo
-  </p>
+<div class="notification-toolbar">
+  <div class="filter-pills" role="group" aria-label="Lọc thông báo">
+    <button
+      type="button"
+      class="filter-pill inline-flex items-center gap-1.5"
+      [attr.aria-pressed]="unreadOnly()"
+      (click)="toggleUnreadOnly()"
+    >
+      Chưa đọc
+      @if (unreadCount() > 0) {
+        <span class="notification-count">{{ unreadCount() }}</span>
+      }
+    </button>
+  </div>
+
+  <div class="notification-toolbar__actions">
+    <p class="notification-note">{{ unreadCount() }} chưa đọc · {{ meta().total }} thông báo</p>
+
+    <button
+      type="button"
+      class="btn-secondary notification-action"
+      [disabled]="unreadCount() === 0 || markingAll() || clearingAll()"
+      (click)="markAllRead()"
+    >
+      <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+        <path
+          d="m4 10.5 3.6 3.6L16 5.7"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+      {{ markingAll() ? 'Đang xử lý…' : 'Đọc tất cả' }}
+    </button>
+
+    <button
+      type="button"
+      class="notification-action notification-action--danger"
+      [disabled]="meta().total === 0 || clearingAll() || markingAll()"
+      (click)="clearAll()"
+    >
+      <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+        <path
+          d="M4 5.8h12M8 5.8V4.3h4v1.5m-6.4 0 .55 9.1a1.5 1.5 0 0 0 1.5 1.4h4.7a1.5 1.5 0 0 0 1.5-1.4l.55-9.1"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+      {{ clearingAll() ? 'Đang xoá…' : 'Xoá tất cả' }}
+    </button>
+  </div>
 </div>
 
 @if (errors().length > 0) {
-  <div class="alert alert-error mt-6" role="alert">
+  <div class="alert alert-error mt-5" role="alert">
     @for (error of errors(); track error) {
       <p>{{ error }}</p>
     }
@@ -37,46 +70,84 @@
 }
 
 @if (loading()) {
-  <div class="mt-6 space-y-3" aria-busy="true">
+  <div class="mt-5 space-y-3" aria-busy="true">
     @for (placeholder of [1, 2, 3, 4]; track placeholder) {
-      <div class="animate-pulse panel p-4">
-        <div class="h-4 w-1/3 rounded bg-mist"></div>
-        <div class="mt-2 h-3 w-2/3 rounded bg-foam"></div>
+      <div class="animate-pulse panel flex items-start gap-3 p-4">
+        <div class="h-9 w-9 shrink-0 rounded-xl bg-foam"></div>
+        <div class="flex-1">
+          <div class="h-4 w-1/3 rounded bg-mist"></div>
+          <div class="mt-2 h-3 w-2/3 rounded bg-foam"></div>
+        </div>
       </div>
     }
   </div>
 } @else if (items().length === 0) {
-  <div class="mt-6 rounded-xl border border-dashed border-line bg-white p-12 text-center">
-    <p class="text-sm font-medium text-ink-soft">
+  <div class="empty-state mt-5">
+    <svg viewBox="0 0 24 24" fill="none" class="mx-auto h-10 w-10 text-mist" aria-hidden="true">
+      <path
+        d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 4 1.5 5.5 1.5 5.5H5s1.5-1.5 1.5-5.5Z"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M9.8 18a2.4 2.4 0 0 0 4.4 0"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linecap="round"
+      />
+    </svg>
+    <p class="mt-3 text-sm font-medium text-ink-soft">
       {{ unreadOnly() ? 'Không còn thông báo chưa đọc' : 'Chưa có thông báo nào' }}
     </p>
     <p class="mt-1 text-sm text-muted">
       Khi quản trị viên duyệt, từ chối hoặc xoá bài của bạn, thông báo sẽ xuất hiện ở đây.
     </p>
+    @if (unreadOnly()) {
+      <button type="button" class="btn-secondary mt-4" (click)="toggleUnreadOnly()">
+        Xem tất cả thông báo
+      </button>
+    }
   </div>
 } @else {
-  <ul class="mt-6 divide-y divide-line-soft panel">
+  <ul class="notification-list mt-5 panel">
     @for (item of items(); track item.id) {
-      <li class="flex items-start">
+      <li class="notification-item flex items-start">
         <button
           type="button"
-          class="flex w-full items-start gap-3 px-4 py-4 text-left transition hover:bg-wash"
-          [class]="item.readAt ? '' : 'bg-foam/40'"
+          class="notification-item__main"
+          [class.is-unread]="!item.readAt"
           (click)="open(item)"
         >
-          <span
-            class="mt-1.5 h-2 w-2 shrink-0 rounded-full"
-            [class]="item.readAt ? 'bg-transparent' : 'bg-tide'"
-            [attr.aria-label]="item.readAt ? null : 'Chưa đọc'"
-          ></span>
+          <span class="notification-item__icon" [class.is-unread]="!item.readAt" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" class="h-4 w-4">
+              <path
+                d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 4 1.5 5.5 1.5 5.5H5s1.5-1.5 1.5-5.5Z"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M9.8 18a2.4 2.4 0 0 0 4.4 0"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
 
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-ink">{{ item.title }}</p>
-            <p class="mt-1 text-sm leading-relaxed text-ink-soft">{{ item.message }}</p>
-            <p class="mt-2 text-xs text-muted">
+          <span class="notification-item__body">
+            <span class="notification-item__title">
+              {{ item.title }}
+              @if (!item.readAt) {
+                <span class="notification-item__new">Mới</span>
+              }
+            </span>
+            <span class="notification-item__message">{{ item.message }}</span>
+            <span class="notification-item__time">
               {{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}
-            </p>
-          </div>
+            </span>
+          </span>
         </button>
 
         <!--
@@ -85,52 +156,61 @@
         -->
         <button
           type="button"
-          class="mr-3 shrink-0 self-center rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-muted transition hover:border-danger-line hover:text-danger"
+          class="notification-item__close"
           [attr.aria-label]="(item.userId ? 'Xoá thông báo: ' : 'Ẩn thông báo: ') + item.title"
+          [attr.title]="item.userId ? 'Xoá thông báo' : 'Ẩn thông báo'"
           (click)="remove(item)"
         >
-          {{ item.userId ? 'Xoá' : 'Ẩn' }}
+          <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+            <path
+              d="m5.5 5.5 9 9m0-9-9 9"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
         </button>
       </li>
     }
   </ul>
 }
 
-@if (meta().totalPages > 1) {
-  <nav class="mt-8 flex items-center justify-center gap-1" aria-label="Phân trang thông báo">
-    <button
-      type="button"
-      class="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft transition hover:bg-wash disabled:cursor-not-allowed disabled:text-mist"
-      [disabled]="meta().page <= 1"
-      aria-label="Trang trước"
-      (click)="goToPage(meta().page - 1)"
-    >
-      ‹
-    </button>
+@if (meta().total > 0) {
+  <nav class="notification-pagination" aria-label="Phân trang thông báo">
+    <p class="notification-pagination__summary">Trang {{ meta().page }} / {{ meta().totalPages }}</p>
 
-    @for (page of pages(); track page) {
+    <div class="notification-pagination__controls">
       <button
         type="button"
-        [class]="
-          page === meta().page
-            ? 'rounded-lg border border-ink bg-ink px-3 py-1.5 text-sm font-semibold text-white'
-            : 'rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft transition hover:bg-wash'
-        "
-        [attr.aria-current]="page === meta().page ? 'page' : null"
-        (click)="goToPage(page)"
+        class="notification-page-btn"
+        [disabled]="meta().page <= 1"
+        aria-label="Trang trước"
+        (click)="goToPage(meta().page - 1)"
       >
-        {{ page }}
+        ‹
       </button>
-    }
 
-    <button
-      type="button"
-      class="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft transition hover:bg-wash disabled:cursor-not-allowed disabled:text-mist"
-      [disabled]="meta().page >= meta().totalPages"
-      aria-label="Trang sau"
-      (click)="goToPage(meta().page + 1)"
-    >
-      ›
-    </button>
+      @for (page of pages(); track page) {
+        <button
+          type="button"
+          class="notification-page-btn"
+          [class.is-active]="page === meta().page"
+          [attr.aria-current]="page === meta().page ? 'page' : null"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+      }
+
+      <button
+        type="button"
+        class="notification-page-btn"
+        [disabled]="meta().page >= meta().totalPages"
+        aria-label="Trang sau"
+        (click)="goToPage(meta().page + 1)"
+      >
+        ›
+      </button>
+    </div>
   </nav>
 }

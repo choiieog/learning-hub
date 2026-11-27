@@ -31,7 +31,7 @@
   </div>
 } @else if (data(); as board) {
   @if (board.me; as me) {
-    <section class="mt-6 rounded-xl border border-mist bg-white p-5">
+    <section class="board-me mt-6 rounded-xl border border-mist bg-white p-5">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
           @if (me.exp > 0) {
@@ -66,7 +66,10 @@
         aria-valuemax="100"
         [attr.aria-valuenow]="me.progressPercent"
       >
-        <div class="h-full rounded-full bg-tide" [style.width.%]="me.progressPercent"></div>
+        <div
+          class="board-bar h-full rounded-full bg-tide"
+          [style.width.%]="me.progressPercent"
+        ></div>
       </div>
       <p class="mt-2 text-xs text-muted">
         {{ me.levelExp }}/{{ me.levelStep }} EXP trong cấp hiện tại
@@ -74,15 +77,9 @@
     </section>
   }
 
-  <section class="mt-6 overflow-hidden panel">
+  <section class="board-card mt-6 overflow-hidden panel">
     <header class="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-5 py-4">
-      <h2 class="text-base font-semibold">
-        @if (board.items.length > 0) {
-          Top {{ board.items.length }} sinh viên
-        } @else {
-          Bảng xếp hạng
-        }
-      </h2>
+      <h2 class="text-base font-semibold">Bảng xếp hạng</h2>
       <span class="text-xs text-muted">{{ board.total }} sinh viên tham gia</span>
     </header>
 
@@ -97,7 +94,7 @@
       <ul class="divide-y divide-line-soft">
         @for (entry of board.items; track entry.id) {
           <li
-            class="flex items-center gap-3 px-5 py-3.5"
+            class="board-row flex items-center gap-3 px-5 py-3.5"
             [class]="entry.id === board.me?.id ? 'bg-foam/40' : ''"
           >
             <span [class]="rankClass(entry.rank)">{{ entry.rank }}</span>
@@ -135,7 +132,7 @@
             <div class="w-40 shrink-0 block">
               <div class="h-1.5 overflow-hidden rounded-full bg-foam">
                 <div
-                  class="h-full rounded-full bg-marine"
+                  class="board-bar h-full rounded-full bg-marine"
                   [style.width.%]="entry.progressPercent"
                 ></div>
               </div>
@@ -147,9 +144,55 @@
         }
       </ul>
     }
+
+    @if (board.meta.total > 0) {
+      <nav class="board-pagination" aria-label="Phân trang bảng xếp hạng">
+        <p class="board-pagination__summary">{{ rangeLabel() }}</p>
+
+        <div class="board-pagination__controls">
+          <span class="board-pagination__page">
+            Trang {{ board.meta.page }} / {{ board.meta.totalPages }}
+          </span>
+
+          @if (board.meta.totalPages > 1) {
+            <button
+              type="button"
+              class="board-page-btn"
+              [disabled]="board.meta.page <= 1"
+              aria-label="Trang trước"
+              (click)="goToPage(board.meta.page - 1)"
+            >
+              ‹
+            </button>
+
+            @for (page of pages(); track page) {
+              <button
+                type="button"
+                class="board-page-btn"
+                [class.is-active]="page === board.meta.page"
+                [attr.aria-current]="page === board.meta.page ? 'page' : null"
+                (click)="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+            }
+
+            <button
+              type="button"
+              class="board-page-btn"
+              [disabled]="board.meta.page >= board.meta.totalPages"
+              aria-label="Trang sau"
+              (click)="goToPage(board.meta.page + 1)"
+            >
+              ›
+            </button>
+          }
+        </div>
+      </nav>
+    }
   </section>
 
-  <section class="mt-6 panel p-5">
+  <section class="board-tips mt-6 panel p-5">
     <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">Cách kiếm EXP</h2>
     <ul class="mt-3 grid gap-3 text-sm text-ink-soft grid-cols-3">
       <li class="rounded-lg bg-wash px-4 py-3">

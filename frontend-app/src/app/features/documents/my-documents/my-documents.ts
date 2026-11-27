@@ -187,11 +187,12 @@ export class MyDocuments implements OnInit {
   }
 
   protected badgeClass(status: DocumentStatus): string {
-    if (status === 'APPROVED') {
-      return 'rounded-md bg-success-soft px-2 py-0.5 text-[11px] font-bold text-success';
-    }
+    const base =
+      'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10.5px] font-semibold';
 
-    return 'rounded-md bg-warning-soft px-2 py-0.5 text-[11px] font-bold text-warning';
+    return status === 'APPROVED'
+      ? `${base} bg-success-soft text-success`
+      : `${base} bg-warning-soft text-warning`;
   }
 
   protected fileType(name: string): string {

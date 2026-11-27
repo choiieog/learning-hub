@@ -1,11 +1,12 @@
-<header class="page-head">
+<div class="library-page">
+<header class="library-head page-head">
   <h1 class="page-title">Tài liệu</h1>
   <p class="page-subtitle">
     Tài liệu đã được kiểm duyệt — tìm theo môn, loại file hoặc từ khoá.
   </p>
 </header>
 
-<div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+<div class="library-toolbar mt-6 flex flex-wrap items-center justify-between gap-4">
   <div class="relative min-w-0 max-w-xl flex-1">
     <svg
       viewBox="0 0 20 20"
@@ -46,9 +47,18 @@
 </div>
 
 <!-- Bộ lọc -->
-<div class="mt-4 panel p-4">
+<div class="library-filters mt-4 panel p-4">
   <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Môn học</p>
-  <div class="flex flex-wrap gap-2">
+  <div
+    #subjectStrip
+    class="subject-strip"
+    role="group"
+    aria-label="Môn học — kéo ngang để xem thêm"
+    (pointerdown)="startSubjectDrag($event)"
+    (pointermove)="moveSubjectDrag($event)"
+    (pointerup)="endSubjectDrag($event)"
+    (pointercancel)="endSubjectDrag($event)"
+  >
     @for (subject of subjects(); track subject.id) {
       <button
         type="button"
@@ -87,21 +97,67 @@
         </div>
       </div>
 
-      <div>
-        <label
+      <div class="relative" (keydown.escape)="closeSortMenu()">
+        <span
+          id="sort-label"
           class="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted"
-          for="sort"
         >
           Sắp xếp
-        </label>
-        <select id="sort" class="field-input w-auto py-1.5" (change)="changeSort($event)">
-          @for (option of sortOptions; track option.value) {
-            <!-- [selected] (không phải [value]) để dropdown khớp cả khi mở bằng URL -->
-            <option [value]="option.value" [selected]="option.value === sort()">
-              {{ option.label }}
-            </option>
-          }
-        </select>
+        </span>
+        <button
+          type="button"
+          class="filter-pill filter-pill--dense sort-trigger"
+          [attr.aria-label]="'Sắp xếp: ' + currentSortLabel()"
+          aria-haspopup="listbox"
+          [attr.aria-expanded]="sortOpen()"
+          (click)="toggleSortMenu()"
+        >
+          <span>{{ currentSortLabel() }}</span>
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            class="h-3.5 w-3.5 transition-transform duration-200"
+            [class.rotate-180]="sortOpen()"
+            aria-hidden="true"
+          >
+            <path
+              d="m6 8 4 4 4-4"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+
+        @if (sortOpen()) {
+          <div class="fixed inset-0 z-30" (click)="closeSortMenu()" aria-hidden="true"></div>
+          <div class="sort-menu" role="listbox" aria-labelledby="sort-label">
+            @for (option of sortOptions; track option.value) {
+              <button
+                type="button"
+                role="option"
+                class="sort-menu__option"
+                [class.is-active]="option.value === sort()"
+                [attr.aria-selected]="option.value === sort()"
+                (click)="chooseSort(option.value)"
+              >
+                <span>{{ option.label }}</span>
+                @if (option.value === sort()) {
+                  <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+                    <path
+                      d="m4.5 10 3.5 3.5 7.5-7.5"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                }
+              </button>
+            }
+          </div>
+        }
       </div>
     </div>
 
@@ -161,7 +217,7 @@
     }
   </div>
 } @else {
-  <div class="mt-6 grid gap-4 grid-cols-3">
+  <div class="library-grid mt-6 grid gap-4 grid-cols-3">
     @for (item of items(); track item.id) {
       <!--
         Mở trang chi tiết ở tab mới để danh sách và bộ lọc còn nguyên trong tab hiện tại.
@@ -172,7 +228,7 @@
         [href]="'/documents/' + item.id"
         target="_blank"
         rel="noopener"
-        class="group flex flex-col panel p-5 transition hover:-translate-y-0.5 hover:border-mist"
+        class="library-card group flex flex-col panel p-5 transition hover:-translate-y-1 hover:border-mist"
       >
         <div class="flex items-center justify-between gap-2">
           <span class="rounded-md bg-foam px-2 py-0.5 text-[11px] font-bold text-tide">
@@ -231,41 +287,49 @@
   </div>
 }
 
-@if (meta().totalPages > 1) {
-  <nav class="mt-8 flex items-center justify-center gap-1" aria-label="Phân trang tài liệu">
-    <button
-      type="button"
-      class="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft transition hover:bg-wash disabled:cursor-not-allowed disabled:text-mist"
-      [disabled]="meta().page <= 1"
-      aria-label="Trang trước"
-      (click)="goToPage(meta().page - 1)"
-    >
-      ‹
-    </button>
+@if (meta().total > 0) {
+  <nav class="library-pagination" aria-label="Phân trang tài liệu">
+    <p class="library-pagination__summary">{{ rangeLabel() }}</p>
 
-    @for (page of pages(); track page) {
-      <button
-        type="button"
-        [class]="
-          page === meta().page
-            ? 'rounded-lg border border-ink bg-ink px-3 py-1.5 text-sm font-semibold text-white'
-            : 'rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft transition hover:bg-wash'
-        "
-        [attr.aria-current]="page === meta().page ? 'page' : null"
-        (click)="goToPage(page)"
-      >
-        {{ page }}
-      </button>
-    }
+    <div class="library-pagination__controls">
+      <span class="library-pagination__page">
+        Trang {{ meta().page }} / {{ meta().totalPages }}
+      </span>
 
-    <button
-      type="button"
-      class="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-soft transition hover:bg-wash disabled:cursor-not-allowed disabled:text-mist"
-      [disabled]="meta().page >= meta().totalPages"
-      aria-label="Trang sau"
-      (click)="goToPage(meta().page + 1)"
-    >
-      ›
-    </button>
+      @if (meta().totalPages > 1) {
+        <button
+          type="button"
+          class="library-page-btn"
+          [disabled]="meta().page <= 1"
+          aria-label="Trang trước"
+          (click)="goToPage(meta().page - 1)"
+        >
+          ‹
+        </button>
+
+        @for (page of pages(); track page) {
+          <button
+            type="button"
+            class="library-page-btn"
+            [class.is-active]="page === meta().page"
+            [attr.aria-current]="page === meta().page ? 'page' : null"
+            (click)="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+        }
+
+        <button
+          type="button"
+          class="library-page-btn"
+          [disabled]="meta().page >= meta().totalPages"
+          aria-label="Trang sau"
+          (click)="goToPage(meta().page + 1)"
+        >
+          ›
+        </button>
+      }
+    </div>
   </nav>
 }
+</div>

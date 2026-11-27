@@ -3,10 +3,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
@@ -48,7 +50,16 @@ export class DocumentList implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly host = inject(ElementRef<HTMLElement>);
   private readonly keywordInput = new Subject<string>();
+  private readonly subjectStrip = viewChild<ElementRef<HTMLElement>>('subjectStrip');
+  private subjectDrag: {
+    pointerId: number;
+    startX: number;
+    startScrollLeft: number;
+    moved: boolean;
+  } | null = null;
+  private suppressSubjectClick = false;
 
   protected readonly items = signal<DocumentSummary[]>([]);
   protected readonly meta = signal<PaginationMeta>({
@@ -64,6 +75,7 @@ export class DocumentList implements OnInit {
   protected readonly selectedSubjects = signal<string[]>([]);
   protected readonly selectedFileTypes = signal<string[]>([]);
   protected readonly sort = signal<SortValue>(DEFAULT_SORT);
+  protected readonly sortOpen = signal(false);
 
   protected readonly fileTypes = [
     { value: 'pdf', label: 'PDF' },
@@ -76,6 +88,10 @@ export class DocumentList implements OnInit {
     { value: 'viewCount:desc', label: 'Nhiều lượt xem' },
     { value: 'ratingAvg:desc', label: 'Đánh giá cao' },
   ];
+
+  protected readonly currentSortLabel = computed(
+    () => this.sortOptions.find((option) => option.value === this.sort())?.label ?? 'Mới nhất',
+  );
 
   protected readonly hasFilters = computed(
     () =>
@@ -138,7 +154,69 @@ export class DocumentList implements OnInit {
     this.keywordInput.next('');
   }
 
+  protected startSubjectDrag(event: PointerEvent): void {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const strip = this.subjectStrip()?.nativeElement;
+    if (!strip || strip.scrollWidth <= strip.clientWidth) {
+      return;
+    }
+
+    this.subjectDrag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: strip.scrollLeft,
+      moved: false,
+    };
+  }
+
+  protected moveSubjectDrag(event: PointerEvent): void {
+    const drag = this.subjectDrag;
+    const strip = this.subjectStrip()?.nativeElement;
+    if (!drag || !strip || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const distance = event.clientX - drag.startX;
+    if (!drag.moved && Math.abs(distance) > 4) {
+      drag.moved = true;
+      strip.setPointerCapture(event.pointerId);
+      strip.classList.add('is-dragging');
+    }
+
+    if (drag.moved) {
+      event.preventDefault();
+      strip.scrollLeft = drag.startScrollLeft - distance;
+    }
+  }
+
+  protected endSubjectDrag(event: PointerEvent): void {
+    const drag = this.subjectDrag;
+    const strip = this.subjectStrip()?.nativeElement;
+    if (!drag || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    if (strip?.hasPointerCapture(event.pointerId)) {
+      strip.releasePointerCapture(event.pointerId);
+    }
+    strip?.classList.remove('is-dragging');
+    this.subjectDrag = null;
+
+    if (drag.moved) {
+      // Chặn cú click phát sinh sau khi kéo, để không vô tình chọn môn học.
+      this.suppressSubjectClick = true;
+      window.setTimeout(() => (this.suppressSubjectClick = false), 80);
+    }
+  }
+
   protected toggleSubject(subjectId: string): void {
+    if (this.suppressSubjectClick) {
+      return;
+    }
+
     const next = toggleValue(this.selectedSubjects(), subjectId);
     this.selectedSubjects.set(next);
     this.applyFilters({ subjectIds: next, page: 1 });
@@ -150,8 +228,20 @@ export class DocumentList implements OnInit {
     this.applyFilters({ fileTypes: next, page: 1 });
   }
 
-  protected changeSort(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value as SortValue;
+  protected toggleSortMenu(): void {
+    this.sortOpen.update((open) => !open);
+  }
+
+  protected closeSortMenu(): void {
+    this.sortOpen.set(false);
+  }
+
+  protected chooseSort(value: SortValue): void {
+    this.sortOpen.set(false);
+    if (this.sort() === value) {
+      return;
+    }
+
     this.sort.set(value);
     this.applyFilters({ sort: value, page: 1 });
   }
@@ -174,6 +264,7 @@ export class DocumentList implements OnInit {
       return;
     }
 
+    this.scrollToTop();
     this.applyFilters({ page });
   }
 
@@ -238,6 +329,17 @@ export class DocumentList implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
+          // URL trỏ quá số trang hiện có (ví dụ sau khi xoá bớt tài liệu).
+          if (
+            result.items.length === 0 &&
+            result.meta.total > 0 &&
+            result.meta.page > result.meta.totalPages
+          ) {
+            this.loading.set(false);
+            this.applyFilters({ page: result.meta.totalPages });
+            return;
+          }
+
           this.items.set(result.items);
           this.meta.set(result.meta);
           this.loading.set(false);
@@ -249,5 +351,10 @@ export class DocumentList implements OnInit {
           this.loading.set(false);
         },
       });
+  }
+
+  private scrollToTop(): void {
+    const scroller = (this.host.nativeElement as HTMLElement).closest('.app-main');
+    scroller?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

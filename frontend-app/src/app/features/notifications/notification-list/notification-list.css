@@ -1,1 +1,332 @@
-/* Tailwind-first component; add component-scoped styles below when needed. */
+/* Trang thông báo dùng chung nhịp chuyển động với tổng quan. */
+.page-head {
+  animation: notif-head-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 20ms backwards;
+}
+
+.notification-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  margin-top: 20px;
+  animation: notif-controls-in 440ms cubic-bezier(0.22, 1, 0.36, 1) 60ms backwards;
+}
+
+.notification-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.notification-note {
+  color: var(--color-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.notification-count {
+  display: inline-grid;
+  min-width: 17px;
+  height: 17px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-foam);
+  padding: 0 4px;
+  color: var(--color-tide);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.filter-pill[aria-pressed='true'] .notification-count {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* Nút hành động nhẹ, cùng hình khối với nút phụ của dashboard. */
+.notification-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 6px 12px;
+  color: var(--color-ink-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.notification-action:hover:not(:disabled) {
+  border-color: var(--color-mist);
+  background: var(--color-wash);
+  color: var(--color-ink);
+}
+
+.notification-action--danger {
+  color: var(--color-muted);
+}
+
+.notification-action--danger:hover:not(:disabled) {
+  border-color: var(--color-danger-line);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.notification-action:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-line-soft);
+  color: var(--color-mist);
+}
+
+/* Danh sách: một khung panel, mỗi tin là một dòng có icon và nút × riêng. */
+.notification-list {
+  animation: notif-controls-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 100ms backwards;
+  overflow: hidden;
+}
+
+.notification-item {
+  animation: notif-item-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.notification-item + .notification-item {
+  border-top: 1px solid var(--color-line-soft);
+}
+
+.notification-item:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.notification-item:nth-child(3) {
+  animation-delay: 80ms;
+}
+
+.notification-item:nth-child(4) {
+  animation-delay: 120ms;
+}
+
+.notification-item:nth-child(5) {
+  animation-delay: 160ms;
+}
+
+.notification-item:nth-child(6) {
+  animation-delay: 200ms;
+}
+
+.notification-item:nth-child(n + 7) {
+  animation-delay: 240ms;
+}
+
+.notification-item__main {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px 8px 15px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.notification-item__main:hover {
+  background: var(--color-wash);
+}
+
+.notification-item__icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--color-wash);
+  color: var(--color-mist);
+}
+
+.notification-item__icon.is-unread {
+  background: var(--color-foam);
+  color: var(--color-tide);
+}
+
+.notification-item__body {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.notification-item__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.notification-item__new {
+  border-radius: 999px;
+  background: var(--color-foam);
+  padding: 2px 7px;
+  color: var(--color-tide);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.notification-item__message {
+  margin-top: 3px;
+  color: var(--color-ink-soft);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.notification-item__time {
+  margin-top: 6px;
+  color: var(--color-muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.notification-item__close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  place-items: center;
+  align-self: center;
+  margin-right: 10px;
+  border-radius: 9px;
+  color: var(--color-mist);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.notification-item__close:hover {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+/* Footer phân trang cùng nhịp với thư viện tài liệu. */
+.notification-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 28px;
+  border-top: 1px solid var(--color-line-soft);
+  padding-top: 18px;
+  animation: notif-controls-in 440ms cubic-bezier(0.22, 1, 0.36, 1) 180ms backwards;
+}
+
+.notification-pagination__summary {
+  color: var(--color-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.notification-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.notification-page-btn {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.notification-page-btn:hover:not(:disabled) {
+  border-color: var(--color-mist);
+  background: var(--color-wash);
+  color: var(--color-ink);
+}
+
+.notification-page-btn.is-active {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+.notification-page-btn:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-line-soft);
+  color: var(--color-mist);
+}
+
+@keyframes notif-head-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes notif-controls-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes notif-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-head,
+  .notification-toolbar,
+  .notification-list,
+  .notification-item,
+  .notification-pagination {
+    animation: none;
+  }
+}

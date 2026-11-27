@@ -280,6 +280,46 @@ export class NotificationsService {
   }
 
   /**
+   * Xoá tất cả thông báo khỏi danh sách của người gọi: tin cá nhân bị xoá hẳn, tin
+   * chung chỉ bị ẩn với riêng người này (`NotificationRead.deletedAt`) như khi xoá lẻ.
+   */
+  async deleteAll(userId: string): Promise<{ deleted: number }> {
+    const [personal, broadcasts, reads] = await this.prisma.$transaction([
+      this.prisma.notification.deleteMany({ where: { userId } }),
+      this.prisma.notification.findMany({ where: { userId: null }, select: { id: true } }),
+      this.prisma.notificationRead.findMany({
+        where: { userId },
+        select: { notificationId: true },
+      }),
+    ], TRANSACTION_OPTIONS);
+
+    const now = new Date();
+    const hidden = new Set(reads.map((row) => row.notificationId));
+    const missing = broadcasts.filter((item) => !hidden.has(item.id));
+
+    await this.prisma.$transaction([
+      this.prisma.notificationRead.updateMany({
+        where: { userId },
+        data: { deletedAt: now },
+      }),
+      ...(missing.length > 0
+        ? [
+            this.prisma.notificationRead.createMany({
+              data: missing.map((item) => ({
+                userId,
+                notificationId: item.id,
+                deletedAt: now,
+              })),
+              skipDuplicates: true,
+            }),
+          ]
+        : []),
+    ], TRANSACTION_OPTIONS);
+
+    return { deleted: personal.count + broadcasts.length };
+  }
+
+  /**
    * Admin thu hồi thông báo chung: xoá row dùng chung, `NotificationRead` của mọi người
    * bị xoá theo cascade nên tin biến mất khỏi tất cả chuông.
    */

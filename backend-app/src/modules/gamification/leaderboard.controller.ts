@@ -10,9 +10,9 @@ import { GamificationService } from './gamification.service';
 export class LeaderboardController {
   constructor(private readonly gamification: GamificationService) {}
 
-  /** GET /api/leaderboard?limit=10 — top sinh viên + vị trí của người gọi. */
+  /** GET /api/leaderboard?page=1&limit=10 — top sinh viên + vị trí của người gọi. */
   @Get()
   getLeaderboard(@CurrentUser('id') userId: string, @Query() query: LeaderboardQueryDto) {
-    return this.gamification.leaderboard(userId, query.limit);
+    return this.gamification.leaderboard(userId, query.page, query.limit);
   }
 }

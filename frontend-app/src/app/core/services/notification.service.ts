@@ -29,6 +29,13 @@ export class NotificationService {
       .pipe(map((res) => res.data));
   }
 
+  /** Xoá tất cả thông báo khỏi danh sách của mình. */
+  removeAll(): Observable<{ deleted: number }> {
+    return this.http
+      .delete<ApiResponse<{ deleted: number }>>(this.baseUrl)
+      .pipe(map((res) => res.data));
+  }
+
   /** Xoá thông báo cá nhân của chính mình; tin chung là việc của admin. */
   remove(id: string): Observable<{ id: string }> {
     return this.http

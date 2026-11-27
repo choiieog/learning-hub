@@ -37,6 +37,7 @@ export interface LeaderboardEntry extends LevelProgress {
 export interface LeaderboardResponse {
   items: LeaderboardEntry[];
   total: number;
+  meta: { page: number; limit: number; total: number; totalPages: number };
   /** Vị trí + tiến độ của người gọi; null nếu tài khoản không còn tồn tại. */
   me: LeaderboardEntry | null;
 }
@@ -93,9 +94,11 @@ export class GamificationService {
     }
   }
 
-  /** Top sinh viên theo EXP + vị trí hiện tại của người gọi. */
-  async leaderboard(viewerId: string, limit = 10): Promise<LeaderboardResponse> {
+  /** Một trang top sinh viên theo EXP + vị trí hiện tại của người gọi. */
+  async leaderboard(viewerId: string, page = 1, limit = 10): Promise<LeaderboardResponse> {
     const take = Math.min(50, Math.max(1, limit));
+    const currentPage = Math.max(1, page);
+    const skip = (currentPage - 1) * take;
     const where: Prisma.UserWhereInput = { role: Role.USER, deletedAt: null };
 
     // Một transaction chỉ-đọc giữ các truy vấn trên cùng một connection, tránh lỗi
@@ -104,6 +107,7 @@ export class GamificationService {
       const users = await tx.user.findMany({
         where,
         orderBy: [{ exp: 'desc' }, { level: 'desc' }, { createdAt: 'asc' }],
+        skip,
         take,
         select: LEADERBOARD_USER_SELECT,
       });
@@ -113,8 +117,9 @@ export class GamificationService {
         select: LEADERBOARD_USER_SELECT,
       });
 
+      // Hạng là vị trí tuyệt đối trên bảng, không phải thứ tự trong trang.
       const items: LeaderboardEntry[] = users.map((user, index) => ({
-        rank: index + 1,
+        rank: skip + index + 1,
         ...user,
         ...levelProgress(user.exp),
       }));
@@ -130,7 +135,12 @@ export class GamificationService {
         me = { rank, ...viewer, ...levelProgress(viewer.exp) };
       }
 
-      return { items, total, me };
+      return {
+        items,
+        total,
+        meta: { page: currentPage, limit: take, total, totalPages: Math.ceil(total / take) },
+        me,
+      };
     }, TRANSACTION_OPTIONS);
   }
 }

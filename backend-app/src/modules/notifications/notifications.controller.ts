@@ -28,6 +28,12 @@ export class NotificationsController {
     return this.notificationsService.markRead(id, userId);
   }
 
+  /** DELETE /api/notifications — xoá tất cả thông báo khỏi danh sách của tôi. */
+  @Delete()
+  removeAll(@CurrentUser('id') userId: string) {
+    return this.notificationsService.deleteAll(userId);
+  }
+
   /** DELETE /api/notifications/:id — xoá tin cá nhân, hoặc ẩn tin chung với riêng mình. */
   @Delete(':id')
   removeOwn(@Param('id') id: string, @CurrentUser('id') userId: string) {

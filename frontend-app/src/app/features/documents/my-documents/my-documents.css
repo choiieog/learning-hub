@@ -1,1 +1,189 @@
-/* Tailwind-first component; add component-scoped styles below when needed. */
+/* Trang tài liệu đã chia sẻ dùng chung nhịp chuyển động với tổng quan. */
+.page-head {
+  animation: shared-head-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 20ms backwards;
+}
+
+.filter-pills {
+  animation: shared-controls-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 60ms backwards;
+}
+
+.shared-card {
+  animation: shared-card-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 140ms backwards;
+}
+
+.shared-grid > .shared-card:nth-child(2) {
+  animation-delay: 170ms;
+}
+
+.shared-grid > .shared-card:nth-child(3) {
+  animation-delay: 200ms;
+}
+
+.shared-grid > .shared-card:nth-child(4) {
+  animation-delay: 230ms;
+}
+
+.shared-grid > .shared-card:nth-child(5) {
+  animation-delay: 260ms;
+}
+
+.shared-grid > .shared-card:nth-child(6) {
+  animation-delay: 290ms;
+}
+
+.shared-grid > .shared-card:nth-child(7) {
+  animation-delay: 320ms;
+}
+
+.shared-grid > .shared-card:nth-child(8) {
+  animation-delay: 350ms;
+}
+
+.shared-grid > .shared-card:nth-child(9) {
+  animation-delay: 380ms;
+}
+
+.shared-grid > .shared-card:nth-child(n + 10) {
+  animation-delay: 410ms;
+}
+
+/* Footer phân trang cùng nhịp với thư viện tài liệu. */
+.shared-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-top: 28px;
+  border-top: 1px solid var(--color-line-soft);
+  padding-top: 18px;
+  animation: shared-controls-in 440ms cubic-bezier(0.22, 1, 0.36, 1) 180ms backwards;
+}
+
+.shared-pagination__summary,
+.shared-pagination__page {
+  color: var(--color-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.shared-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.shared-pagination__page {
+  margin-right: 7px;
+}
+
+.shared-page-btn {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.shared-page-btn:hover:not(:disabled) {
+  border-color: var(--color-mist);
+  background: var(--color-wash);
+  color: var(--color-ink);
+}
+
+.shared-page-btn.is-active {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+.shared-page-btn:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-line-soft);
+  color: var(--color-mist);
+}
+
+.shared-modal {
+  animation: shared-fade-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.shared-modal__panel {
+  animation: shared-dialog-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes shared-head-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shared-controls-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shared-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shared-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shared-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+      .page-head,
+    .filter-pills,
+    .shared-card,
+  .shared-pagination,
+  .shared-modal,
+  .shared-modal__panel {
+    animation: none;
+  }
+}

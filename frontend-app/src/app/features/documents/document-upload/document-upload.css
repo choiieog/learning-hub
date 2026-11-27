@@ -1,1 +1,71 @@
-/* Tailwind-first component; add component-scoped styles below when needed. */
+/* Trang đăng tài liệu dùng chung nhịp chuyển động với tổng quan: tiêu đề trồi
+   lên trước, các khối nội dung vào sau theo từng lớp. */
+.page-head {
+  animation: upload-head-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 20ms backwards;
+}
+
+.upload-main > * {
+  animation: upload-card-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 100ms backwards;
+}
+
+.upload-main > *:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.upload-main > *:nth-child(3) {
+  animation-delay: 220ms;
+}
+
+.upload-aside > * {
+  animation: upload-card-in 440ms cubic-bezier(0.22, 1, 0.36, 1) 140ms backwards;
+}
+
+.upload-aside > *:nth-child(2) {
+  animation-delay: 200ms;
+}
+
+.upload-files > li {
+  animation: upload-file-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes upload-head-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes upload-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes upload-file-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-head,
+  .upload-main > *,
+  .upload-aside > *,
+  .upload-files > li {
+    animation: none;
+  }
+}

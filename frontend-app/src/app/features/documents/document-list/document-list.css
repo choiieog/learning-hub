@@ -1,1 +1,277 @@
-/* Tailwind-first component; add component-scoped styles below when needed. */
+/* Trang thư viện dùng chung nhịp chuyển động với dashboard: nội dung trồi lên
+   theo từng lớp, card vào so le và hover nhấc nhẹ. */
+.library-head {
+  animation: library-head-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 20ms backwards;
+}
+
+.library-toolbar {
+  animation: library-controls-in 440ms cubic-bezier(0.22, 1, 0.36, 1) 60ms backwards;
+}
+
+.library-filters {
+  animation: library-controls-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 100ms backwards;
+}
+
+.library-card {
+  animation: library-card-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 140ms backwards;
+}
+
+.library-grid > .library-card:nth-child(2) {
+  animation-delay: 170ms;
+}
+
+.library-grid > .library-card:nth-child(3) {
+  animation-delay: 200ms;
+}
+
+.library-grid > .library-card:nth-child(4) {
+  animation-delay: 230ms;
+}
+
+.library-grid > .library-card:nth-child(5) {
+  animation-delay: 260ms;
+}
+
+.library-grid > .library-card:nth-child(6) {
+  animation-delay: 290ms;
+}
+
+.library-grid > .library-card:nth-child(7) {
+  animation-delay: 320ms;
+}
+
+.library-grid > .library-card:nth-child(8) {
+  animation-delay: 350ms;
+}
+
+.library-grid > .library-card:nth-child(9) {
+  animation-delay: 380ms;
+}
+
+.library-grid > .library-card:nth-child(n + 10) {
+  animation-delay: 410ms;
+}
+
+.library-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-top: 28px;
+  border-top: 1px solid var(--color-line-soft);
+  padding-top: 18px;
+  animation: library-controls-in 440ms cubic-bezier(0.22, 1, 0.36, 1) 180ms backwards;
+}
+
+.library-pagination__summary,
+.library-pagination__page {
+  color: var(--color-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.library-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.library-pagination__page {
+  margin-right: 7px;
+}
+
+.library-page-btn {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.library-page-btn:hover:not(:disabled) {
+  border-color: var(--color-mist);
+  background: var(--color-wash);
+  color: var(--color-ink);
+}
+
+.library-page-btn.is-active {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+.library-page-btn:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-line-soft);
+  color: var(--color-mist);
+}
+
+/* Hàng môn học luôn một dòng; kéo bằng chuột hoặc dùng thanh cuộn ngang. */
+.subject-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 1px 1px 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-mist) transparent;
+  cursor: grab;
+  user-select: none;
+}
+
+.subject-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.subject-strip::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--color-mist);
+}
+
+.subject-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.subject-strip > button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.subject-strip.is-dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
+}
+
+.subject-strip.is-dragging > button {
+  pointer-events: none;
+}
+
+.sort-trigger {
+  display: inline-flex;
+  min-width: 178px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.sort-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  display: grid;
+  width: 100%;
+  min-width: 190px;
+  gap: 2px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 13px;
+  background: #fff;
+  padding: 4px;
+  box-shadow: 0 16px 34px -18px rgba(14, 42, 50, 0.32);
+  animation: library-menu-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sort-menu__option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-radius: 9px;
+  padding: 7px 9px;
+  color: var(--color-ink-soft);
+  font-size: 11.5px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.sort-menu__option:hover {
+  background: var(--color-wash);
+  color: var(--color-ink);
+}
+
+.sort-menu__option.is-active {
+  background: var(--color-foam);
+  color: var(--color-tide-deep);
+  font-weight: 600;
+}
+
+@keyframes library-head-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes library-controls-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes library-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes library-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-head,
+  .library-toolbar,
+  .library-filters,
+  .library-card,
+  .library-pagination,
+  .sort-menu {
+    animation: none;
+  }
+
+  .library-card,
+  .library-page-btn,
+  .sort-menu__option {
+    transition: none;
+  }
+}

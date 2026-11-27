@@ -1,3 +1,5 @@
+import { PaginationMeta } from './api.model';
+
 /** Tiến độ EXP trong level hiện tại. */
 export interface LevelProgress {
   level: number;
@@ -21,5 +23,6 @@ export interface LeaderboardEntry extends LevelProgress {
 export interface LeaderboardResponse {
   items: LeaderboardEntry[];
   total: number;
+  meta: PaginationMeta;
   me: LeaderboardEntry | null;
 }

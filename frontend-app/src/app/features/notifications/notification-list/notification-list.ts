@@ -51,6 +51,7 @@ export class NotificationList implements OnInit {
   protected readonly loading = signal(true);
   protected readonly errors = signal<string[]>([]);
   protected readonly markingAll = signal(false);
+  protected readonly clearingAll = signal(false);
 
   /** Tối đa 5 số trang quanh trang hiện tại. */
   protected readonly pages = computed(() => {
@@ -70,13 +71,11 @@ export class NotificationList implements OnInit {
       });
   }
 
-  protected toggleUnreadOnly(event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-
+  protected toggleUnreadOnly(): void {
     void this.router.navigate([], {
       relativeTo: this.route,
       replaceUrl: true,
-      queryParams: { unreadOnly: checked ? 'true' : null, page: null },
+      queryParams: { unreadOnly: this.unreadOnly() ? null : 'true', page: null },
     });
   }
 
@@ -139,6 +138,45 @@ export class NotificationList implements OnInit {
       });
   }
 
+  /** Xoá toàn bộ thông báo khỏi danh sách của mình, rồi về trang 1. */
+  protected clearAll(): void {
+    if (this.meta().total === 0 || this.clearingAll() || this.markingAll()) {
+      return;
+    }
+
+    if (!confirm('Xoá tất cả thông báo? Thao tác này không hoàn tác được.')) {
+      return;
+    }
+
+    this.clearingAll.set(true);
+    this.errors.set([]);
+
+    this.notificationState
+      .removeAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.clearingAll.set(false);
+
+          if (this.meta().page > 1) {
+            void this.router.navigate([], {
+              relativeTo: this.route,
+              replaceUrl: true,
+              queryParams: { page: null },
+              queryParamsHandling: 'merge',
+            });
+            return;
+          }
+
+          this.fetch(this.route.snapshot.queryParamMap);
+        },
+        error: (error: unknown) => {
+          this.clearingAll.set(false);
+          this.errors.set(getApiErrorMessages(error));
+        },
+      });
+  }
+
   /** Xoá tin cá nhân hoặc ẩn tin chung; tải lại danh sách để số chưa đọc khớp server. */
   protected remove(item: AppNotification): void {
     const question = item.userId
@@ -172,6 +210,17 @@ export class NotificationList implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
+          // Xoá tin cuối của trang cuối: lùi về trang còn dữ liệu.
+          if (result.items.length === 0 && result.meta.page > 1) {
+            void this.router.navigate([], {
+              relativeTo: this.route,
+              replaceUrl: true,
+              queryParams: { page: result.meta.page - 1 },
+              queryParamsHandling: 'merge',
+            });
+            return;
+          }
+
           this.items.set(result.items);
           this.meta.set(result.meta);
           this.notificationState.sync(result);
