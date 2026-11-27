@@ -73,17 +73,17 @@ privacy panel, FAQ and dark CTA follow the existing tidal system.
 ### Student shell — /dashboard, /documents, /upload, /my-documents, /leaderboard, /notifications, /profile
 
 - Floating shell: 14px canvas gutter; 224px `wash` rail below 1280px, 252px above, with 26px
-  radius and no border. The shell fills the viewport; the rail stays put and the main panel
-  scrolls internally, so the page itself never scrolls. The rail is functions only — no
+  radius and a 1px `line` border. The shell fills the viewport; the rail stays put and the main
+  panel scrolls internally, so the page itself never scrolls. The rail is functions only — no
   account block or logout; 44px rows, 18px side padding, 22px icons.
 - Rail groups: Bàn học / Của bạn / Cộng đồng, 11px uppercase muted labels. The active item is
   ink and semibold and carries a 5×40px `tide` marker flush to the rail's left edge; the marker
   grows from zero and the icon turns `tide`. Inactive items have no fill on hover. A 231px
   dark tide-to-ink card at the rail foot carries a short library note and one action.
-- 72px `wash` topbar with 26px radius: a 380px global search pill leads (routes to
-  `/documents` with `keyword`), followed by the bell and account dropdown. Admins also see a
-  queue shortcut and the small “Quản trị” link. Password changes live in the account menu,
-  never in the page masthead.
+- 72px `wash` topbar with 26px radius and a 1px `line` border: a 380px global search pill
+  leads (routes to `/documents` with `keyword`), followed by the bell and account dropdown.
+  Admins also see a queue shortcut and the small “Quản trị” link. Password changes live in the
+  account menu, never in the page masthead.
 - Page mastheads are editorial: title and subtitle on their own axis, with actions moved to a
   `.page-toolbar` row underneath. No primary/secondary button shares the title’s line. Metadata
   such as totals may sit at the end of the toolbar, not beside the title. Every app page uses

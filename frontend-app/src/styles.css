@@ -273,7 +273,7 @@
     min-height: 0;
     flex-direction: column;
     overflow: hidden;
-    border: 0;
+    border: 1px solid var(--color-line);
     border-radius: 26px;
     background: var(--color-wash);
     animation: rail-enter 440ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -533,7 +533,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    border: 0;
+    border: 1px solid var(--color-line);
     border-radius: 26px;
     background: var(--color-wash);
     padding: 12px 16px;
