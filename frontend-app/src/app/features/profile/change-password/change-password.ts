@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import {
   AbstractControl,
   FormBuilder,
@@ -33,7 +41,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
 @Component({
   selector: 'app-change-password',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './change-password.html',
   styleUrl: './change-password.css',
 })
@@ -45,6 +53,55 @@ export class ChangePassword {
   protected readonly submitting = signal(false);
   protected readonly success = signal<string | null>(null);
   protected readonly errors = signal<string[]>([]);
+  protected readonly profilePath = this.auth.profilePath;
+
+  /** Hiện/ẩn từng ô mật khẩu. */
+  protected readonly visible = signal({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
+  /** Giá trị mới nhất để vẽ thanh độ mạnh và dấu khớp, không cần subscribe form. */
+  protected readonly newPasswordValue = signal('');
+  protected readonly confirmPasswordValue = signal('');
+
+  protected readonly checks = computed(() => {
+    const value = this.newPasswordValue();
+
+    return {
+      length: value.length >= 8 && value.length <= 72,
+      letter: /[A-Za-z]/.test(value),
+      digit: /\d/.test(value),
+      long: value.length >= 12,
+    };
+  });
+
+  /** 0–4 điểm → nhãn + màu thanh độ mạnh. */
+  protected readonly strength = computed(() => {
+    const checks = this.checks();
+    const score = [checks.length, checks.letter, checks.digit, checks.long].filter(Boolean).length;
+    const labels = ['Chưa nhập', 'Yếu', 'Trung bình', 'Khá', 'Mạnh'];
+
+    return { score, percent: score * 25, label: labels[score] };
+  });
+
+  protected readonly passwordsMatch = computed(() => {
+    const confirm = this.confirmPasswordValue();
+
+    return confirm.length > 0 && confirm === this.newPasswordValue();
+  });
+
+  protected onNewPasswordInput(event: Event): void {
+    this.newPasswordValue.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onConfirmPasswordInput(event: Event): void {
+    this.confirmPasswordValue.set((event.target as HTMLInputElement).value);
+  }
+
+  protected toggleVisibility(control: 'currentPassword' | 'newPassword' | 'confirmPassword'): void {
+    this.visible.update((state) => ({ ...state, [control]: !state[control] }));
+  }
 
   protected readonly form = this.fb.nonNullable.group(
     {
@@ -89,6 +146,8 @@ export class ChangePassword {
           // Backend cấp lại token cho phiên hiện tại → không phải đăng nhập lại.
           this.auth.setSession({ accessToken: result.accessToken, user: result.user });
           this.form.reset();
+          this.newPasswordValue.set('');
+          this.confirmPasswordValue.set('');
           this.success.set(result.message);
         },
         error: (error: unknown) => {

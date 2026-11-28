@@ -23,7 +23,8 @@ export class Avatar {
 
   protected readonly initialsText = computed(() => initials(this.name()));
   protected readonly fontSize = computed(() => Math.max(9, Math.round(this.size() * 0.32)));
-  protected readonly ringWidth = computed(() => Math.max(2, Math.round(this.size() * 0.09)));
+  /** Viền mảnh: ~5% kích thước (96px → 5px), tối thiểu 1.5px để vẫn thấy ở avatar nhỏ. */
+  protected readonly ringWidth = computed(() => Math.max(1.5, Math.round(this.size() * 0.05 * 2) / 2));
 
   /** Backend có thể trả gradient hoặc URL trần — chuẩn hoá về một giá trị background-image hợp lệ. */
   protected readonly frameImage = computed(() => {

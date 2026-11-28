@@ -240,10 +240,12 @@
               [attr.title]="frame.unlocked ? frame.name : 'Mở ở cấp ' + frame.minLevel"
               (click)="selectFrame(frame.id)"
             >
-              <span
-                class="profile-frame__swatch"
-                [style.background-image]="'url(' + frame.assetUrl + ')'"
-              ></span>
+              <app-avatar
+                [avatarUrl]="user()?.avatarUrl ?? null"
+                [frameUrl]="frame.assetUrl"
+                [name]="user()?.fullName ?? ''"
+                [size]="40"
+              />
               <span class="profile-frame__name">{{ frame.name }}</span>
               <span class="profile-frame__meta">
                 @if (!frame.unlocked) {
