@@ -614,6 +614,7 @@
     flex: none;
     align-items: center;
     gap: 12px;
+    margin-left: auto;
   }
 
   .topbar-btn {
@@ -679,6 +680,14 @@
   .account-menu-trigger:focus-visible {
     outline: 2px solid var(--color-tide);
     outline-offset: 2px;
+  }
+
+  .account-menu-chevron {
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .account-menu-chevron.is-open {
+    transform: rotate(180deg);
   }
 
   .app-main {
@@ -909,6 +918,7 @@
   .dash-head .page-title {
     font-size: clamp(2rem, 2.9vw, 2.6rem);
     line-height: 1.08;
+    overflow-wrap: anywhere;
   }
 
   .dash-kicker {
@@ -1540,10 +1550,12 @@
 
   .dash-list {
     display: grid;
+    min-width: 0;
     margin-top: 14px;
   }
 
   .dash-list__row {
+    min-width: 0;
     border-top: 1px solid var(--color-line-soft);
   }
 
@@ -1554,14 +1566,24 @@
   .dash-doc-row {
     display: flex;
     min-width: 0;
+    /* Cùng nhịp row với .dash-rank để hai cột nhìn đều nhau. */
+    min-height: 72px;
     align-items: center;
     gap: 12px;
     padding: 12px 0;
     text-decoration: none;
   }
 
+  /* Cho phép tiêu đề dài co lại và cắt ellipsis thay vì đẩy tràn card. */
+  .dash-doc-row__body {
+    min-width: 0;
+    flex: 1 1 0%;
+    overflow: hidden;
+  }
+
   .dash-doc-row__title {
     display: block;
+    max-width: 100%;
     overflow: hidden;
     color: var(--color-ink);
     font-size: 12.5px;
@@ -1646,19 +1668,28 @@
 
   .dash-rank-list {
     display: grid;
+    min-width: 0;
     margin-top: 14px;
   }
 
   .dash-rank {
     display: flex;
+    min-width: 0;
+    min-height: 72px;
+    align-items: center;
     gap: 12px;
     border-top: 1px solid var(--color-line-soft);
-    padding: 13px 0;
+    padding: 12px 0;
   }
 
   .dash-rank:first-child {
     border-top: 0;
-    padding-top: 4px;
+  }
+
+  .dash-rank__body {
+    min-width: 0;
+    flex: 1 1 0%;
+    overflow: hidden;
   }
 
   .dash-rank__index {

@@ -126,19 +126,12 @@
         @for (rating of items(); track rating.id) {
           <li class="py-4">
             <div class="flex items-start gap-3">
-              @if (rating.user.avatarUrl) {
-                <img
-                  [src]="rating.user.avatarUrl"
-                  alt=""
-                  class="h-9 w-9 shrink-0 rounded-full object-cover"
-                />
-              } @else {
-                <span
-                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foam text-xs font-semibold text-muted"
-                >
-                  {{ authorInitials(rating.user.fullName) }}
-                </span>
-              }
+              <app-avatar
+                [avatarUrl]="rating.user.avatarUrl ?? null"
+                [frameUrl]="rating.user.avatarFrameUrl ?? null"
+                [name]="rating.user.fullName"
+                [size]="36"
+              />
 
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -169,15 +162,48 @@
       </ul>
 
       @if (meta(); as m) {
-        @if (m.page < m.totalPages) {
-          <button
-            type="button"
-            class="btn-secondary mt-4"
-            [disabled]="loadingMore()"
-            (click)="loadMore()"
-          >
-            {{ loadingMore() ? 'Đang tải...' : 'Xem thêm đánh giá' }}
-          </button>
+        @if (m.total > 0) {
+          <nav class="rating-pagination" aria-label="Phân trang đánh giá">
+            <p class="rating-pagination__summary">{{ rangeLabel() }}</p>
+
+            <div class="rating-pagination__controls">
+              <span class="rating-pagination__page">Trang {{ m.page }} / {{ m.totalPages }}</span>
+
+              @if (m.totalPages > 1) {
+                <button
+                  type="button"
+                  class="rating-page-btn"
+                  [disabled]="m.page <= 1"
+                  aria-label="Trang trước"
+                  (click)="goToPage(m.page - 1)"
+                >
+                  ‹
+                </button>
+
+                @for (page of pages(); track page) {
+                  <button
+                    type="button"
+                    class="rating-page-btn"
+                    [class.is-active]="page === m.page"
+                    [attr.aria-current]="page === m.page ? 'page' : null"
+                    (click)="goToPage(page)"
+                  >
+                    {{ page }}
+                  </button>
+                }
+
+                <button
+                  type="button"
+                  class="rating-page-btn"
+                  [disabled]="m.page >= m.totalPages"
+                  aria-label="Trang sau"
+                  (click)="goToPage(m.page + 1)"
+                >
+                  ›
+                </button>
+              }
+            </div>
+          </nav>
         }
       }
     }

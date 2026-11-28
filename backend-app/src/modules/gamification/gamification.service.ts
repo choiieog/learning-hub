@@ -4,12 +4,22 @@ import { ExpReason, Prisma, Role } from '../../generated/prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 import { LevelProgress, levelFromExp, levelProgress } from './gamification.constants';
 
+type LeaderboardUser = Prisma.UserGetPayload<{ select: typeof LEADERBOARD_USER_SELECT }>;
+
+/** Bỏ object quan hệ khung avatar, chỉ giữ `avatarFrameUrl` cho payload API. */
+function toEntry(user: LeaderboardUser): Omit<LeaderboardEntry, 'rank'> {
+  const { avatarFrame, ...rest } = user;
+
+  return { ...rest, avatarFrameUrl: avatarFrame?.assetUrl ?? null, ...levelProgress(user.exp) };
+}
+
 const LEADERBOARD_USER_SELECT = {
   id: true,
   fullName: true,
   avatarUrl: true,
   level: true,
   exp: true,
+  avatarFrame: { select: { assetUrl: true } },
 } satisfies Prisma.UserSelect;
 
 export interface AwardInput {
@@ -32,6 +42,7 @@ export interface LeaderboardEntry extends LevelProgress {
   id: string;
   fullName: string;
   avatarUrl: string | null;
+  avatarFrameUrl: string | null;
 }
 
 export interface LeaderboardResponse {
@@ -120,8 +131,7 @@ export class GamificationService {
       // Hạng là vị trí tuyệt đối trên bảng, không phải thứ tự trong trang.
       const items: LeaderboardEntry[] = users.map((user, index) => ({
         rank: skip + index + 1,
-        ...user,
-        ...levelProgress(user.exp),
+        ...toEntry(user),
       }));
 
       let me: LeaderboardEntry | null = null;
@@ -132,7 +142,7 @@ export class GamificationService {
             where: { ...where, exp: { gt: viewer.exp } },
           }));
 
-        me = { rank, ...viewer, ...levelProgress(viewer.exp) };
+        me = { rank, ...toEntry(viewer) };
       }
 
       return {

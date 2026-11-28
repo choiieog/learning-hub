@@ -1,0 +1,42 @@
+:host {
+  display: inline-flex;
+  flex: none;
+}
+
+.avatar {
+  display: block;
+  flex: none;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background-color: var(--color-foam);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+/* Ô tròn bên trong luôn cắt ảnh, nên ảnh dọc/rất dài không kéo giãn khung. */
+.avatar__inner {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-foam);
+}
+
+.avatar__inner img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.avatar__initials {
+  color: var(--color-tide-deep);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  user-select: none;
+}

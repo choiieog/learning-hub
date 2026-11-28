@@ -15,9 +15,7 @@ import { NotificationStateService } from '../../core/services/notification-state
 import { NotificationService } from '../../core/services/notification.service';
 
 /**
- * Khung giao diện cho sinh viên: rail cố định + header (tìm kiếm, chuông thông báo, tài khoản).
- *
- * Topbar tìm kiếm toàn cục: nhập từ khoá rồi Enter sẽ mở thư viện với bộ lọc `keyword`.
+ * Khung giao diện cho sinh viên: rail cố định + header (chuông thông báo, tài khoản).
  */
 @Component({
   selector: 'app-user-layout',
@@ -41,17 +39,6 @@ export class UserLayout {
 
   constructor() {
     this.load();
-  }
-
-  protected search(term: string, event: Event): void {
-    event.preventDefault();
-    const keyword = term.trim();
-
-    if (!keyword) {
-      return;
-    }
-
-    void this.router.navigate(['/documents'], { queryParams: { keyword } });
   }
 
   protected togglePanel(): void {

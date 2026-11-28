@@ -1,6 +1,6 @@
 <a
   routerLink="/documents"
-  class="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-tide"
+  class="detail-back inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-tide"
 >
   <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4" aria-hidden="true">
     <path
@@ -46,7 +46,7 @@
   </div>
 } @else if (item(); as doc) {
   <article class="mt-4">
-    <section class="rounded-2xl border border-line bg-white p-8">
+    <section class="detail-hero rounded-2xl border border-line bg-white p-8">
       <div class="flex flex-wrap items-center gap-2">
         @for (type of fileTypes(doc.files); track type) {
           <span class="rounded-md bg-foam px-2 py-0.5 text-[11px] font-bold text-tide">
@@ -66,12 +66,12 @@
         }
       </div>
 
-      <h1 class="mt-3 font-semibold tracking-tight text-ink text-3xl">
+      <h1 class="detail-title mt-3 font-semibold tracking-tight text-ink text-3xl">
         {{ doc.title }}
       </h1>
 
       @if (doc.description) {
-        <p class="mt-3 max-w-3xl text-base leading-relaxed text-ink-soft">
+        <p class="detail-description mt-3 text-base leading-relaxed text-ink-soft">
           {{ doc.description }}
         </p>
       }
@@ -86,15 +86,12 @@
         </a>
 
         <span class="inline-flex items-center gap-2">
-          @if (doc.author.avatarUrl) {
-            <img [src]="doc.author.avatarUrl" alt="" class="h-6 w-6 rounded-full object-cover" />
-          } @else {
-            <span
-              class="flex h-6 w-6 items-center justify-center rounded-full bg-foam text-[10px] font-semibold text-muted"
-            >
-              {{ authorInitials(doc.author.fullName) }}
-            </span>
-          }
+          <app-avatar
+            [avatarUrl]="doc.author.avatarUrl ?? null"
+            [frameUrl]="doc.author.avatarFrameUrl ?? null"
+            [name]="doc.author.fullName"
+            [size]="24"
+          />
           {{ doc.author.fullName }}
         </span>
 
@@ -131,9 +128,9 @@
       }
     </section>
 
-    <div class="mt-6 grid gap-6 grid-cols-3">
-      <div class="space-y-6 col-span-2">
-        <section class="panel p-6">
+    <div class="detail-grid mt-6 grid gap-6 grid-cols-3">
+      <div class="detail-main space-y-6 col-span-2">
+        <section class="detail-card panel p-6">
           <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">
             Tệp đính kèm ({{ doc.files.length }})
           </h2>
@@ -141,9 +138,9 @@
           @if (doc.files.length === 0) {
             <p class="mt-4 text-sm text-muted">Tài liệu này chưa có tệp đính kèm.</p>
           } @else {
-            <ul class="mt-4 divide-y divide-line-soft">
+            <ul class="detail-file-list mt-4 divide-y divide-line-soft">
               @for (file of doc.files; track file.url) {
-                <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+                <li class="detail-file-row flex flex-wrap items-center justify-between gap-3 py-3">
                   <div class="flex min-w-0 items-center gap-3">
                     <span
                       class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-foam text-[10px] font-bold text-muted"
@@ -151,13 +148,12 @@
                       {{ fileType(file) }}
                     </span>
                     <div class="min-w-0">
-                      <!-- Tên tệp mở trang đọc nội dung ở tab mới: PDF nhúng sẵn, DOCX dựng bằng docx-preview. -->
+                      <!-- Tên tệp mở trang đọc nội dung trong cùng tab: PDF nhúng sẵn, DOCX dựng bản xem trước. -->
                       <a
-                        [href]="viewerHref(file)"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="block truncate text-sm font-medium text-ink hover:text-tide hover:underline"
-                        [attr.aria-label]="'Mở ' + file.name + ' ở thẻ mới'"
+                        [routerLink]="['/viewer']"
+                        [queryParams]="viewerParams(file)"
+                        class="detail-file-link block truncate text-sm font-medium text-ink transition hover:text-tide hover:underline"
+                        [attr.aria-label]="'Mở ' + file.name"
                       >
                         {{ file.name }}
                       </a>
@@ -165,62 +161,45 @@
                     </div>
                   </div>
 
-                  <!-- Tải xuống qua trang đọc: request cần access token nên không thể trỏ thẳng vào file.url. -->
+                  <!-- Trang đọc cần access token nên vẫn đi qua /viewer, nhưng mở trong cùng tab. -->
                   <a
-                    [href]="viewerHref(file)"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    [routerLink]="['/viewer']"
+                    [queryParams]="viewerParams(file)"
                     class="btn-secondary shrink-0"
                   >
-                    <svg
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      class="mr-1.5 inline h-4 w-4"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M10 2.5a.75.75 0 0 1 .75.75v8.19l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.22 2.22V3.25A.75.75 0 0 1 10 2.5ZM4.5 15.5a.75.75 0 0 1 .75.75v.25h9.5v-.25a.75.75 0 0 1 1.5 0v.5a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-.5a.75.75 0 0 1 .75-.75Z"
-                      />
-                    </svg>
                     Xem tệp
                   </a>
                 </li>
               }
             </ul>
             <p class="mt-3 text-xs text-muted">
-              Bấm tên tệp để mở trang đọc nội dung ở thẻ mới (PDF xem trực tiếp, DOCX dựng bản xem
-              trước). Bấm chuột phải vào nút “Tải xuống” nếu trình duyệt chặn tải.
+              Bấm tên tệp hoặc “Xem tệp” để mở trang đọc nội dung (PDF xem trực tiếp, DOCX dựng bản
+              xem trước) trong cùng tab.
             </p>
           }
         </section>
 
         @if (doc.status === 'APPROVED') {
           <app-rating-section
+            class="detail-card"
             [documentId]="doc.id"
             [canRate]="doc.author.id !== currentUser()?.id"
           />
         }
       </div>
 
-      <aside class="space-y-6">
-        <section class="panel p-6">
+      <aside class="detail-aside space-y-6">
+        <section class="detail-card panel p-6">
           <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">
             Người chia sẻ
           </h2>
           <div class="mt-4 flex items-center gap-3">
-            @if (doc.author.avatarUrl) {
-              <img
-                [src]="doc.author.avatarUrl"
-                alt=""
-                class="h-11 w-11 rounded-full object-cover"
-              />
-            } @else {
-              <span
-                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-foam text-sm font-semibold text-muted"
-              >
-                {{ authorInitials(doc.author.fullName) }}
-              </span>
-            }
+            <app-avatar
+              [avatarUrl]="doc.author.avatarUrl ?? null"
+              [frameUrl]="doc.author.avatarFrameUrl ?? null"
+              [name]="doc.author.fullName"
+              [size]="44"
+            />
             <div class="min-w-0">
               <p class="truncate text-sm font-semibold text-ink">{{ doc.author.fullName }}</p>
               <p class="text-xs text-muted">Cấp {{ doc.author.level }}</p>
@@ -228,7 +207,7 @@
           </div>
         </section>
 
-        <section class="panel p-6">
+        <section class="detail-card panel p-6">
           <h2 class="text-sm font-semibold uppercase tracking-wide text-muted">Thông tin</h2>
           <dl class="mt-4 space-y-3 text-sm">
             <div class="flex items-center justify-between gap-3">

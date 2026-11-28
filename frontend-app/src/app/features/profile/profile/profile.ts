@@ -11,13 +11,14 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AvatarFrame, User } from '../../../core/models';
+import { AvatarFrame, LeaderboardEntry, User } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { AvatarFrameService } from '../../../core/services/avatar-frame.service';
+import { GamificationService } from '../../../core/services/gamification.service';
 import { UploadService } from '../../../core/services/upload.service';
 import { UserService } from '../../../core/services/user.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
-import { initials } from '../../../core/utils/format.util';
+import { Avatar } from '../../../shared/components/avatar/avatar';
 
 const MAX_AVATAR_MB = 5;
 const AVATAR_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
@@ -35,7 +36,7 @@ const BIO_MAX = 500;
 @Component({
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, Avatar],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -44,6 +45,7 @@ export class Profile implements OnInit {
   private readonly userService = inject(UserService);
   private readonly avatarFrameService = inject(AvatarFrameService);
   private readonly uploadService = inject(UploadService);
+  private readonly gamificationApi = inject(GamificationService);
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -62,13 +64,23 @@ export class Profile implements OnInit {
   protected readonly currentFrameId = signal<string | null>(null);
   protected readonly savingFrame = signal(false);
   protected readonly frameError = signal<string | null>(null);
+  /** Vị trí + tiến độ EXP từ /leaderboard (kèm hạng toàn khoá). */
+  protected readonly boardMe = signal<LeaderboardEntry | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
     fullName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
     bio: ['', [Validators.maxLength(BIO_MAX)]],
   });
 
-  protected readonly userInitials = computed(() => initials(this.user()?.fullName ?? ''));
+  protected readonly level = computed(() => this.boardMe()?.level ?? this.user()?.level ?? 1);
+  protected readonly levelExp = computed(() => this.boardMe()?.levelExp ?? 0);
+  protected readonly levelStep = computed(() => this.boardMe()?.levelStep ?? 0);
+  protected readonly remaining = computed(() => this.boardMe()?.remaining ?? 0);
+  protected readonly progressPercent = computed(() => this.boardMe()?.progressPercent ?? 0);
+  protected readonly rank = computed(() => this.boardMe()?.rank ?? null);
+  protected readonly unlockedFrames = computed(
+    () => this.frames().filter((frame) => frame.unlocked).length,
+  );
   protected readonly currentFrameAsset = computed(() => {
     const frame = this.frames().find((item) => item.id === this.currentFrameId());
 
@@ -98,6 +110,7 @@ export class Profile implements OnInit {
 
     this.fetch();
     this.loadFrames();
+    this.loadProgress();
   }
 
   protected showError(control: 'fullName' | 'bio'): boolean {
@@ -238,6 +251,16 @@ export class Profile implements OnInit {
           this.errors.set(getApiErrorMessages(error));
           this.loading.set(false);
         },
+      });
+  }
+
+  private loadProgress(): void {
+    this.gamificationApi
+      .leaderboard(1, 1)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (board) => this.boardMe.set(board.me),
+        error: () => this.boardMe.set(null),
       });
   }
 

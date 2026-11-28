@@ -11,7 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import {
   DocumentSummary,
@@ -21,7 +21,8 @@ import {
 import { DocumentService } from '../../../core/services/document.service';
 import { SubjectService } from '../../../core/services/subject.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
-import { fileExtension, initials } from '../../../core/utils/format.util';
+import { fileExtension } from '../../../core/utils/format.util';
+import { Avatar } from '../../../shared/components/avatar/avatar';
 
 const PAGE_SIZE = 12;
 const DEFAULT_SORT = 'createdAt:desc';
@@ -40,7 +41,7 @@ function toggleValue(list: string[], value: string): string[] {
 @Component({
   selector: 'app-document-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe],
+  imports: [DatePipe, RouterLink, Avatar],
   templateUrl: './document-list.html',
   styleUrl: './document-list.css',
 })
@@ -268,12 +269,10 @@ export class DocumentList implements OnInit {
     this.applyFilters({ page });
   }
 
-  protected badge(item: DocumentSummary): string {
-    return fileExtension(item.files[0]?.name ?? '');
-  }
-
-  protected authorInitials(fullName: string): string {
-    return initials(fullName);
+  /** Mọi loại file đính kèm (không trùng), để badge đầu card không chỉ đại diện file đầu tiên. */
+  protected fileTypeBadges(item: DocumentSummary): string[] {
+    const types = item.files.map((file) => fileExtension(file.name)).filter(Boolean);
+    return types.length > 0 ? [...new Set(types)] : ['FILE'];
   }
 
   private readFilters(params: ParamMap): void {

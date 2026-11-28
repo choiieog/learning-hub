@@ -17,6 +17,8 @@ export interface LeaderboardEntry extends LevelProgress {
   id: string;
   fullName: string;
   avatarUrl?: string | null;
+  /** Giá trị CSS `background` của khung avatar đang dùng. */
+  avatarFrameUrl?: string | null;
 }
 
 /** Kết quả GET /api/leaderboard — `me` là vị trí của người đang đăng nhập. */

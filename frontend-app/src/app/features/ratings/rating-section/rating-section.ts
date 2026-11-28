@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  computed,
   effect,
   inject,
   input,
@@ -13,7 +14,7 @@ import { Rating, RatingSummary } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { RatingService } from '../../../core/services/rating.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
-import { initials } from '../../../core/utils/format.util';
+import { Avatar } from '../../../shared/components/avatar/avatar';
 
 const STAR_VALUES = [1, 2, 3, 4, 5] as const;
 const STAR_VALUES_DESC = [5, 4, 3, 2, 1] as const;
@@ -23,13 +24,13 @@ type StarKey = '1' | '2' | '3' | '4' | '5';
  * Khối đánh giá trong trang chi tiết tài liệu.
  *
  * Hiện điểm trung bình + phân bố 1–5 sao, form đánh giá (mỗi người một đánh giá,
- * gửi lại là cập nhật) và danh sách nhận xét có "Xem thêm".
+ * gửi lại là cập nhật) và danh sách nhận xét có phân trang.
  * Tác giả không tự đánh giá bài mình — backend chặn, UI ẩn form qua `canRate`.
  */
 @Component({
   selector: 'app-rating-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe],
+  imports: [DatePipe, Avatar],
   templateUrl: './rating-section.html',
   styleUrl: './rating-section.css',
 })
@@ -48,15 +49,42 @@ export class RatingSection {
   protected readonly items = signal<Rating[]>([]);
   protected readonly summary = signal<RatingSummary | null>(null);
   protected readonly myRating = signal<Rating | null>(null);
-  protected readonly meta = signal<{ page: number; totalPages: number } | null>(null);
+  protected readonly meta = signal<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  } | null>(null);
   protected readonly loading = signal(true);
-  protected readonly loadingMore = signal(false);
   protected readonly submitting = signal(false);
   protected readonly errors = signal<string[]>([]);
   protected readonly success = signal<string | null>(null);
 
   protected readonly selectedStars = signal(0);
   protected readonly comment = signal('');
+
+  /** Tối đa 5 số trang quanh trang hiện tại, giống phân trang thư viện. */
+  protected readonly pages = computed(() => {
+    const meta = this.meta();
+    if (!meta || meta.totalPages <= 1) {
+      return [];
+    }
+
+    const start = Math.max(1, Math.min(meta.page - 2, meta.totalPages - 4));
+    const end = Math.min(meta.totalPages, start + 4);
+    return Array.from({ length: Math.max(0, end - start + 1) }, (_, index) => start + index);
+  });
+
+  protected readonly rangeLabel = computed(() => {
+    const meta = this.meta();
+    if (!meta || meta.total === 0) {
+      return '0 đánh giá';
+    }
+
+    const from = (meta.page - 1) * meta.limit + 1;
+    const to = Math.min(meta.page * meta.limit, meta.total);
+    return `${from}–${to} trong ${meta.total} đánh giá`;
+  });
 
   constructor() {
     // Đổi tài liệu (route param) → tải lại từ trang 1.
@@ -91,21 +119,17 @@ export class RatingSection {
     return '★'.repeat(stars);
   }
 
-  protected authorInitials(fullName: string): string {
-    return initials(fullName);
-  }
-
   protected onCommentInput(event: Event): void {
     this.comment.set((event.target as HTMLTextAreaElement).value);
   }
 
-  protected loadMore(): void {
+  protected goToPage(page: number): void {
     const meta = this.meta();
-    if (!meta || this.loadingMore() || meta.page >= meta.totalPages) {
+    if (!meta || page < 1 || page > meta.totalPages || page === meta.page) {
       return;
     }
 
-    this.load(this.documentId(), meta.page + 1);
+    this.load(this.documentId(), page);
   }
 
   protected submit(): void {
@@ -142,37 +166,30 @@ export class RatingSection {
   }
 
   private load(documentId: string, page: number): void {
-    const append = page > 1;
-
-    if (append) {
-      this.loadingMore.set(true);
-    } else {
-      this.loading.set(true);
-      this.errors.set([]);
-    }
+    this.loading.set(true);
+    this.errors.set([]);
 
     this.ratingsApi
       .list(documentId, page)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
-          this.items.set(append ? [...this.items(), ...result.items] : result.items);
+          this.items.set(result.items);
           this.summary.set(result.summary);
-          this.meta.set({ page: result.meta.page, totalPages: result.meta.totalPages });
+          this.meta.set(result.meta);
           this.myRating.set(result.myRating);
 
-          if (!append) {
+          // Chỉ đồng bộ form ở trang đầu, để chuyển trang không xoá nội dung đang gõ.
+          if (page === 1) {
             this.selectedStars.set(result.myRating?.stars ?? 0);
             this.comment.set(result.myRating?.comment ?? '');
           }
 
           this.loading.set(false);
-          this.loadingMore.set(false);
         },
         error: (error: unknown) => {
           this.errors.set(getApiErrorMessages(error));
           this.loading.set(false);
-          this.loadingMore.set(false);
         },
       });
   }

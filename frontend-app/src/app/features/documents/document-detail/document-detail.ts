@@ -15,7 +15,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import { DocumentService } from '../../../core/services/document.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
 import { DOCUMENT_STATUS_LABEL } from '../../../core/utils/document-status.util';
-import { fileExtension, formatFileSize, initials } from '../../../core/utils/format.util';
+import { fileExtension, formatFileSize } from '../../../core/utils/format.util';
+import { Avatar } from '../../../shared/components/avatar/avatar';
 import { RatingSection } from '../../ratings/rating-section/rating-section';
 
 /**
@@ -28,7 +29,7 @@ import { RatingSection } from '../../ratings/rating-section/rating-section';
 @Component({
   selector: 'app-document-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe, RatingSection],
+  imports: [RouterLink, DatePipe, RatingSection, Avatar],
   templateUrl: './document-detail.html',
   styleUrl: './document-detail.css',
 })
@@ -68,16 +69,11 @@ export class DocumentDetailPage implements OnInit {
     return formatFileSize(bytes);
   }
 
-  /** Trang đọc nội dung tệp ở tab mới — xem `DocumentViewerPage`. `doc` để breadcrumb quay lại đây. */
-  protected viewerHref(file: DocumentFile): string {
+  /** Query param cho trang đọc nội dung tệp — xem `DocumentViewerPage`. `doc` để breadcrumb quay lại đây. */
+  protected viewerParams(file: DocumentFile): Record<string, string> {
     const id = this.documentId();
-    const idParam = id ? `&doc=${encodeURIComponent(id)}` : '';
 
-    return `/viewer?src=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}${idParam}`;
-  }
-
-  protected authorInitials(fullName: string): string {
-    return initials(fullName);
+    return { src: file.url, name: file.name, ...(id ? { doc: id } : {}) };
   }
 
   protected statusLabel(status: DocumentStatus): string {

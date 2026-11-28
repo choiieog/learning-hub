@@ -18,7 +18,15 @@ const RATING_SELECT = {
   comment: true,
   createdAt: true,
   updatedAt: true,
-  user: { select: { id: true, fullName: true, avatarUrl: true, level: true } },
+  user: {
+    select: {
+      id: true,
+      fullName: true,
+      avatarUrl: true,
+      level: true,
+      avatarFrame: { select: { assetUrl: true } },
+    },
+  },
 } satisfies Prisma.RatingSelect;
 
 export interface RatingSummary {
@@ -34,7 +42,13 @@ export interface RatingItem {
   comment: string | null;
   createdAt: Date;
   updatedAt: Date;
-  user: { id: string; fullName: string; avatarUrl: string | null; level: number };
+  user: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+    avatarFrameUrl: string | null;
+    level: number;
+  };
 }
 
 export interface PaginatedRatings {
@@ -103,14 +117,14 @@ export class RatingsService {
     }
 
     return {
-      items: items as RatingItem[],
+      items: items.map(toRatingItem),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
       summary: {
         ratingAvg: roundAverage(aggregate._avg.stars),
         ratingCount: total,
         distribution,
       },
-      myRating: (myRating as RatingItem | null) ?? null,
+      myRating: myRating ? toRatingItem(myRating) : null,
     };
   }
 
@@ -154,7 +168,7 @@ export class RatingsService {
         data: { ratingAvg, ratingCount },
       });
 
-      return { rating: rating as RatingItem, ratingAvg, ratingCount };
+      return { rating: toRatingItem(rating), ratingAvg, ratingCount };
     }, TRANSACTION_OPTIONS);
 
     // Chỉ đánh giá mới cộng EXP; sửa lại đánh giá cũ không cộng thêm để tránh farm.
@@ -185,6 +199,16 @@ export class RatingsService {
 
     return document;
   }
+}
+
+/** Bỏ object quan hệ khung avatar, chỉ giữ `avatarFrameUrl` cho payload API. */
+function toRatingItem(rating: Prisma.RatingGetPayload<{ select: typeof RATING_SELECT }>): RatingItem {
+  const { avatarFrame, ...user } = rating.user;
+
+  return {
+    ...rating,
+    user: { ...user, avatarFrameUrl: avatarFrame?.assetUrl ?? null },
+  };
 }
 
 /** Làm tròn 2 chữ số để hiển thị ổn định (vd 4.33 thay vì 4.3333333333). */

@@ -1,1 +1,72 @@
-/* Tailwind-first component; add component-scoped styles below when needed. */
+/* Phân trang đánh giá dùng cùng nhịp với phân trang thư viện và dashboard. */
+.rating-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-top: 20px;
+  border-top: 1px solid var(--color-line-soft);
+  padding-top: 14px;
+}
+
+.rating-pagination__summary,
+.rating-pagination__page {
+  color: var(--color-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.rating-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rating-pagination__page {
+  margin-right: 7px;
+}
+
+.rating-page-btn {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.rating-page-btn:hover:not(:disabled) {
+  border-color: var(--color-mist);
+  background: var(--color-wash);
+  color: var(--color-ink);
+}
+
+.rating-page-btn.is-active {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+.rating-page-btn:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-line-soft);
+  color: var(--color-mist);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rating-page-btn {
+    transition: none;
+  }
+}

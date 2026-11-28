@@ -33,82 +33,119 @@
     </div>
   }
 
-  <!-- Danh tính gọn: avatar + tên + email; số liệu tách thành ba ô nhỏ bên phải. -->
+  <!-- Danh tính: avatar (bấm camera để đổi) · tiến độ EXP · thành tích & thứ hạng. -->
   <section class="profile-hero panel mt-6">
-    <div class="flex w-[104px] shrink-0 flex-col items-center gap-1.5">
-      <div
-        class="profile-avatar"
-        [class.has-frame]="currentFrameAsset() !== null"
-        [style.background-image]="currentFrameAsset() ? 'url(' + currentFrameAsset() + ')' : null"
-      >
-        @if (user()?.avatarUrl; as avatarUrl) {
-          <img
-            [src]="avatarUrl"
-            [alt]="'Ảnh đại diện của ' + (user()?.fullName ?? '')"
-            class="h-full w-full rounded-full border-2 border-white object-cover"
-          />
-        } @else {
-          <div
-            class="flex h-full w-full items-center justify-center rounded-full bg-foam text-xl font-semibold text-tide-deep"
-            aria-hidden="true"
-          >
-            {{ userInitials() }}
-          </div>
+    <div class="profile-identity">
+      <div class="profile-avatar-wrap">
+        <app-avatar
+          [avatarUrl]="user()?.avatarUrl ?? null"
+          [frameUrl]="currentFrameAsset()"
+          [name]="user()?.fullName ?? ''"
+          [size]="96"
+        />
+
+        <input
+          #avatarInput
+          type="file"
+          class="hidden"
+          accept="image/png,image/jpeg,image/webp"
+          (change)="onAvatarSelected($event)"
+        />
+        <button
+          type="button"
+          class="profile-avatar-edit"
+          [disabled]="uploadingAvatar()"
+          [attr.title]="'PNG, JPG hoặc WEBP, tối đa ' + maxAvatarMb + ' MB'"
+          aria-label="Đổi ảnh đại diện"
+          (click)="avatarInput.click()"
+        >
+          @if (uploadingAvatar()) {
+            <span class="profile-avatar-edit__spinner" aria-hidden="true"></span>
+          } @else {
+            <svg viewBox="0 0 20 20" fill="none" class="h-[15px] w-[15px]" aria-hidden="true">
+              <path
+                d="M3.5 7.5h2l1.2-1.8h6.6l1.2 1.8h2A1.5 1.5 0 0 1 18 9v6a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 15V9a1.5 1.5 0 0 1 1.5-1.5Z"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linejoin="round"
+              />
+              <circle cx="10" cy="11.75" r="2.6" stroke="currentColor" stroke-width="1.5" />
+            </svg>
+          }
+        </button>
+      </div>
+
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <h2 class="profile-name">{{ user()?.fullName }}</h2>
+          <span class="profile-role">{{ roleLabel() }}</span>
+        </div>
+        <p class="profile-email">{{ user()?.email }}</p>
+        <p class="profile-joined">
+          <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+            <rect x="3" y="5" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.5" />
+            <path d="M3 9h14M7 3v3.5M13 3v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+          Tham gia {{ user()?.createdAt | date: 'dd/MM/yyyy' }}
+        </p>
+        @if (avatarError()) {
+          <p class="mt-2 text-xs text-danger" role="alert">{{ avatarError() }}</p>
         }
       </div>
+    </div>
 
-      <input
-        #avatarInput
-        type="file"
-        class="hidden"
-        accept="image/png,image/jpeg,image/webp"
-        (change)="onAvatarSelected($event)"
-      />
-      <button
-        type="button"
-        class="text-[11px] font-semibold text-tide transition hover:text-ink"
-        [disabled]="uploadingAvatar()"
-        (click)="avatarInput.click()"
-      >
-        {{ uploadingAvatar() ? 'Đang tải…' : 'Đổi ảnh' }}
-      </button>
-      <span
-        class="text-[9.5px] font-medium uppercase tracking-wide text-muted"
-        [attr.title]="'PNG, JPG hoặc WEBP, tối đa ' + maxAvatarMb + ' MB'"
-      >
-        PNG · JPG · WEBP
+    <div class="profile-progress">
+      <span class="profile-level-pill">
+        <svg viewBox="0 0 20 20" fill="none" class="h-3.5 w-3.5" aria-hidden="true">
+          <circle cx="10" cy="7.5" r="4" stroke="currentColor" stroke-width="1.5" />
+          <path d="m6.5 10.5-1 6 4.5-2.2 4.5 2.2-1-6" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+        </svg>
+        CẤP {{ level() }}
       </span>
+
+      <div class="profile-progress__head">
+        <p>EXP: {{ levelExp() }} / {{ levelStep() }}</p>
+        <span>{{ progressPercent() }}%</span>
+      </div>
+
+      <div
+        class="profile-progress__bar"
+        role="progressbar"
+        aria-label="Tiến độ lên cấp"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="progressPercent()"
+      >
+        <span [style.width.%]="progressPercent()"></span>
+      </div>
+
+      <p class="profile-progress__hint">
+        Cần thêm {{ remaining() }} EXP để lên Cấp {{ level() + 1 }}
+      </p>
     </div>
 
-    <div class="min-w-0 flex-1">
-      <div class="flex flex-wrap items-center gap-2.5">
-        <h2 class="truncate text-[1.45rem] font-semibold leading-tight tracking-[-0.02em] text-ink">
-          {{ user()?.fullName }}
-        </h2>
-        <span class="rounded-full bg-foam px-2.5 py-0.5 text-[10px] font-semibold text-tide-deep">
-          {{ roleLabel() }}
-        </span>
-      </div>
-      <p class="mt-1 truncate text-[12.5px] text-muted">{{ user()?.email }}</p>
-      @if (avatarError()) {
-        <p class="mt-2 text-sm text-danger" role="alert">{{ avatarError() }}</p>
-      }
-    </div>
+    <div class="profile-achievements">
+      <p class="profile-block-title">Thành tích &amp; Thứ hạng</p>
 
-    <dl class="profile-hero__stats">
-      <div>
-        <dt>Cấp</dt>
-        <dd>{{ user()?.level ?? 1 }}</dd>
-      </div>
-      <div>
-        <dt>EXP</dt>
-        <dd>{{ user()?.exp ?? 0 }}</dd>
-      </div>
-      <div>
-        <dt>Tham gia</dt>
-        <dd class="text-[13px]">{{ user()?.createdAt | date: 'dd/MM/yyyy' }}</dd>
-      </div>
-    </dl>
+      <p class="profile-achievement">
+        <svg viewBox="0 0 20 20" fill="none" class="h-[15px] w-[15px]" aria-hidden="true">
+          <path d="M6 3h8v4.5a4 4 0 0 1-8 0V3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+          <path d="M6 4H3.5v1.5A2.5 2.5 0 0 0 6 8M14 4h2.5v1.5A2.5 2.5 0 0 1 14 8M10 11.5V15M7 16.5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        Xếp hạng
+        <strong>{{ rank() !== null ? '#' + rank() : '—' }}</strong>
+      </p>
+      <p class="profile-achievement__note">Toàn khoá</p>
+
+      <p class="profile-achievement">
+        <svg viewBox="0 0 20 20" fill="none" class="h-[15px] w-[15px]" aria-hidden="true">
+          <circle cx="10" cy="8" r="5" stroke="currentColor" stroke-width="1.5" />
+          <path d="m7 12.5-1 4.5 4-2 4 2-1-4.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+        </svg>
+        Khung đã mở
+        <strong>{{ unlockedFrames() }}/{{ frames().length }}</strong>
+      </p>
+    </div>
   </section>
 
   <div

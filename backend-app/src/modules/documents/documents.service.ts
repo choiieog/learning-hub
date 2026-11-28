@@ -53,7 +53,13 @@ const DOCUMENT_SUMMARY_SELECT = {
   publishedAt: true,
   subject: { select: { id: true, code: true, name: true } },
   author: {
-    select: { id: true, fullName: true, avatarUrl: true, level: true },
+    select: {
+      id: true,
+      fullName: true,
+      avatarUrl: true,
+      level: true,
+      avatarFrame: { select: { assetUrl: true } },
+    },
   },
   files: {
     select: {
@@ -81,6 +87,8 @@ export interface DocumentSummary {
     id: string;
     fullName: string;
     avatarUrl: string | null;
+    /** Giá trị CSS `background` của khung avatar đang dùng (null = không khung). */
+    avatarFrameUrl: string | null;
     level: number;
   };
   files: {
@@ -155,7 +163,7 @@ export class DocumentsService {
     ], TRANSACTION_OPTIONS);
 
     return {
-      items: items as DocumentSummary[],
+      items: items.map(toDocumentSummary),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -271,7 +279,7 @@ export class DocumentsService {
       return document;
     }, TRANSACTION_OPTIONS);
 
-    return created as DocumentSummary;
+    return toDocumentSummary(created);
   }
 
   /**
@@ -543,9 +551,7 @@ export class DocumentsService {
     options: { viewCountedToday: boolean; viewCount?: number },
   ): DocumentDetail {
     return {
-      ...document,
-      // Prisma trả enum sinh tự động, ép về enum dùng chung của API.
-      status: document.status as DocumentStatus,
+      ...toDocumentSummary(document),
       viewCount: options.viewCount ?? document.viewCount,
       viewCountedToday: options.viewCountedToday,
     };
@@ -611,10 +617,24 @@ export class DocumentsService {
     ], TRANSACTION_OPTIONS);
 
     return {
-      items: items as DocumentSummary[],
+      items: items.map(toDocumentSummary),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
+}
+
+/** Bỏ object quan hệ khung avatar, chỉ giữ `avatarFrameUrl` cho payload API. */
+function toDocumentSummary(
+  document: Prisma.DocumentGetPayload<{ select: typeof DOCUMENT_SUMMARY_SELECT }>,
+): DocumentSummary {
+  const { avatarFrame, ...author } = document.author;
+
+  return {
+    ...document,
+    // Prisma trả enum sinh tự động, ép về enum dùng chung của API.
+    status: document.status as DocumentStatus,
+    author: { ...author, avatarFrameUrl: avatarFrame?.assetUrl ?? null },
+  };
 }
 
 function isUniqueConstraintError(error: unknown): boolean {

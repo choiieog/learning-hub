@@ -223,7 +223,7 @@
               <li class="dash-list__row">
                 <a [routerLink]="['/documents', item.id]" class="dash-doc-row">
                   <span class="file-mark">{{ fileType(item.files[0]?.name ?? '') }}</span>
-                  <span class="min-w-0 flex-1">
+                  <span class="dash-doc-row__body">
                     <span class="dash-doc-row__title">{{ item.title }}</span>
                     <span class="dash-doc-row__meta">
                       <span class="font-medium text-tide">{{ item.subject.code }}</span>
@@ -263,7 +263,7 @@
             @for (item of data.topDocuments; track item.id) {
               <li class="dash-rank">
                 <span class="dash-rank__index">{{ $index + 1 }}</span>
-                <div class="min-w-0 flex-1">
+                <div class="dash-rank__body min-w-0 flex-1">
                   <div class="flex items-baseline justify-between gap-3">
                     <a [routerLink]="['/documents', item.id]" class="dash-rank__title">{{ item.title }}</a>
                     <span class="dash-rank__count">{{ item.viewCount }}</span>

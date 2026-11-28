@@ -1,0 +1,18 @@
+<span
+  class="avatar"
+  [class.has-frame]="frameImage() !== null"
+  [style.width.px]="size()"
+  [style.height.px]="size()"
+  [style.padding.px]="frameImage() ? ringWidth() : 0"
+  [style.background-image]="frameImage()"
+>
+  <span class="avatar__inner">
+    @if (avatarUrl(); as url) {
+      <img [src]="url" [alt]="name() ? 'Ảnh đại diện của ' + name() : ''" />
+    } @else {
+      <span class="avatar__initials" aria-hidden="true" [style.font-size.px]="fontSize()">
+        {{ initialsText() }}
+      </span>
+    }
+  </span>
+</span>

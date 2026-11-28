@@ -7,19 +7,12 @@
     aria-label="Tài khoản"
     (click)="toggle()"
   >
-    <span
-      class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-      [style.background]="avatarFrame() ?? 'transparent'"
-      [class.p-0.5]="avatarFrame() !== null"
-    >
-      @if (user()?.avatarUrl; as avatarUrl) {
-        <img [src]="avatarUrl" alt="" class="h-full w-full rounded-full object-cover" />
-      } @else {
-        <span class="flex h-full w-full items-center justify-center rounded-full bg-marine text-[11px] font-semibold text-ink">
-          {{ userInitials() }}
-        </span>
-      }
-    </span>
+    <app-avatar
+      [avatarUrl]="user()?.avatarUrl ?? null"
+      [frameUrl]="avatarFrame()"
+      [name]="user()?.fullName ?? ''"
+      [size]="40"
+    />
     <span class="hidden min-w-0 xl:block">
       <span class="block max-w-[160px] truncate text-[13px] font-medium leading-5 text-ink">
         {{ user()?.fullName }}
@@ -28,7 +21,13 @@
         {{ user()?.email }}
       </span>
     </span>
-    <svg viewBox="0 0 20 20" fill="none" class="hidden h-4 w-4 shrink-0 text-muted xl:block" aria-hidden="true">
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      class="account-menu-chevron hidden h-4 w-4 shrink-0 text-muted xl:block"
+      [class.is-open]="open()"
+      aria-hidden="true"
+    >
       <path d="m6 8 4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
   </button>

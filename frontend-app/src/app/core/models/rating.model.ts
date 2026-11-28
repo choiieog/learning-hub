@@ -3,6 +3,8 @@ export interface RatingAuthor {
   id: string;
   fullName: string;
   avatarUrl?: string | null;
+  /** Giá trị CSS `background` của khung avatar đang dùng. */
+  avatarFrameUrl?: string | null;
   level?: number;
 }
 

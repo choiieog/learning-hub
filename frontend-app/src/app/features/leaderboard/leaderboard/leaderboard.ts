@@ -12,7 +12,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LeaderboardResponse } from '../../../core/models';
 import { GamificationService } from '../../../core/services/gamification.service';
 import { getApiErrorMessages } from '../../../core/utils/api-error.util';
-import { initials } from '../../../core/utils/format.util';
+import { Avatar } from '../../../shared/components/avatar/avatar';
 
 const PAGE_SIZE = 10;
 
@@ -27,7 +27,7 @@ const PAGE_SIZE = 10;
 @Component({
   selector: 'app-leaderboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Avatar],
   templateUrl: './leaderboard.html',
   styleUrl: './leaderboard.css',
 })
@@ -82,10 +82,6 @@ export class Leaderboard implements OnInit {
       replaceUrl: true,
       queryParams: { page: page > 1 ? page : null },
     });
-  }
-
-  protected authorInitials(fullName: string): string {
-    return initials(fullName);
   }
 
   protected rankClass(rank: number): string {

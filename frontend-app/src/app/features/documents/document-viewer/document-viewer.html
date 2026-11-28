@@ -1,5 +1,5 @@
 <article class="space-y-5">
-  <header class="page-head">
+  <header class="viewer-head page-head">
     <a
       [routerLink]="isAdmin() ? '/admin/documents' : '/documents'"
       class="text-xs font-medium text-muted transition hover:text-tide"
@@ -12,7 +12,7 @@
   </header>
 
   @if (downloadUrl(); as href) {
-    <div class="page-toolbar">
+    <div class="viewer-toolbar page-toolbar">
       <a [href]="href" [attr.download]="fileName()" class="btn-secondary">
         Tải xuống
       </a>
@@ -20,16 +20,16 @@
   }
 
   @if (invalid()) {
-    <div class="alert alert-error" role="alert">
+    <div class="viewer-stage alert alert-error" role="alert">
       <p>Đường dẫn tệp không hợp lệ hoặc tệp không còn tồn tại.</p>
     </div>
   } @else if (error(); as message) {
-    <div class="alert alert-error" role="alert">
+    <div class="viewer-stage alert alert-error" role="alert">
       <p>{{ message }}</p>
     </div>
   } @else if (loading()) {
     <p
-      class="panel p-6 text-center text-sm text-muted"
+      class="viewer-stage panel p-6 text-center text-sm text-muted"
       aria-busy="true"
     >
       Đang tải tệp…
@@ -38,15 +38,15 @@
     <iframe
       [src]="url"
       [title]="fileName()"
-      class="h-[80vh] w-full rounded-xl border border-line bg-wash"
+      class="viewer-stage h-[80vh] w-full rounded-xl border border-line bg-wash"
     ></iframe>
   } @else if (kind() === 'docx') {
     <div
       #docxHost
-      class="max-h-[80vh] overflow-auto panel px-4 py-3"
+      class="viewer-stage max-h-[80vh] overflow-auto panel px-4 py-3"
     ></div>
   } @else {
-    <div class="rounded-xl border border-dashed border-line bg-white p-10 text-center">
+    <div class="viewer-stage rounded-xl border border-dashed border-line bg-white p-10 text-center">
       <p class="text-sm font-medium text-ink-soft">
         Chưa đọc trực tiếp được {{ fileType() }}
       </p>

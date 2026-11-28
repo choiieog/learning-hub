@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { NotificationStateService } from '../../core/services/notification-state.service';
-import { initials } from '../../core/utils/format.util';
+import { Avatar } from '../../shared/components/avatar/avatar';
 
 /**
  * Cụm tài khoản trên topbar: avatar + tên, bấm mở dropdown.
@@ -13,7 +13,7 @@ import { initials } from '../../core/utils/format.util';
 @Component({
   selector: 'app-account-menu',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Avatar],
   templateUrl: './account-menu.html',
 })
 export class AccountMenu {
@@ -23,7 +23,6 @@ export class AccountMenu {
 
   protected readonly user = this.auth.currentUser;
   protected readonly isAdmin = this.auth.isAdmin;
-  protected readonly userInitials = computed(() => initials(this.user()?.fullName ?? ''));
   protected readonly avatarFrame = computed(
     () => this.user()?.avatarFrameUrl ?? null,
   );

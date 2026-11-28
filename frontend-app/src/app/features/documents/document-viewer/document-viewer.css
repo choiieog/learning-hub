@@ -1,1 +1,32 @@
-/* Tailwind-first component; add component-scoped styles below when needed. */
+/* Trang đọc tệp dùng chung nhịp chuyển động với dashboard: đầu trang, thanh công cụ
+   rồi mới tới khung nội dung, cùng easing và độ trễ tăng dần. */
+.viewer-head {
+  animation: viewer-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) 20ms backwards;
+}
+
+.viewer-toolbar {
+  animation: viewer-rise 440ms cubic-bezier(0.22, 1, 0.36, 1) 60ms backwards;
+}
+
+.viewer-stage {
+  animation: viewer-rise 460ms cubic-bezier(0.22, 1, 0.36, 1) 100ms backwards;
+}
+
+@keyframes viewer-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewer-head,
+  .viewer-toolbar,
+  .viewer-stage {
+    animation: none;
+  }
+}

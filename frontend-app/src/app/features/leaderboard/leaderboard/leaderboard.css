@@ -4,10 +4,6 @@
   animation: board-head-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 20ms backwards;
 }
 
-.page-toolbar {
-  animation: board-controls-in 440ms cubic-bezier(0.22, 1, 0.36, 1) 60ms backwards;
-}
-
 .board-me {
   animation: board-card-in 460ms cubic-bezier(0.22, 1, 0.36, 1) 80ms backwards;
 }
@@ -188,7 +184,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .page-head,
-  .page-toolbar,
   .board-me,
   .board-card,
   .board-bar,
